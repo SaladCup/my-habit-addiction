@@ -201,7 +201,7 @@ function BeadDropAnim({ bead, getBeadColor, onDone }) {
 }
 
 // ── Cash-in vs save-for-later prompt (framed: frame_popup) ──
-function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSaveForLater }) {
+function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSpinTier1 }) {
   const cashable = isCashable(wallet)
   const color = getBeadColor(drawnBead.slot, drawnBead.isGold)
   const best = cashable.bestOption
@@ -237,16 +237,18 @@ function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSaveForLater 
             fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.3,
           }}>
             {best && best.tier >= 2
-              ? `You can cash in for a Tier ${best.tier} spin right now!`
-              : 'Cash in now for a Tier 1 spin, or save up for a match.'}
+              ? `Cash in matching beads for a Tier ${best.tier} spin — or keep them and play at Tier 1.`
+              : 'Spin now at Tier 1! Keep saving beads to unlock higher tiers.'}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-            <KawaiiButton variant={best && best.tier >= 2 ? 'mint' : 'primary'} size="lg" fullWidth onClick={onCashIn}>
-              Cash In Now 💎
-            </KawaiiButton>
-            <KawaiiButton variant="secondary" size="md" fullWidth onClick={onSaveForLater}>
-              Save for Later 💾
+            {best && best.tier >= 2 && (
+              <KawaiiButton variant="mint" size="lg" fullWidth onClick={onCashIn}>
+                💎 Cash In &amp; Spin — Tier {best.tier}
+              </KawaiiButton>
+            )}
+            <KawaiiButton variant={best && best.tier >= 2 ? 'secondary' : 'primary'} size="lg" fullWidth onClick={onSpinTier1}>
+              🎰 Keep Beads &amp; Spin (Tier 1)
             </KawaiiButton>
           </div>
         </div>
@@ -472,8 +474,11 @@ export default function HomeScreen() {
     navigate('/spin')
   }
 
-  function handleSaveForLater() {
+  function handleSpinTier1() {
+    // Keep all beads in the wallet (don't cash any in) and still get to play at Tier 1.
     setPrompt(null)
+    setSession({ activeTier: 1 })
+    navigate('/spin')
   }
 
   function handleOnboardingComplete(catData, habitData) {
@@ -545,7 +550,7 @@ export default function HomeScreen() {
           wallet={wallet}
           getBeadColor={getBeadColor}
           onCashIn={handleCashIn}
-          onSaveForLater={handleSaveForLater}
+          onSpinTier1={handleSpinTier1}
         />
       )}
 
