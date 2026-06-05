@@ -1,0 +1,199 @@
+@import './tokens.css';
+
+@font-face {
+  font-family: 'Bunny Snaps';
+  src: url('/fonts/BunnySnaps.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text-dark);
+  /* No scene behind the app — just a calm solid that matches the frame's edge,
+     so any margin around the framed card blends in. */
+  background: #E7D7EF;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;   /* centre the phone card vertically */
+}
+
+/* ── App shell ── */
+.app-shell {
+  position: relative;
+  /* Framed sunburst fills as much of the viewport as fits (height-driven), so
+     it scales up to mobile-game size. No scene behind it — just solid margins. */
+  aspect-ratio: 768 / 1344;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Framed sunburst is the page background on every screen (its gold/jewel
+     corner frame is baked in). The larger scene (on <body>) fills the
+     surrounding area on iPad / desktop so it accommodates any screen. */
+  background-image: url('/ui/bg_sunburst.png');
+  background-size: 100% 100%;   /* aspect matches the shell → full frame, no crop */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #F3E9FF;
+  box-shadow: 0 0 60px rgba(120, 90, 160, 0.28);
+}
+
+/* dreamy backgrounds reusable on full-screen game/reward views */
+.bg-sunburst {
+  background-image: url('/ui/bg_sunburst.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.bg-clouds {
+  background-image: url('/ui/bg_clouds.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* ── Screen container ── */
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: calc(var(--nav-height) + 16px);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Pixel panel (RPG border style) ── */
+.pixel-panel {
+  background: var(--cream);
+  border: var(--pixel-size) solid var(--deep-purple);
+  box-shadow:
+    var(--pixel-size) var(--pixel-size) 0 0 var(--deep-purple),
+    inset 0 0 0 var(--pixel-size) rgba(255,255,255,0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+/* ── Utility ── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+}
+
+/* ── Animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(5deg); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px 2px var(--pink); }
+  50%       { box-shadow: 0 0 20px 6px var(--pink); }
+}
+
+@keyframes bounce-in {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  80%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes reel-win-glow {
+  0%, 100% { background: transparent; box-shadow: none; }
+  50% {
+    background: var(--glow-color, rgba(255,215,0,0.2));
+    box-shadow: 0 0 14px 4px var(--glow-color, rgba(255,215,0,0.3));
+  }
+}
+
+@keyframes pointer-tick {
+  0%   { transform: translateY(0px)  rotate(0deg);   }
+  30%  { transform: translateY(9px)  rotate(-22deg); }
+  70%  { transform: translateY(3px)  rotate(-8deg);  }
+  100% { transform: translateY(0px)  rotate(0deg);   }
+}
+
+@keyframes slot-shake {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  20%  { transform: translate3d(-4px, -2px, 0) rotate(-0.5deg); }
+  40%  { transform: translate3d(4px,  2px, 0) rotate(0.5deg); }
+  60%  { transform: translate3d(-3px, 1px, 0) rotate(-0.3deg); }
+  80%  { transform: translate3d(2px, -1px, 0) rotate(0.2deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+@keyframes reel-shimmer {
+  0%   { top: -40%; opacity: 0; }
+  8%   { opacity: 0.65; }
+  92%  { opacity: 0.65; }
+  100% { top: 130%; opacity: 0; }
+}
+
+@keyframes payline-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+@keyframes coin-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cell-win-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
+}

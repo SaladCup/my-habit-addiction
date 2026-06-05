@@ -1,0 +1,13 @@
+{
+  "name": "My Habit Addiction",
+  "short_name": "HabitAddict",
+  "description": "Get dangerously consistent ✨",
+  "theme_color": "#FFB7C5",
+  "background_color": "#FFF5F9",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "icons": [
+    { "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

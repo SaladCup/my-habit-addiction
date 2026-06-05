@@ -1,0 +1,74 @@
+:root {
+  /* ── Core Palette ── */
+  --pink:        #FFB7C5;
+  --lavender:    #C8B4E0;
+  --mint:        #B4E0C8;
+  --yellow:      #FFE9A0;
+  --sky:         #B4D4FF;
+  --cream:       #FFF5F9;
+  --deep-pink:   #FF85A1;
+  --deep-purple: #9B7EC8;
+  --text-dark:   #3D2B4F;
+  --text-mid:    #7B5EA7;
+  --text-light:  #FFF5F9;
+  --gold:        #FFD700;
+  --gold-shine:  #FFF176;
+  --gold-dark:   #E6B800;
+  --shadow:      rgba(61, 43, 79, 0.15);
+  --shadow-sm:   rgba(61, 43, 79, 0.08);
+
+  /* ── Tier Colors ── */
+  --t1-color:      #FFB7C5;
+  --t1-dark:       #FF85A1;
+  --t2-color:      #C8B4E0;
+  --t2-dark:       #9B7EC8;
+  --t3-color:      #B4E0C8;
+  --t3-dark:       #5CBFA0;
+  --bonus-color:   #FFE9A0;
+  --bonus-dark:    #F5C44B;
+  --jackpot-color: #FFD700;
+  --jackpot-dark:  #E6B800;
+
+  /* ── Typography ── */
+  --font-pixel: 'Bunny Snaps', cursive;
+  --font-body:  'Nunito', sans-serif;
+
+  /* ── Spacing ── */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* ── Border Radius ── */
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   24px;
+  --radius-xl:   32px;
+  --radius-pill: 999px;
+
+  /* ── Pixel border (RPG panel style) ── */
+  --pixel-size: 3px;
+
+  /* ── Z-index layers ── */
+  --z-decor:      0;
+  --z-content:    10;
+  --z-nav:        100;
+  --z-modal:      200;
+  --z-overlay:    300;
+  --z-celebration:400;
+
+  /* ── Transitions ── */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 150ms var(--ease-smooth);
+  --transition-med:  300ms var(--ease-smooth);
+  --transition-bounce: 400ms var(--ease-bounce);
+
+  /* ── App dimensions ── */
+  /* Phone-shaped app card. Width capped to a phone size; the shell is locked to
+     the background art's aspect ratio (768x1344) so the framed bg fits exactly. */
+  --app-max-width: 480px;
+  --nav-height: 92px;
+}
