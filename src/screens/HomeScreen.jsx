@@ -5,7 +5,7 @@ import { isCashable } from '../engine/gameLogic'
 import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw } from '../engine/sounds'
 
-// ── color utils ──
+// ── utils ──
 function darken(hex, amt = 20) {
   try {
     const n = parseInt(hex.replace('#', ''), 16)
@@ -15,336 +15,162 @@ function darken(hex, amt = 20) {
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
   } catch { return '#888' }
 }
-function lighten(hex, amt = 30) {
-  try {
-    const n = parseInt(hex.replace('#', ''), 16)
-    const r = Math.min(255, (n >> 16) + amt)
-    const g = Math.min(255, ((n >> 8) & 0xff) + amt)
-    const b = Math.min(255, (n & 0xff) + amt)
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
-  } catch { return '#fff' }
-}
 function hashSlot(key) {
   const s = String(key || '')
   let h = 0
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
   return (h % 6) + 1
 }
+function seeded(n) {
+  const x = Math.sin(n + 1) * 10000
+  return x - Math.floor(x)
+}
 
-// ── Pure-SVG teapot with glass body, beads inside, milestone bands ──
+// ── Jar (kawaii glass jar art + bead fill) ──
 function TeapotJar({ jarBeads, milestones, getBeadColor }) {
-  const W = 280, H = 320
-  // teapot body bounding box (interior fill region)
-  const bodyX = 50, bodyY = 110, bodyW = 180, bodyH = 150
-  const bodyR = 70   // corner roundness for the body
+  const W = 200, H = 291
+  const jarX = 30, jarW = 140
+  const jarY = 86, jarH = 168
 
-  const sorted = [...milestones].sort((a, b) => a.beadCount - b.beadCount)
-  const maxMilestone = sorted.length ? sorted[sorted.length - 1].beadCount : 50
-  const capacity = Math.max(maxMilestone, jarBeads.length, 10)
-  const fillRatio = Math.min(jarBeads.length / capacity, 1)
-  const fillTop = bodyY + bodyH - fillRatio * bodyH
-
-  // Lay beads out as offset rows from the bottom
-  const visible = jarBeads.slice(-90)
-  const beadR = 7
-  const padX = 12
-  const innerW = bodyW - padX * 2
-  const colW = beadR * 2 + 2
-  const cols = Math.max(3, Math.floor(innerW / colW))
-  const rowH = beadR * 2 - 1
+  const maxMilestone = milestones.length
+    ? Math.max(...milestones.map(m => m.beadCount))
+    : 150
+  const capacity = Math.max(maxMilestone, jarBeads.length, 1)
+  const visibleBeads = jarBeads.slice(-77)
 
   function beadPos(i) {
-    const col = i % cols
-    const row = Math.floor(i / cols)
-    const off = row % 2 === 1 ? colW / 2 : 0
-    const jitter = ((i * 9301 + 49297) % 233281) / 233281
+    const totalCols = 7
+    const col = i % totalCols
+    const row = Math.floor(i / totalCols)
+    const xOff = seeded(i * 7) * 8 - 4
+    const yOff = seeded(i * 11) * 4 - 2
     return {
-      x: bodyX + padX + col * colW + off + (jitter * 2 - 1),
-      y: bodyY + bodyH - beadR - row * rowH,
+      x: jarX + 14 + col * ((jarW - 28) / (totalCols - 1)) + xOff,
+      y: jarY + jarH - 10 - row * 14 + yOff,
     }
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 6px' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 320, overflow: 'visible' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 2px' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={150} height={150 * (H / W)} style={{ overflow: 'visible' }}>
         <defs>
-          {/* soft purple "back wall" — what you see through the empty glass */}
-          <radialGradient id="teapot-back" cx="50%" cy="40%" r="70%">
-            <stop offset="0%"   stopColor="#F3E8FF" />
-            <stop offset="60%"  stopColor="#E0CCF5" />
-            <stop offset="100%" stopColor="#C8B4E0" />
-          </radialGradient>
-
-          {/* front glass — translucent overlay with cool tint */}
-          <linearGradient id="teapot-glass" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stopColor="rgba(255,255,255,0.55)" />
-            <stop offset="35%"  stopColor="rgba(255,255,255,0.15)" />
-            <stop offset="100%" stopColor="rgba(180,160,210,0.30)" />
-          </linearGradient>
-
-          {/* glossy diagonal shine */}
-          <linearGradient id="teapot-shine" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="rgba(255,255,255,0.0)" />
-            <stop offset="45%"  stopColor="rgba(255,255,255,0.55)" />
-            <stop offset="55%"  stopColor="rgba(255,255,255,0.55)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.0)" />
-          </linearGradient>
-
-          <linearGradient id="teapot-rim" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stopColor="#C8B4E0" />
-            <stop offset="100%" stopColor="#9B7EC8" />
-          </linearGradient>
-
-          {/* clip so beads + fill live strictly inside the teapot body */}
-          <clipPath id="teapot-clip">
-            <rect x={bodyX} y={bodyY} width={bodyW} height={bodyH} rx={bodyR} ry={bodyR * 0.8} />
+          <clipPath id="jar-clip">
+            <path d={`M${jarX} ${jarY} H${jarX + jarW} V${jarY + jarH - 18} Q${jarX + jarW} ${jarY + jarH} ${jarX + jarW - 18} ${jarY + jarH} H${jarX + 18} Q${jarX} ${jarY + jarH} ${jarX} ${jarY + jarH - 18} Z`} />
           </clipPath>
         </defs>
 
-        {/* ── LAYER 1: back wall (behind the glass) ── */}
-        <g>
-          {/* lid */}
-          <ellipse cx={W / 2} cy={bodyY + 6} rx={70} ry={12} fill="url(#teapot-rim)" />
-          <rect x={W / 2 - 10} y={bodyY - 20} width={20} height={18} rx={6} fill="#9B7EC8" />
-          <circle cx={W / 2} cy={bodyY - 22} r={8} fill="#C8B4E0" stroke="#9B7EC8" strokeWidth={2} />
-          <circle cx={W / 2 - 2} cy={bodyY - 24} r={2.5} fill="#FFF5F9" opacity={0.9} />
-
-          {/* spout */}
-          <path
-            d={`M${bodyX + 4} ${bodyY + 50}
-                C ${bodyX - 30} ${bodyY + 30}, ${bodyX - 42} ${bodyY + 60}, ${bodyX - 36} ${bodyY + 90}
-                L ${bodyX - 4} ${bodyY + 78}
-                C ${bodyX - 10} ${bodyY + 64}, ${bodyX - 4} ${bodyY + 56}, ${bodyX + 8} ${bodyY + 64} Z`}
-            fill="url(#teapot-rim)" stroke="#7B5EA7" strokeWidth={1.5} strokeLinejoin="round"
-          />
-
-          {/* handle */}
-          <path
-            d={`M${bodyX + bodyW - 4} ${bodyY + 40}
-                C ${bodyX + bodyW + 40} ${bodyY + 30}, ${bodyX + bodyW + 50} ${bodyY + 110}, ${bodyX + bodyW - 6} ${bodyY + 110}`}
-            fill="none" stroke="#9B7EC8" strokeWidth={14} strokeLinecap="round"
-          />
-          <path
-            d={`M${bodyX + bodyW - 4} ${bodyY + 40}
-                C ${bodyX + bodyW + 40} ${bodyY + 30}, ${bodyX + bodyW + 50} ${bodyY + 110}, ${bodyX + bodyW - 6} ${bodyY + 110}`}
-            fill="none" stroke="#C8B4E0" strokeWidth={6} strokeLinecap="round"
-          />
-
-          {/* back wall of the body */}
-          <rect
-            x={bodyX} y={bodyY} width={bodyW} height={bodyH}
-            rx={bodyR} ry={bodyR * 0.8}
-            fill="url(#teapot-back)"
-            stroke="#9B7EC8" strokeWidth={3}
-          />
-        </g>
-
-        {/* ── LAYER 2: bead pile (clipped inside body) ── */}
-        <g clipPath="url(#teapot-clip)">
-          {/* gentle fill tint so the bead pile reads as "water" */}
-          <rect
-            x={bodyX} y={fillTop} width={bodyW} height={bodyY + bodyH - fillTop}
-            fill="#FFD9E6" opacity={0.35}
-          />
-          {visible.map((b, i) => {
-            const p = beadPos(i)
-            if (p.y < bodyY + 4) return null
-            const color = getBeadColor(b.slot, b.isGold)
-            const grad = `bead-${b.id}`
+        {/* beads sit behind the glass art so the glossy highlight reads on top */}
+        <g clipPath="url(#jar-clip)">
+          {visibleBeads.map((bead, i) => {
+            const pos = beadPos(i)
+            if (pos.y < jarY) return null
+            const r = 8
+            const imgSrc = bead.isGold ? '/beads/bead-gold.png' : `/beads/bead-${bead.slot}.png`
             return (
-              <g key={b.id}>
-                <defs>
-                  <radialGradient id={grad} cx="35%" cy="30%" r="75%">
-                    <stop offset="0%"   stopColor="#FFFFFF" />
-                    <stop offset="40%"  stopColor={color} />
-                    <stop offset="100%" stopColor={darken(color, 35)} />
-                  </radialGradient>
-                </defs>
-                <circle
-                  cx={p.x} cy={p.y} r={beadR}
-                  fill={`url(#${grad})`}
-                  stroke={darken(color, 25)} strokeWidth={0.6}
-                  opacity={0.97}
-                />
-                <circle cx={p.x - 2} cy={p.y - 2.5} r={1.6} fill="#FFFFFF" opacity={0.85} />
-                {b.isGold && (
-                  <circle cx={p.x} cy={p.y} r={beadR + 1.5} fill="none" stroke="#FFE066" strokeWidth={0.8} opacity={0.7} />
-                )}
-              </g>
+              <image key={bead.id} href={imgSrc} x={pos.x - r} y={pos.y - r} width={r * 2} height={r * 2} opacity={0.97} />
             )
           })}
         </g>
 
-        {/* ── LAYER 3: milestone bands across the glass ── */}
-        <g clipPath="url(#teapot-clip)">
-          {sorted.map(m => {
-            const ly = bodyY + bodyH - (m.beadCount / capacity) * bodyH
-            const reached = jarBeads.length >= m.beadCount
-            const label = m.name.length > 10 ? m.name.slice(0, 10) + '…' : m.name
-            return (
-              <g key={m.id}>
-                <line
-                  x1={bodyX + 6} y1={ly} x2={bodyX + bodyW - 6} y2={ly}
-                  stroke={reached ? '#5CBFA0' : '#9B7EC8'}
-                  strokeWidth={1.5} strokeDasharray="5 4" opacity={0.8}
-                />
-                <rect
-                  x={bodyX + bodyW - 84} y={ly - 9}
-                  width={78} height={18} rx={9}
-                  fill={reached ? '#B4E0C8' : '#FFF5F9'}
-                  stroke={reached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1.5}
-                />
-                <text
-                  x={bodyX + bodyW - 45} y={ly + 1}
-                  textAnchor="middle" dominantBaseline="central"
-                  fontSize={11} fontFamily="'Bunny Snaps', cursive"
-                  fill={reached ? '#1A5C3A' : '#5C4B7A'}
-                >
-                  {reached ? '★ ' : ''}{label}
-                </text>
-              </g>
-            )
-          })}
-        </g>
+        {/* the jar art itself */}
+        <image href="/ui/jar.png" x={0} y={0} width={W} height={H} pointerEvents="none" />
 
-        {/* ── LAYER 4: front glass overlay (the see-through pane) ── */}
-        <g pointerEvents="none">
-          <rect
-            x={bodyX} y={bodyY} width={bodyW} height={bodyH}
-            rx={bodyR} ry={bodyR * 0.8}
-            fill="url(#teapot-glass)"
-          />
-          {/* diagonal shine band */}
-          <path
-            d={`M${bodyX + 14} ${bodyY + 14}
-                Q ${bodyX + 24} ${bodyY + 4}, ${bodyX + 40} ${bodyY + 10}
-                L ${bodyX + 24} ${bodyY + bodyH - 30}
-                Q ${bodyX + 16} ${bodyY + bodyH - 20}, ${bodyX + 10} ${bodyY + bodyH - 40} Z`}
-            fill="url(#teapot-shine)" opacity={0.55}
-          />
-          {/* edge highlight */}
-          <rect
-            x={bodyX} y={bodyY} width={bodyW} height={bodyH}
-            rx={bodyR} ry={bodyR * 0.8}
-            fill="none" stroke="#FFFFFF" strokeWidth={1.2} opacity={0.6}
-          />
-        </g>
+        {/* milestone lines across the glass */}
+        {milestones.map(m => {
+          const lineY = jarY + jarH - (m.beadCount / capacity) * jarH
+          if (lineY < jarY || lineY > jarY + jarH) return null
+          const isReached = jarBeads.length >= m.beadCount
+          return (
+            <g key={m.id}>
+              <line x1={jarX} y1={lineY} x2={jarX + jarW} y2={lineY}
+                stroke={isReached ? '#5CBFA0' : '#9B7EC8'}
+                strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
+              <rect x={jarX + jarW - 4} y={lineY - 8} width={52} height={16} rx={4}
+                fill={isReached ? '#B4E0C8' : '#E8D8F5'}
+                stroke={isReached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1} />
+              <text x={jarX + jarW + 22} y={lineY + 1}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={15} fontFamily="'Bunny Snaps', cursive"
+                fill={isReached ? '#1A5C3A' : '#3D2B4F'}>
+                {m.name.length > 7 ? m.name.slice(0, 7) + '…' : m.name}
+              </text>
+            </g>
+          )
+        })}
 
-        {/* base / saucer */}
-        <ellipse cx={W / 2} cy={bodyY + bodyH + 6} rx={88} ry={10} fill="#9B7EC8" />
-        <ellipse cx={W / 2} cy={bodyY + bodyH + 4} rx={84} ry={7} fill="#C8B4E0" />
-
-        {/* bead count under teapot */}
-        <text
-          x={W / 2} y={H - 4}
-          textAnchor="middle"
-          fontSize={20} fontFamily="'Bunny Snaps', cursive" fill="#7B5EA7"
-        >
-          {jarBeads.length} bead{jarBeads.length === 1 ? '' : 's'}
+        <text x={W / 2} y={H - 1} textAnchor="middle"
+          fontSize={22} fontFamily="'Bunny Snaps', cursive" fill="#9B7EC8">
+          {jarBeads.length} beads
         </text>
       </svg>
     </div>
   )
 }
 
-// ── Bubbly arcade habit button (pure CSS, no PNGs) ──
+// ── Habit row: ornate pink card (habit_card.png via border-image) ──
 function HabitButton({ habit, color, onTap }) {
-  const dark = darken(color, 35)
-  const light = lighten(color, 18)
+  const beadSlot = habit.beadSlot || hashSlot(habit.categoryId || habit.id)
   return (
     <button
       onClick={onTap}
       style={{
-        position: 'relative',
         width: '100%',
-        minHeight: 96,
-        padding: '14px 18px 16px',
-        border: `4px solid ${dark}`,
-        borderRadius: 28,
-        background: `radial-gradient(ellipse at 30% 22%, ${light} 0%, ${color} 38%, ${darken(color, 12)} 100%)`,
-        boxShadow: `
-          inset 0 -8px 0 ${dark}99,
-          inset 0 4px 0 rgba(255,255,255,0.55),
-          0 6px 0 ${dark},
-          0 14px 22px ${dark}55
-        `,
+        minHeight: 150,
+        background: 'transparent',
+        borderStyle: 'solid',
+        borderWidth: '30px 56px',
+        borderColor: 'transparent',
+        borderImage: 'url(/ui/habit_card.png) 120 150 fill / 30px 56px / 0 stretch',
         cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: 12,
-        textAlign: 'left',
-        userSelect: 'none', WebkitUserSelect: 'none',
-        transition: 'transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease',
-        fontFamily: "'Bunny Snaps', cursive",
-        overflow: 'hidden',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '0 10px',
+        filter: `drop-shadow(0 6px 10px ${color}44)`,
+        transition: 'transform 120ms ease',
+        userSelect: 'none',
       }}
-      onPointerDown={e => {
-        e.currentTarget.style.transform = 'translateY(5px) scale(0.98)'
-        e.currentTarget.style.boxShadow = `
-          inset 0 -2px 0 ${dark}aa,
-          inset 0 8px 14px ${light},
-          0 2px 0 ${dark},
-          0 6px 12px ${dark}55
-        `
-      }}
-      onPointerUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-      onPointerLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+      onPointerDown={e => { e.currentTarget.style.transform = 'translateY(3px) scale(0.99)' }}
+      onPointerUp={e => { e.currentTarget.style.transform = '' }}
+      onPointerLeave={e => { e.currentTarget.style.transform = '' }}
     >
-      {/* glossy top highlight */}
-      <span style={{
-        position: 'absolute', top: 6, left: 14, right: 14, height: 18,
-        borderRadius: 20,
-        background: 'linear-gradient(to bottom, rgba(255,255,255,0.85), rgba(255,255,255,0))',
-        pointerEvents: 'none',
-      }} />
-      {/* sparkle */}
-      <span style={{
-        position: 'absolute', top: 10, left: 24, fontSize: 14,
-        color: 'rgba(255,255,255,0.85)', pointerEvents: 'none',
-      }}>✦</span>
-
-      {/* bead medallion */}
-      <span style={{
-        width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+      {/* category medallion */}
+      <div style={{
+        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
         background: `radial-gradient(circle at 35% 30%, #fff 0%, ${color} 55%, ${darken(color, 25)} 100%)`,
-        boxShadow: `inset 0 -3px 6px ${darken(color, 30)}, 0 0 0 3px #fff, 0 0 0 5px ${darken(color, 20)}66, 0 3px 6px rgba(0,0,0,0.25)`,
-        zIndex: 1,
+        boxShadow: `0 0 0 2px #fff, 0 0 0 3px ${darken(color, 20)}55, 0 2px 4px rgba(0,0,0,0.18)`,
       }} />
 
-      <span style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
-        <span style={{
-          display: 'block',
+      {/* name + description (centered) */}
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+        <div style={{
           fontFamily: "'Bunny Snaps', cursive",
-          fontSize: 26, lineHeight: 1.1,
-          color: '#3D2B4F',
-          textShadow: `1px 1px 0 ${light}, 0 2px 3px rgba(255,255,255,0.4)`,
+          fontSize: 26, color: '#9B3D6B', lineHeight: 1.1,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          textShadow: '0 1px 0 rgba(255,255,255,0.6)',
         }}>
           {habit.name}
-        </span>
+        </div>
         {habit.description && (
-          <span style={{
-            display: 'block',
-            fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700,
-            color: '#3D2B4F', opacity: 0.7,
+          <div style={{
+            fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#A36A87',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            marginTop: 2,
           }}>
             {habit.description}
-          </span>
+          </div>
         )}
-      </span>
+      </div>
 
-      <span style={{
-        zIndex: 1,
-        fontSize: 30,
-        filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.25))',
-      }}>
-        🎯
-      </span>
+      {/* category bead accent */}
+      <img
+        src={`/beads/bead-${beadSlot}.png`}
+        alt=""
+        onError={e => { e.currentTarget.style.display = 'none' }}
+        style={{ width: 30, height: 30, flexShrink: 0, filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.2))' }}
+      />
     </button>
   )
 }
 
-// ── Bead drop animation: bead falls from button toward teapot ──
+// ── Bead drop animation: bead falls toward the jar ──
 function BeadDropAnim({ bead, getBeadColor, onDone }) {
   const color = getBeadColor(bead.slot, bead.isGold)
   return (
@@ -374,7 +200,7 @@ function BeadDropAnim({ bead, getBeadColor, onDone }) {
   )
 }
 
-// ── Cash-in vs save-for-later prompt ──
+// ── Cash-in vs save-for-later prompt (framed: frame_popup) ──
 function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSaveForLater }) {
   const cashable = isCashable(wallet)
   const color = getBeadColor(drawnBead.slot, drawnBead.isGold)
@@ -383,59 +209,46 @@ function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSaveForLater 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 300,
-      background: 'rgba(61,43,79,0.55)',
-      backdropFilter: 'blur(8px)',
+      background: 'rgba(61,43,79,0.5)',
+      backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
+      padding: 20,
     }}>
       <div style={{
+        position: 'relative',
         width: '100%', maxWidth: 360,
-        background: 'linear-gradient(180deg, #FFF5F9 0%, #FCE7F3 100%)',
-        border: '4px solid #C8B4E0',
-        borderRadius: 28,
-        padding: 22,
-        boxShadow: '0 18px 40px rgba(61,43,79,0.35), inset 0 4px 0 rgba(255,255,255,0.7)',
-        animation: 'popIn 0.35s cubic-bezier(0.34,1.56,0.64,1)',
-        textAlign: 'center',
+        aspectRatio: '600 / 900',
+        background: "url('/ui/frame_popup.png') center / 100% 100% no-repeat",
+        filter: 'drop-shadow(0 12px 30px rgba(155,126,200,0.4))',
+        animation: 'bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
-        <style>{`
-          @keyframes popIn {
-            0%   { transform: scale(0.6); opacity: 0; }
-            100% { transform: scale(1);   opacity: 1; }
-          }
-        `}</style>
-
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          padding: '16% 14% 13%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+          textAlign: 'center', overflowY: 'auto',
+        }}>
           <BeadDisplay color={color} slot={drawnBead.slot} isGold={drawnBead.isGold} size="xl" animate={drawnBead.isGold} />
-        </div>
 
-        <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
-          fontSize: 26, color: '#9B7EC8', marginBottom: 4,
-        }}>
-          🌸 BEAD EARNED!
-        </div>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontSize: 15, color: '#7B5EA7',
-          marginBottom: 18, lineHeight: 1.3,
-        }}>
-          {best && best.tier >= 2
-            ? `You can cash in for a Tier ${best.tier} spin right now!`
-            : 'Cash in now for a Tier 1 spin, or save up for a match.'}
-        </div>
+          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 26, color: '#9B3D6B' }}>
+            🌸 BEAD EARNED!
+          </div>
+          <div style={{
+            fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.3,
+          }}>
+            {best && best.tier >= 2
+              ? `You can cash in for a Tier ${best.tier} spin right now!`
+              : 'Cash in now for a Tier 1 spin, or save up for a match.'}
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <KawaiiButton
-            variant={best && best.tier >= 2 ? 'mint' : 'primary'}
-            size="lg"
-            fullWidth
-            onClick={onCashIn}
-          >
-            Cash In Now 💎
-          </KawaiiButton>
-          <KawaiiButton variant="secondary" size="md" fullWidth onClick={onSaveForLater}>
-            Save for Later 💾
-          </KawaiiButton>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            <KawaiiButton variant={best && best.tier >= 2 ? 'mint' : 'primary'} size="lg" fullWidth onClick={onCashIn}>
+              Cash In Now 💎
+            </KawaiiButton>
+            <KawaiiButton variant="secondary" size="md" fullWidth onClick={onSaveForLater}>
+              Save for Later 💾
+            </KawaiiButton>
+          </div>
         </div>
       </div>
     </div>
@@ -459,45 +272,27 @@ function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
         cursor: 'pointer',
       }}
     >
-      <span style={{
-        fontFamily: "'Bunny Snaps', cursive",
-        fontSize: 22, color: '#7B5EA7', flexShrink: 0,
-      }}>
+      <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#7B5EA7', flexShrink: 0 }}>
         WALLET
       </span>
-      <div style={{
-        display: 'flex', gap: 5, flex: 1, overflow: 'hidden', flexWrap: 'nowrap',
-        minWidth: 0,
-      }}>
+      <div style={{ display: 'flex', gap: 5, flex: 1, overflow: 'hidden', flexWrap: 'nowrap', minWidth: 0 }}>
         {wallet.slice(-14).map(b => (
-          <BeadDisplay
-            key={b.id}
-            color={getBeadColor(b.slot, b.isGold)}
-            slot={b.slot}
-            isGold={b.isGold}
-            size="sm"
-          />
+          <BeadDisplay key={b.id} color={getBeadColor(b.slot, b.isGold)} slot={b.slot} isGold={b.isGold} size="sm" />
         ))}
         {wallet.length > 14 && (
-          <span style={{
-            fontFamily: "'Bunny Snaps', cursive",
-            fontSize: 18, color: '#9B7EC8', alignSelf: 'center', marginLeft: 4,
-          }}>
+          <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#9B7EC8', alignSelf: 'center', marginLeft: 4 }}>
             +{wallet.length - 14}
           </span>
         )}
       </div>
-      <span style={{
-        fontFamily: "'Bunny Snaps', cursive",
-        fontSize: 24, color: '#9B7EC8', flexShrink: 0,
-      }}>
+      <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 24, color: '#9B7EC8', flexShrink: 0 }}>
         ›
       </span>
     </div>
   )
 }
 
-// ── Onboarding (kept simple for new users) ──
+// ── Onboarding (framed: frame_onboard) ──
 function OnboardingModal({ onComplete }) {
   const [catName, setCatName]     = useState('')
   const [catColor, setCatColor]   = useState('#FFB7C5')
@@ -528,86 +323,88 @@ function OnboardingModal({ onComplete }) {
       background: 'rgba(61,43,79,0.6)',
       backdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16,
+      padding: 10,
     }}>
       <div style={{
-        width: '100%', maxWidth: 460, maxHeight: '94vh', overflowY: 'auto',
-        background: 'linear-gradient(180deg, #FFF5F9 0%, #FCE7F3 100%)',
-        border: '4px solid #C8B4E0',
-        borderRadius: 28, padding: 24,
-        boxShadow: '0 18px 40px rgba(61,43,79,0.35), inset 0 4px 0 rgba(255,255,255,0.7)',
+        position: 'relative',
+        width: '100%', maxWidth: 520,
+        aspectRatio: '600 / 1200',
+        maxHeight: '97vh',
+        background: "url('/ui/frame_onboard.png') center / 100% 100% no-repeat",
+        filter: 'drop-shadow(0 12px 30px rgba(155,126,200,0.45))',
+        animation: 'bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
-        <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{ fontSize: 44, marginBottom: 4 }}>🫖</div>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 28, color: '#9B7EC8' }}>
-            WELCOME!
+        <div style={{
+          position: 'absolute', inset: 0,
+          padding: '11% 13% 10%',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          overflowY: 'auto',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 28, color: '#9B3D6B' }}>
+              WELCOME!
+            </div>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7' }}>
+              Let's set up your first habit.
+            </div>
           </div>
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7' }}>
-            Let's set up your first habit.
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
-            STEP 1 · CATEGORY
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
+              STEP 1 · CATEGORY
+            </div>
+            <input
+              style={inputStyle}
+              placeholder="e.g. Health, Study, Creative…"
+              value={catName}
+              onChange={e => setCatName(e.target.value)}
+              autoFocus
+            />
+            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 16, color: '#7B5EA7', margin: '10px 0 6px' }}>
+              PICK A COLOR
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {KAWAII_COLORS.map(c => (
+                <button
+                  key={c.hex}
+                  title={c.name}
+                  onClick={() => setCatColor(c.hex)}
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%', padding: 0, cursor: 'pointer',
+                    background: `radial-gradient(circle at 35% 30%, white 0%, ${c.hex} 50%, ${darken(c.hex, 20)} 100%)`,
+                    border: catColor === c.hex ? '3px solid #3D2B4F' : '2px solid rgba(0,0,0,0.08)',
+                    boxShadow: catColor === c.hex ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : '0 1px 3px rgba(0,0,0,0.1)',
+                    transform: catColor === c.hex ? 'scale(1.18)' : 'scale(1)',
+                    transition: 'all 120ms ease',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          <input
-            style={inputStyle}
-            placeholder="e.g. Health, Study, Creative…"
-            value={catName}
-            onChange={e => setCatName(e.target.value)}
-            autoFocus
-          />
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 16, color: '#7B5EA7', margin: '10px 0 6px' }}>
-            PICK A COLOR
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {KAWAII_COLORS.map(c => (
-              <button
-                key={c.hex}
-                title={c.name}
-                onClick={() => setCatColor(c.hex)}
-                style={{
-                  width: 28, height: 28, borderRadius: '50%', padding: 0, cursor: 'pointer',
-                  background: `radial-gradient(circle at 35% 30%, white 0%, ${c.hex} 50%, ${darken(c.hex, 20)} 100%)`,
-                  border: catColor === c.hex ? '3px solid #3D2B4F' : '2px solid rgba(0,0,0,0.08)',
-                  boxShadow: catColor === c.hex ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : '0 1px 3px rgba(0,0,0,0.1)',
-                  transform: catColor === c.hex ? 'scale(1.18)' : 'scale(1)',
-                  transition: 'all 120ms ease',
-                  flexShrink: 0,
-                }}
-              />
-            ))}
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
-            STEP 2 · YOUR HABIT
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
+              STEP 2 · YOUR HABIT
+            </div>
+            <input
+              style={{ ...inputStyle, marginBottom: 8 }}
+              placeholder="e.g. Morning Run, Read 20 Pages…"
+              value={habitName}
+              onChange={e => setHabitName(e.target.value)}
+            />
+            <input
+              style={inputStyle}
+              placeholder="Description (optional)"
+              value={habitDesc}
+              onChange={e => setHabitDesc(e.target.value)}
+            />
           </div>
-          <input
-            style={{ ...inputStyle, marginBottom: 8 }}
-            placeholder="e.g. Morning Run, Read 20 Pages…"
-            value={habitName}
-            onChange={e => setHabitName(e.target.value)}
-          />
-          <input
-            style={inputStyle}
-            placeholder="Description (optional)"
-            value={habitDesc}
-            onChange={e => setHabitDesc(e.target.value)}
-          />
-        </div>
 
-        <KawaiiButton
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-        >
-          ✨ CREATE MY FIRST HABIT
-        </KawaiiButton>
+          <KawaiiButton variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={!canSubmit}>
+            ✨ CREATE MY FIRST HABIT
+          </KawaiiButton>
+        </div>
       </div>
     </div>
   )
@@ -634,7 +431,7 @@ export default function HomeScreen() {
     }
   }, [])
 
-  // Map each habit to a stable bead slot color (from settings.beadSlots)
+  // Map each habit to a stable bead-slot color (from settings.beadSlots)
   const habitColor = useMemo(() => {
     const map = {}
     for (const h of habits) {
@@ -688,55 +485,28 @@ export default function HomeScreen() {
     <div style={{ position: 'relative', minHeight: '100%', paddingBottom: 8 }}>
       <FloatingDecor />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '14px 16px 0' }}>
-        {/* Title */}
-        <h1 style={{
-          margin: '0 0 6px',
-          fontFamily: "'Bunny Snaps', cursive",
-          fontSize: 'clamp(28px, 8vw, 40px)',
-          color: '#3D2B4F',
-          textAlign: 'center',
-          letterSpacing: '0.04em',
-          textShadow: `
-            -1px -1px 0 #FFF5F9,
-             1px -1px 0 #FFF5F9,
-            -1px  1px 0 #FFF5F9,
-             1px  1px 0 #FFF5F9,
-             2px  3px 0 #C8B4E0,
-             4px  5px 0 rgba(155,126,200,0.55),
-             0 10px 22px rgba(61,43,79,0.4)
-          `,
-        }}>
-          MY HABIT ADDICTION
-        </h1>
-        <div style={{
-          textAlign: 'center',
-          fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: 700,
-          color: '#7B5EA7', opacity: 0.8, marginBottom: 6,
-          letterSpacing: '0.06em',
-        }}>
-          get addicted for good this time ✨
-        </div>
+      <div style={{ position: 'relative', zIndex: 10, padding: '12px 16px 0' }}>
+        {/* Logo */}
+        <img
+          src="/ui/logo.png"
+          alt="My Habit Addiction — get addicted for good this time"
+          style={{ width: '100%', maxWidth: 340, height: 'auto', margin: '0 auto 4px', display: 'block',
+            filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
+        />
 
-        {/* Teapot */}
+        {/* Jar */}
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />
 
         {/* Tap-a-habit banner */}
-        <div style={{
-          textAlign: 'center',
-          fontFamily: "'Bunny Snaps', cursive",
-          fontSize: 22, color: '#FF85A1', margin: '6px 0 12px',
-          textShadow: '1px 1px 0 #fff',
-        }}>
-          ✦ Tap a habit to earn a bead ✦
-        </div>
+        <img
+          src="/ui/tap_banner.png"
+          alt="Tap a habit to earn a bead, silly!"
+          style={{ display: 'block', width: '80%', maxWidth: 330, height: 'auto', margin: '0 auto 8px' }}
+        />
 
         {/* Habit list */}
         {habits.length > 0 && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', gap: 14,
-            maxWidth: 440, margin: '0 auto',
-          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 440, width: '100%', margin: '0 auto' }}>
             {habits.map(habit => (
               <HabitButton
                 key={habit.id}
@@ -750,7 +520,7 @@ export default function HomeScreen() {
 
         {/* Quick cash-in shortcut when a tier-2+ match exists */}
         {wallet.length > 0 && isCashable(wallet).options.some(o => o.tier >= 2) && (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 12 }}>
             <KawaiiButton
               variant="mint" size="md" fullWidth
               onClick={() => {
@@ -788,35 +558,39 @@ export default function HomeScreen() {
           padding: 24,
         }}>
           <div style={{
-            width: '100%', maxWidth: 360,
-            background: 'linear-gradient(180deg, #FFF9DB 0%, #FFE9A0 100%)',
-            border: '4px solid #F5C44B',
-            borderRadius: 28, padding: 24,
-            textAlign: 'center',
-            boxShadow: '0 0 40px rgba(255,215,0,0.55), 0 18px 40px rgba(61,43,79,0.35)',
-            animation: 'popIn 0.45s cubic-bezier(0.34,1.56,0.64,1)',
+            position: 'relative',
+            width: '100%', maxWidth: 380,
+            aspectRatio: '396 / 352',
+            background: "url('/ui/frame_med.png') center / 100% 100% no-repeat",
+            filter: 'drop-shadow(0 0 40px rgba(255,215,0,0.45)) drop-shadow(0 12px 30px rgba(155,126,200,0.4))',
+            animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)',
           }}>
-            <div style={{ fontSize: 44 }}>✨</div>
             <div style={{
-              fontFamily: "'Bunny Snaps', cursive", fontSize: 32, color: '#5C3A00',
-              textShadow: '2px 2px 0 rgba(184,150,12,0.35)',
+              position: 'absolute', inset: 0,
+              padding: '20% 14% 13%',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+              textAlign: 'center',
             }}>
-              GOLD BEAD!
+              <div style={{ fontSize: 40, lineHeight: 1 }}>✨</div>
+              <div style={{
+                fontFamily: "'Bunny Snaps', cursive", fontSize: 32, color: '#5C3A00',
+                textShadow: '2px 2px 0 rgba(184,150,12,0.35)',
+              }}>
+                GOLD BEAD!
+              </div>
+              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 18, color: '#7B5EA7' }}>
+                Automatic cash-in ⚡
+              </div>
+              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#B8960C', marginBottom: 8 }}>
+                TIER 3 UNLOCKED!
+              </div>
+              <KawaiiButton variant="gold" size="md" fullWidth onClick={() => {
+                setGold(false)
+                navigate('/spin')
+              }}>
+                🎰 SPIN AT TIER 3!
+              </KawaiiButton>
             </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 15, color: '#7B5EA7', margin: '6px 0' }}>
-              Automatic cash-in ⚡
-            </div>
-            <div style={{
-              fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#B8960C', marginBottom: 14,
-            }}>
-              TIER 3 UNLOCKED!
-            </div>
-            <KawaiiButton variant="gold" size="lg" fullWidth onClick={() => {
-              setGold(false)
-              navigate('/spin')
-            }}>
-              🎰 SPIN AT TIER 3!
-            </KawaiiButton>
           </div>
         </div>
       )}
