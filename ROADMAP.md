@@ -24,6 +24,27 @@ Last updated: 2026-06-05
 
 ---
 
+## 🎰 Slot machine — payout clarity & engagement engine
+**Make wins legible (the #1 confusion: "why did I win _that_ amount?").**
+Right now `resolveSlotSpin` pre-rolls a total payout via a triangular distribution
+(min 10 / mode 40 / max 100), splits it into chunks across paylines, then assigns
+reel symbols *cosmetically* — so the symbols and winning lines don't actually
+determine the coin amount. That's why payouts feel arbitrary.
+- [ ] Move to a **paytable-driven** model: each symbol/combo has a defined coin value, and the amount won = the sum of the actual winning lines.
+- [ ] Show **per-line payouts** on the highlighted lines + a running breakdown (e.g. "Row 1 🌸🌸🌸 +30", "Diagonal ⭐⭐⭐ +50") so the total is self-explanatory.
+- [ ] Add a viewable **paytable** screen/sheet (what each symbol & line pays).
+
+**"Max addiction" engine — adaptive win/loss tuning.**
+Formalize the existing luck logic (`getAdjustedWeights`, pity timer, session
+warm-up, near-miss injection, jackpot-due) into ONE tunable, documented
+**engagement engine** that targets the optimal win/loss ratio to keep the player
+in the "one-more-spin" zone:
+- [ ] Dynamic difficulty / reinforcement schedule that adapts to the individual's play pattern (variable-ratio with a moving target hit-rate).
+- [ ] Loss-streak rescue (inject a win when quit-risk is high) + session pacing (generous warm-up, escalate near likely quit points).
+- [ ] Tunable RTP / hit-frequency parameters; track per-player history; near-miss frequency tuning.
+- [ ] Keep it all in one parameterized module so the ratios can be tuned/A-B tested.
+- _Intentional by design — this app weaponizes casino dopamine loops toward positive habit completion._
+
 ## 🔤 Fonts
 - [ ] Bunny Snaps no longer fits the new aesthetic. Research & choose font(s) that match the glossy kawaii / magical-girl style for editable & dynamic text (habit names, numbers, labels).
   - Need: a **display/heading** font + a **readable body** font.
