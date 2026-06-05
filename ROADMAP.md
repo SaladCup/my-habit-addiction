@@ -17,6 +17,46 @@ Last updated: 2026-06-05
 
 ---
 
+## 🗺️ Execution plan — how we tackle it
+
+Two tracks run in parallel: **🎨 You generate** (art/fonts to spec) and **💻 I build** (code).
+Phase 0 produces the spec so you can generate art while I build logic — then we wire together.
+Each phase ends with a committed, working git checkpoint. Sizes: S = small, M = medium, L = large.
+
+### Phase 0 — Foundation _(do first; unblocks everything, stops the churn)_
+- 💻 **Asset dimension spec** — I produce the exact px size for every asset (S)
+- 🔤 **Fonts** — I shortlist kawaii display + body fonts → you pick → I install (S)
+- 💻 **Icon-size normalization** — every icon exactly equal (S)
+- ✅ _Checkpoint: stable sizes + fonts locked._
+
+### Phase 1 — Make it make sense _(I build; runs while you generate Phase 2 art)_
+- 💻 **Pin home header** — title (logo) + jar fixed at top, only habit list scrolls (S–M)
+- 💻 **Slot payout clarity** — paytable-driven payouts + per-line breakdown + paytable view (M)
+- 💻 **Adaptive engagement engine** — refactor luck logic into one tunable module (M–L)
+- ✅ _Checkpoint: the game is legible + tuned._
+
+### Phase 2 — Art swap-ins _(🎨 you generate to Phase-0 spec → 💻 I wire)_
+- 🎨 new bead PNGs · 🎨 kawaii Wheel asset · 🎨 bank icon
+- 💻 wire each in
+- ✅ _Checkpoint: final art everywhere._
+
+### Phase 3 — The juice _(biggest reward payoff)_
+- 💻 **Audio SFX mapping** — map your downloaded sounds to every event (M)
+- 💻 **Coin cascade** — screen-filling coins w/ physics, count = amount won, + clink sound (L)
+- 💻 **Bead-fall physics** — beads fall through the opening + stack at the bottom (L)
+- ✅ _Checkpoint: maximal audio-visual reward._
+
+### Phase 4 — Bank feature
+- 💻 **Bank screen** (view coin / $ / time balances; uses the bank icon)
+- 💻 **Spending tracker** (log a purchase → deduct from balance, with history) (M)
+
+### Phase 5 — Future _(separate native effort, parked)_
+- 📱 **App blocking** — block TikTok/YouTube when low on coins (needs iOS/Android native)
+
+**What I need from you, by phase:** P0 = pick a font from my shortlist · P2 = generate beads/wheel/bank-icon to the spec · P3 = hand over the casino sound files (point me to the folder).
+
+---
+
 ## 🔧 Near-term polish
 - [ ] **Icon sizes** — finalize/normalize so every nav + in-app icon is *exactly* the same size (recurring issue; lock it down once).
 - [ ] **Asset dimension spec** — lock exact pixel dimensions for EVERY static UI element (labels, boxes, banners, frames, icons) so art is generated once at the correct size instead of iterating live. Authoritative list is in project memory — keep it the source of truth.
