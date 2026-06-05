@@ -27,7 +27,7 @@ export default function TimerDisplay({ endTime, onExpire, style = {} }) {
 
   return (
     <div style={{
-      fontFamily: "'Bunny Snaps', cursive",
+      fontFamily: "'Fredoka', cursive",
       fontSize: '22px',
       color: isUrgent ? '#F54B4B' : isWarning ? '#F5C44B' : '#3D2B4F',
       animation: isUrgent ? 'pulse-glow 0.5s ease-in-out infinite' : 'none',

@@ -43,20 +43,20 @@ export default function WalletScreen() {
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
       <h2 style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 38, color: '#3D2B4F',
         marginBottom: 4,
       }}>
         ✦ BEAD WALLET ✦
       </h2>
-      <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 18 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 18 }}>
         {wallet.length} bead{wallet.length !== 1 ? 's' : ''} in hand
       </div>
 
       {wallet.length === 0 ? (
         <PixelPanel color="lavender" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 44, marginBottom: 8 }}>🫙</div>
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 24, color: '#7B5EA7', marginBottom: 12 }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#7B5EA7', marginBottom: 12 }}>
             No beads yet! Complete a habit to earn one.
           </div>
           <KawaiiButton variant="secondary" size="sm" onClick={() => navigate('/')}>
@@ -68,7 +68,7 @@ export default function WalletScreen() {
           {/* Cash-in options */}
           {cashable.canCash && (
             <PixelPanel color="mint" style={{ marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 25, color: '#1A5C3A', marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#1A5C3A', marginBottom: 10 }}>
                 ✦ CASH IN OPTIONS
               </div>
               {cashable.options.map((opt, i) => (
@@ -84,14 +84,14 @@ export default function WalletScreen() {
                     cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: 8,
-                    fontFamily: 'Nunito, sans-serif',
+                    fontFamily: 'Mulish, sans-serif',
                     fontSize: 22, color: '#3D2B4F',
                   }}
                 >
                   <span>{opt.label}</span>
                   {i === 0 && (
                     <span style={{
-                      fontFamily: "'Bunny Snaps', cursive",
+                      fontFamily: "'Fredoka', cursive",
                       fontSize: 24, color: '#1A5C3A',
                       background: '#B4E0C8',
                       padding: '3px 8px', borderRadius: 999,
@@ -107,7 +107,7 @@ export default function WalletScreen() {
             {Object.entries(groups).map(([key, group]) => (
               <div key={key} style={{ marginBottom: 14 }}>
                 <div style={{
-                  fontFamily: "'Bunny Snaps', cursive",
+                  fontFamily: "'Fredoka', cursive",
                   fontSize: 24, color: '#7B5EA7',
                   marginBottom: 8,
                   display: 'flex', alignItems: 'center', gap: 8,

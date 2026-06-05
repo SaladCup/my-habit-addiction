@@ -35,7 +35,7 @@ export default function NearMissOverlay({ show, higherTier, onDone }) {
       backdropFilter: 'blur(8px)',
     }}>
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: '10px',
         color: '#FF85A1',
         marginBottom: '6px',
@@ -43,7 +43,7 @@ export default function NearMissOverlay({ show, higherTier, onDone }) {
         SO CLOSE... 😭
       </div>
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: '14px',
         color: '#C8B4E0',
         opacity: 0.7,
@@ -52,7 +52,7 @@ export default function NearMissOverlay({ show, higherTier, onDone }) {
         {TIER_LABELS[higherTier]}
       </div>
       <div style={{
-        fontFamily: 'Nunito, sans-serif',
+        fontFamily: 'Mulish, sans-serif',
         fontSize: '12px',
         color: '#7B5EA7',
         marginTop: '6px',

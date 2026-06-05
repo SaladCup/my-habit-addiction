@@ -73,7 +73,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
                   textAnchor="middle"
                   dominantBaseline="central"
                   fontSize={11}
-                  fontFamily="'Bunny Snaps', cursive"
+                  fontFamily="'Fredoka', cursive"
                   fill="#3D2B4F"
                   stroke="rgba(255,255,255,0.75)"
                   strokeWidth={2.5}
@@ -97,7 +97,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
 
       {result && (
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 27, color: '#FF85A1',
           background: '#FFF0F8',
           border: '2px solid #FF85A1',

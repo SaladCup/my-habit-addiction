@@ -90,7 +90,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
                 stroke={isReached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1} />
               <text x={jarX + jarW + 22} y={lineY + 1}
                 textAnchor="middle" dominantBaseline="central"
-                fontSize={15} fontFamily="'Bunny Snaps', cursive"
+                fontSize={15} fontFamily="'Fredoka', cursive"
                 fill={isReached ? '#1A5C3A' : '#3D2B4F'}>
                 {m.name.length > 7 ? m.name.slice(0, 7) + '…' : m.name}
               </text>
@@ -99,7 +99,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
         })}
 
         <text x={W / 2} y={H - 1} textAnchor="middle"
-          fontSize={22} fontFamily="'Bunny Snaps', cursive" fill="#9B7EC8">
+          fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8">
           {jarBeads.length} beads
         </text>
       </svg>
@@ -142,7 +142,7 @@ function HabitButton({ habit, color, onTap }) {
       {/* name + description (centered) */}
       <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 26, color: '#9B3D6B', lineHeight: 1.1,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           textShadow: '0 1px 0 rgba(255,255,255,0.6)',
@@ -151,7 +151,7 @@ function HabitButton({ habit, color, onTap }) {
         </div>
         {habit.description && (
           <div style={{
-            fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#A36A87',
+            fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#A36A87',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {habit.description}
@@ -230,11 +230,11 @@ function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSpinTier1 }) 
         }}>
           <BeadDisplay color={color} slot={drawnBead.slot} isGold={drawnBead.isGold} size="xl" animate={drawnBead.isGold} />
 
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 26, color: '#9B3D6B' }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#9B3D6B' }}>
             🌸 BEAD EARNED!
           </div>
           <div style={{
-            fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.3,
+            fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.3,
           }}>
             {best && best.tier >= 2
               ? `Cash in matching beads for a Tier ${best.tier} spin — or keep them and play at Tier 1.`
@@ -274,7 +274,7 @@ function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
         cursor: 'pointer',
       }}
     >
-      <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#7B5EA7', flexShrink: 0 }}>
+      <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#7B5EA7', flexShrink: 0 }}>
         WALLET
       </span>
       <div style={{ display: 'flex', gap: 5, flex: 1, overflow: 'hidden', flexWrap: 'nowrap', minWidth: 0 }}>
@@ -282,12 +282,12 @@ function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
           <BeadDisplay key={b.id} color={getBeadColor(b.slot, b.isGold)} slot={b.slot} isGold={b.isGold} size="sm" />
         ))}
         {wallet.length > 14 && (
-          <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#9B7EC8', alignSelf: 'center', marginLeft: 4 }}>
+          <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#9B7EC8', alignSelf: 'center', marginLeft: 4 }}>
             +{wallet.length - 14}
           </span>
         )}
       </div>
-      <span style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 24, color: '#9B7EC8', flexShrink: 0 }}>
+      <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#9B7EC8', flexShrink: 0 }}>
         ›
       </span>
     </div>
@@ -312,7 +312,7 @@ function OnboardingModal({ onComplete }) {
 
   const inputStyle = {
     width: '100%',
-    fontFamily: 'Nunito, sans-serif', fontSize: 18,
+    fontFamily: 'Mulish, sans-serif', fontSize: 18,
     padding: '10px 12px',
     border: '2px solid #C8B4E0', borderRadius: 10,
     background: '#FFF5F9', color: '#3D2B4F',
@@ -343,16 +343,16 @@ function OnboardingModal({ onComplete }) {
           overflowY: 'auto',
         }}>
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 28, color: '#9B3D6B' }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 28, color: '#9B3D6B' }}>
               WELCOME!
             </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 16, color: '#7B5EA7' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7' }}>
               Let's set up your first habit.
             </div>
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
               STEP 1 · CATEGORY
             </div>
             <input
@@ -362,7 +362,7 @@ function OnboardingModal({ onComplete }) {
               onChange={e => setCatName(e.target.value)}
               autoFocus
             />
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 16, color: '#7B5EA7', margin: '10px 0 6px' }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#7B5EA7', margin: '10px 0 6px' }}>
               PICK A COLOR
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -386,7 +386,7 @@ function OnboardingModal({ onComplete }) {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
               STEP 2 · YOUR HABIT
             </div>
             <input
@@ -578,15 +578,15 @@ export default function HomeScreen() {
             }}>
               <div style={{ fontSize: 40, lineHeight: 1 }}>✨</div>
               <div style={{
-                fontFamily: "'Bunny Snaps', cursive", fontSize: 32, color: '#5C3A00',
+                fontFamily: "'Fredoka', cursive", fontSize: 32, color: '#5C3A00',
                 textShadow: '2px 2px 0 rgba(184,150,12,0.35)',
               }}>
                 GOLD BEAD!
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 18, color: '#7B5EA7' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#7B5EA7' }}>
                 Automatic cash-in ⚡
               </div>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#B8960C', marginBottom: 8 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#B8960C', marginBottom: 8 }}>
                 TIER 3 UNLOCKED!
               </div>
               <KawaiiButton variant="gold" size="md" fullWidth onClick={() => {

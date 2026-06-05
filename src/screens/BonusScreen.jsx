@@ -74,14 +74,14 @@ export default function BonusScreen() {
     }}>
       <div style={{ textAlign: 'center' }}>
         <h2 style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 32, color: '#FF85A1',
           marginBottom: 6,
           textShadow: '2px 2px 0 rgba(255,133,161,0.3)',
         }}>
           🎰 BONUS ROUND! 🎰
         </h2>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#9B7EC8' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8' }}>
           Coins collected — now spin for a bonus bead! 🎁
         </div>
       </div>
@@ -98,10 +98,10 @@ export default function BonusScreen() {
           {currentResult === 'free' ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>🎁</div>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 26, color: '#FF85A1', marginBottom: 12 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#FF85A1', marginBottom: 12 }}>
                 FREE BEAD!
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 16 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 16 }}>
                 Free bead added to your wallet! 🫙
               </div>
               {collectedBead && (
@@ -115,10 +115,10 @@ export default function BonusScreen() {
             </div>
           ) : (
             <>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 27, color: '#FF85A1', marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#FF85A1', marginBottom: 10 }}>
                 ⚡ BONUS CHALLENGE
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 24, color: '#3D2B4F', marginBottom: 14 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F', marginBottom: 14 }}>
                 {challengeText}
               </div>
 
@@ -127,13 +127,13 @@ export default function BonusScreen() {
               )}
 
               {timedOut && (
-                <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#FF7675', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#FF7675', textAlign: 'center', marginBottom: 8 }}>
                   Time&apos;s up! No bonus bead this time. Heading to rewards…
                 </div>
               )}
 
               {beadEarned && (
-                <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#5CBFA0', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#5CBFA0', textAlign: 'center', marginBottom: 8 }}>
                   ✓ Bead added to your collection!
                 </div>
               )}

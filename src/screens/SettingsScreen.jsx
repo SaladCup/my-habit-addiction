@@ -64,7 +64,7 @@ function MilestoneRow({ milestone, onChange, onDelete }) {
 
 const inputStyle = {
   width: '100%',
-  fontFamily: 'Nunito, sans-serif', fontSize: 22,
+  fontFamily: 'Mulish, sans-serif', fontSize: 22,
   padding: '9px 11px',
   border: '2px solid #C8B4E0', borderRadius: 10,
   background: '#FFF5F9', color: '#3D2B4F',
@@ -125,7 +125,7 @@ export default function SettingsScreen() {
   }
 
   const labelStyle = {
-    fontFamily: "'Bunny Snaps', cursive",
+    fontFamily: "'Fredoka', cursive",
     fontSize: 24, color: '#7B5EA7',
     display: 'block', marginBottom: 6,
   }
@@ -159,7 +159,7 @@ export default function SettingsScreen() {
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
       <h2 style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 21, color: '#3D2B4F', marginBottom: 18,
       }}>
         ✦ SETTINGS ✦
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
 
       {/* Bead Slot Colors */}
       <PixelPanel color="sky" title="BEAD SLOT COLORS" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
           Tap a slot to change its color from the 30-color kawaii palette.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -186,10 +186,10 @@ export default function SettingsScreen() {
               }}
             >
               <BeadDisplay color={bs.color} slot={bs.slot} size="lg" />
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#3D2B4F' }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#3D2B4F' }}>
                 SLOT {bs.slot}
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 15, color: '#7B5EA7', textAlign: 'center' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#7B5EA7', textAlign: 'center' }}>
                 {bs.name}
               </div>
             </button>
@@ -199,12 +199,12 @@ export default function SettingsScreen() {
 
       {/* Categories */}
       <PixelPanel color="lavender" title="CATEGORIES" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
           Group your habits by theme. Each category gets its own color.
         </div>
 
         {categories.length === 0 && !addingCat && (
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#9B7EC8', marginBottom: 12, textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8', marginBottom: 12, textAlign: 'center' }}>
             No categories yet.
           </div>
         )}
@@ -241,7 +241,7 @@ export default function SettingsScreen() {
                   boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
                 }} />
                 <span style={{
-                  fontFamily: 'Nunito, sans-serif', fontSize: 24, fontWeight: 700,
+                  fontFamily: 'Mulish, sans-serif', fontSize: 24, fontWeight: 700,
                   color: '#3D2B4F', flex: 1,
                 }}>
                   {cat.name}
@@ -305,7 +305,7 @@ export default function SettingsScreen() {
               onChange={e => updateSettings({ moneyPerCoin: parseFloat(e.target.value) || 0 })}
             />
             {settings.moneyPerCoin > 0 && (
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
                 T1 win = ${(TIER_COINS.t1 * settings.moneyPerCoin).toFixed(2)} · T3 = ${(TIER_COINS.t3 * settings.moneyPerCoin).toFixed(2)}
               </div>
             )}
@@ -319,7 +319,7 @@ export default function SettingsScreen() {
               onChange={e => updateSettings({ secondsPerCoin: parseFloat(e.target.value) || 0 })}
             />
             {settings.secondsPerCoin > 0 && (
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
                 T1 win = {Math.round(TIER_COINS.t1 * settings.secondsPerCoin / 60)} min · T3 = {Math.round(TIER_COINS.t3 * settings.secondsPerCoin / 60)} min
               </div>
             )}
@@ -338,7 +338,7 @@ export default function SettingsScreen() {
 
       {/* Milestones */}
       <PixelPanel color="mint" title="MILESTONES (JAR LINES)" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
           Set up to 3 milestone rewards. Lines appear on the jar as you fill it.
         </div>
         {draftMilestones.map(m => (
@@ -366,7 +366,7 @@ export default function SettingsScreen() {
       {/* Sound */}
       <PixelPanel color="cream" title="SOUND" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 24, color: '#3D2B4F' }}>
+          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F' }}>
             {settings.muted ? '🔇 Muted' : '🔊 Sound on'}
           </span>
           <KawaiiButton
@@ -393,7 +393,7 @@ export default function SettingsScreen() {
         >
           🔊 TEST SOUND
         </KawaiiButton>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 19, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>
           No sound? Reload the page and tap once — browsers block audio until you interact.
         </div>
       </PixelPanel>
@@ -423,7 +423,7 @@ export default function SettingsScreen() {
             }}
           >
             <div style={{
-              fontFamily: "'Bunny Snaps', cursive", fontSize: 26, color: '#3D2B4F',
+              fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F',
               textAlign: 'center', marginBottom: 12,
             }}>
               SLOT {colorPickerSlot} COLOR
@@ -466,7 +466,7 @@ export default function SettingsScreen() {
 
       {/* Danger zone */}
       <PixelPanel color="pink" title="DANGER ZONE" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
           Wipes all beads, coins, categories, and progress. Keeps settings.
         </div>
         {!confirmReset ? (
@@ -476,7 +476,7 @@ export default function SettingsScreen() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{
-              fontFamily: "'Bunny Snaps', cursive",
+              fontFamily: "'Fredoka', cursive",
               fontSize: 25, color: '#C44B6A', textAlign: 'center', marginBottom: 4,
             }}>
               ARE YOU SURE?

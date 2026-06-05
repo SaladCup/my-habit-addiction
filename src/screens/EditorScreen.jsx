@@ -27,7 +27,7 @@ function BeadSlotPicker({ value, onSelect, beadSlots }) {
           >
             <BeadDisplay color={bs.color} slot={bs.slot} size="lg" selected={active} />
             <span style={{
-              fontFamily: 'Nunito, sans-serif', fontSize: 14,
+              fontFamily: 'Mulish, sans-serif', fontSize: 14,
               color: active ? '#3D2B4F' : '#9B7EC8',
               fontWeight: active ? 700 : 500,
             }}>
@@ -100,7 +100,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
               }}
             >
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, opacity: value === cat.id ? 1 : 0.6 }} />
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, fontWeight: 700, color: '#3D2B4F' }}>
+              <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, fontWeight: 700, color: '#3D2B4F' }}>
                 {cat.name}
               </span>
               {value === cat.id && (
@@ -112,7 +112,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
       )}
 
       {categories.length > 0 && (
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 18, color: '#9B7EC8', marginTop: 6, marginBottom: creating ? 4 : 0 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#9B7EC8', marginTop: 6, marginBottom: creating ? 4 : 0 }}>
           {value ? 'Tap the selected category again to clear it.' : 'Optional — tap a category to assign one.'}
         </div>
       )}
@@ -125,7 +125,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
             marginTop: categories.length > 0 ? 8 : 0,
             background: 'transparent', border: '2px dashed #C8B4E0',
             borderRadius: 20, padding: '6px 14px', cursor: 'pointer',
-            fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#9B7EC8',
+            fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8',
             transition: 'all 140ms ease',
           }}
         >
@@ -251,7 +251,7 @@ function RewardRow({ tier, hint, value, onChange }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive", fontSize: 18, color: '#7B5EA7',
+        fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7',
         minWidth: 78, textAlign: 'right',
       }}>
         {tier}
@@ -284,18 +284,18 @@ export default function EditorScreen() {
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
       <h2 style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 38, color: '#3D2B4F', marginBottom: 4,
       }}>
         ✦ MY HABITS ✦
       </h2>
-      <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 18 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 18 }}>
         {habits.length} habit{habits.length !== 1 ? 's' : ''}
       </div>
 
       {editing && (
         <PixelPanel color="lavender" style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 27, color: '#3D1A6E', marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#3D1A6E', marginBottom: 14 }}>
             {editing === 'new' ? '+ NEW HABIT' : '✏️ EDIT HABIT'}
           </div>
           <HabitForm
@@ -320,16 +320,16 @@ export default function EditorScreen() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <BeadDisplay color={slotInfo?.color || color} slot={slot} size="md" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 27, color: '#3D2B4F', marginBottom: 3 }}>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#3D2B4F', marginBottom: 3 }}>
                   {habit.name}
                 </div>
                 {habit.description && (
-                  <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#7B5EA7' }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7' }}>
                     {habit.description}
                   </div>
                 )}
                 {cat && (
-                  <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#9B7EC8', marginTop: 2 }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#9B7EC8', marginTop: 2 }}>
                     {cat.name}
                   </div>
                 )}
@@ -364,7 +364,7 @@ export default function EditorScreen() {
 
 const inputStyle = {
   width: '100%',
-  fontFamily: 'Nunito, sans-serif', fontSize: 24,
+  fontFamily: 'Mulish, sans-serif', fontSize: 24,
   padding: '10px 12px',
   border: '2px solid #C8B4E0', borderRadius: 10,
   background: '#FFF5F9', color: '#3D2B4F',
@@ -372,7 +372,7 @@ const inputStyle = {
 }
 
 const labelStyle = {
-  fontFamily: "'Bunny Snaps', cursive",
+  fontFamily: "'Fredoka', cursive",
   fontSize: 24, color: '#7B5EA7',
   display: 'block', marginBottom: 6,
 }

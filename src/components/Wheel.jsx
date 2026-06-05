@@ -206,7 +206,7 @@ const Wheel = forwardRef(function Wheel(
                   textAnchor="middle"
                   dominantBaseline="central"
                   fontSize={cfg.fontSize}
-                  fontFamily="'Bunny Snaps', cursive"
+                  fontFamily="'Fredoka', cursive"
                   fill={cfg.text}
                   stroke="rgba(255,255,255,0.75)"
                   strokeWidth={2.5}
@@ -237,7 +237,7 @@ const Wheel = forwardRef(function Wheel(
       {/* Status */}
       {spinning && (
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 28, color: '#9B7EC8',
           animation: 'twinkle 0.6s ease-in-out infinite',
         }}>
@@ -246,7 +246,7 @@ const Wheel = forwardRef(function Wheel(
       )}
       {done && !spinning && (
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 28, color: '#5CBFA0',
         }}>
           ✓ DONE!

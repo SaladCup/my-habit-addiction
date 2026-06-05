@@ -1,12 +1,7 @@
 @import './tokens.css';
 
-@font-face {
-  font-family: 'Bunny Snaps';
-  src: url('/fonts/BunnySnaps.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+/* Fonts: Fredoka (display/headings) + Mulish (body) loaded via Google Fonts
+   link in index.html. Fredoka replaced Bunny Snaps; Mulish replaced Nunito. */
 
 *, *::before, *::after {
   box-sizing: border-box;

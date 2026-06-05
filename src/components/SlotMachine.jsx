@@ -195,7 +195,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           left: `${0.102 * 100}%`, width: `${(0.533 - 0.102) * 100}%`,
           top: `${0.118 * 100}%`, height: `${(0.185 - 0.118) * 100}%`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: Math.round(CAB_H * 0.030),
           color: '#FFE9A0', textShadow: '0 0 8px rgba(255,215,0,0.75)',
           letterSpacing: '0.02em', pointerEvents: 'none',
@@ -209,7 +209,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           left: `${0.620 * 100}%`, width: `${(0.920 - 0.620) * 100}%`,
           top: `${0.125 * 100}%`, height: `${(0.197 - 0.125) * 100}%`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: Math.round(CAB_H * 0.032),
           color: '#FFF3C4', textShadow: '0 0 7px rgba(255,215,0,0.7)',
           letterSpacing: '0.02em', pointerEvents: 'none',
@@ -273,7 +273,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
       {/* Spin counter + spins-left */}
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#9B7EC8',
+        fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#9B7EC8',
         letterSpacing: '0.05em', minHeight: 26, textAlign: 'center',
       }}>
         {phase === 'spinning' ? 'SPINNING…'
@@ -305,7 +305,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
 function bannerStyle(bg, fg) {
   return {
-    fontFamily: "'Bunny Snaps', cursive", fontSize: 24, color: fg,
+    fontFamily: "'Fredoka', cursive", fontSize: 24, color: fg,
     background: bg, border: `3px solid ${fg}33`, borderRadius: 16,
     padding: '8px 22px', boxShadow: '0 4px 0 rgba(0,0,0,0.12)',
     animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)',

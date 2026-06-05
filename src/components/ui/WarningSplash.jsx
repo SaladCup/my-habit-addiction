@@ -30,13 +30,13 @@ export default function WarningSplash({ onDismiss }) {
       ))}
 
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: '28px',
         marginBottom: '12px',
       }}>⚠️</div>
 
       <h1 style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: '32px',
         color: '#FF85A1',
         letterSpacing: '0.05em',
@@ -56,7 +56,7 @@ export default function WarningSplash({ onDismiss }) {
         maxWidth: '340px',
       }}>
         <p style={{
-          fontFamily: 'Nunito, sans-serif',
+          fontFamily: 'Mulish, sans-serif',
           fontSize: '14px',
           lineHeight: 1.7,
           color: '#3D2B4F',
@@ -64,7 +64,7 @@ export default function WarningSplash({ onDismiss }) {
           This app reverse-engineers the most addictive machines ever built and points them at your habits.
         </p>
         <p style={{
-          fontFamily: 'Nunito, sans-serif',
+          fontFamily: 'Mulish, sans-serif',
           fontSize: '13px',
           lineHeight: 1.7,
           color: '#7B5EA7',
@@ -73,7 +73,7 @@ export default function WarningSplash({ onDismiss }) {
           Side effects include: actually becoming consistent, embarrassing excitement about colored beads, and explaining <em>"the system"</em> to everyone you know.
         </p>
         <p style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: '24px',
           color: '#FF85A1',
           marginTop: '16px',
@@ -87,7 +87,7 @@ export default function WarningSplash({ onDismiss }) {
       </KawaiiButton>
 
       <p style={{
-        fontFamily: 'Nunito, sans-serif',
+        fontFamily: 'Mulish, sans-serif',
         fontSize: '11px',
         color: '#9B7EC8',
         marginTop: '16px',

@@ -114,19 +114,19 @@ export default function RewardScreen() {
       }}>
         <div style={{ fontSize: 56, marginBottom: 8, lineHeight: 1 }}>{cfg.emoji}</div>
         <h2 style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 36, color: cfg.color,
           textShadow: `2px 2px 0 ${darken(cfg.color, 40)}`,
           marginBottom: 6,
         }}>
           {cfg.msg}
         </h2>
-        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 24, color: '#7B5EA7' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#7B5EA7' }}>
           {cfg.sub}
         </div>
         {isNearMiss && (
           <div style={{
-            fontFamily: 'Nunito, sans-serif', fontSize: 21, color: '#FF85A1',
+            fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#FF85A1',
             marginTop: 4, fontStyle: 'italic',
           }}>
             (so close to a higher tier!)
@@ -140,24 +140,24 @@ export default function RewardScreen() {
       {/* Coins card */}
       <PixelPanel color="yellow" style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 27, color: '#5C3A00', marginBottom: 8,
         }}>
           COINS EARNED
         </div>
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 34, color: '#5C3A00', marginBottom: 4,
         }}>
           <CoinCounter to={coins} duration={spinResult === 'jackpot' ? 2200 : 1400} /> {coinName}
         </div>
         {coins > 0 && moneyVal && (
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             = ${moneyVal} guilt-free spending
           </div>
         )}
         {coins > 0 && timeVal && (
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             = {timeVal} of {timeActivity}
           </div>
         )}
@@ -166,7 +166,7 @@ export default function RewardScreen() {
       {/* Slot pull history */}
       {pullHistory && pullHistory.length > 0 && (
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 24, color: '#9B7EC8', marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#9B7EC8', marginBottom: 6 }}>
             YOUR 3 PULLS:
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -180,11 +180,11 @@ export default function RewardScreen() {
       {/* New milestones */}
       {newMilestones && newMilestones.length > 0 && (
         <PixelPanel color="mint" style={{ width: '100%', maxWidth: 340 }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 27, color: '#1A5C3A', marginBottom: 8 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#1A5C3A', marginBottom: 8 }}>
             🎉 MILESTONE REACHED!
           </div>
           {newMilestones.map(m => (
-            <div key={m.id} style={{ fontFamily: 'Nunito, sans-serif', fontSize: 24, color: '#3D2B4F', marginBottom: 4 }}>
+            <div key={m.id} style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F', marginBottom: 4 }}>
               <strong>{m.name}</strong> — {m.prize}
             </div>
           ))}

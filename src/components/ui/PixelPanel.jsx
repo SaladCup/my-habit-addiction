@@ -27,7 +27,7 @@ export default function PixelPanel({
     }}>
       {title && (
         <div style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: '18px',
           color: c.shadow,
           marginBottom: '12px',

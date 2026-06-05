@@ -104,7 +104,7 @@ const tooltipStyle = {
   background: '#FFF5F9',
   border: '2px solid #C8B4E0',
   borderRadius: 10,
-  fontFamily: 'Nunito, sans-serif',
+  fontFamily: 'Mulish, sans-serif',
   fontSize: 15,
 }
 
@@ -124,7 +124,7 @@ export default function StatsScreen() {
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
       <h2 style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 34, color: '#3D2B4F', marginBottom: 16,
       }}>
         ✦ STATS ✦
@@ -137,7 +137,7 @@ export default function StatsScreen() {
             key={t}
             onClick={() => setTab(t)}
             style={{
-              fontFamily: "'Bunny Snaps', cursive",
+              fontFamily: "'Fredoka', cursive",
               fontSize: 22,
               padding: '7px 16px',
               background: tab === t ? '#9B7EC8' : '#F5F0FF',
@@ -166,17 +166,17 @@ export default function StatsScreen() {
       {/* Coin value (money + time) */}
       {(moneyValue || timeValue) && (
         <PixelPanel color="yellow" style={{ marginBottom: 14, textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 20, color: '#7B5EA7', marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#7B5EA7', marginBottom: 6 }}>
             VALUE EARNED THIS {tab.toUpperCase()}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap' }}>
             {moneyValue && (
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
                 💰 {moneyValue}
               </div>
             )}
             {timeValue && (
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
                 ⏱ {timeValue} {settings.timeActivity || ''}
               </div>
             )}
@@ -195,7 +195,7 @@ export default function StatsScreen() {
                 border: `2px solid ${bs.color}`, borderRadius: 12,
               }}>
                 <BeadDisplay color={bs.color} slot={bs.slot} size="md" />
-                <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 20, color: '#3D2B4F' }}>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#3D2B4F' }}>
                   ×{slotCounts[bs.slot] || 0}
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function StatsScreen() {
               border: '2px solid #FFD700', borderRadius: 12,
             }}>
               <BeadDisplay isGold size="md" />
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 20, color: '#5C3A00' }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#5C3A00' }}>
                 ×{slotCounts.gold || 0}
               </div>
             </div>
@@ -218,14 +218,14 @@ export default function StatsScreen() {
       {chartData.length > 0 ? (
         <>
           <PixelPanel color="lavender" style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#3D1A6E', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#3D1A6E', marginBottom: 12 }}>
               BEADS OVER TIME
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E8D8F5" />
-                <XAxis dataKey="label" tick={{ fontFamily: 'Nunito', fontSize: 14 }} />
-                <YAxis tick={{ fontFamily: 'Nunito', fontSize: 14 }} allowDecimals={false} />
+                <XAxis dataKey="label" tick={{ fontFamily: 'Mulish', fontSize: 14 }} />
+                <YAxis tick={{ fontFamily: 'Mulish', fontSize: 14 }} allowDecimals={false} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="beads" fill={KAWAII_BAR} radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -233,14 +233,14 @@ export default function StatsScreen() {
           </PixelPanel>
 
           <PixelPanel color="pink" style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 22, color: '#7A2040', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#7A2040', marginBottom: 12 }}>
               {coinName.toUpperCase()} OVER TIME
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#FFE0EC" />
-                <XAxis dataKey="label" tick={{ fontFamily: 'Nunito', fontSize: 14 }} />
-                <YAxis tick={{ fontFamily: 'Nunito', fontSize: 14 }} allowDecimals={false} />
+                <XAxis dataKey="label" tick={{ fontFamily: 'Mulish', fontSize: 14 }} />
+                <YAxis tick={{ fontFamily: 'Mulish', fontSize: 14 }} allowDecimals={false} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Line dataKey="coins" stroke={KAWAII_LINE} strokeWidth={2} dot={{ fill: KAWAII_LINE, r: 3 }} />
               </LineChart>
@@ -250,7 +250,7 @@ export default function StatsScreen() {
       ) : (
         <PixelPanel color="cream" style={{ textAlign: 'center', marginBottom: 14 }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             No data for this period yet. Start tracking habits!
           </div>
         </PixelPanel>
@@ -268,11 +268,11 @@ export default function StatsScreen() {
                 padding: '8px 0',
                 borderBottom: '1px solid #D8F0E8',
               }}>
-                <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#3D2B4F' }}>
+                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#3D2B4F' }}>
                   {h.name}
                 </div>
                 <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 800,
+                  fontFamily: 'Mulish, sans-serif', fontWeight: 800,
                   fontSize: 24, color: '#1A5C3A',
                   background: '#B4E0C8', padding: '6px 16px', borderRadius: 999,
                   minWidth: 52, textAlign: 'center',
@@ -300,14 +300,14 @@ function StatCard({ label, value, emoji, color }) {
     }}>
       <div style={{ fontSize: 28, marginBottom: 4 }}>{emoji}</div>
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 34, color: '#3D2B4F',
         marginBottom: 4,
       }}>
         {value}
       </div>
       <div style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: 20, color: '#7B5EA7',
         lineHeight: 1.4,
       }}>

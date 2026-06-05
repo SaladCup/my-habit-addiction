@@ -10,7 +10,7 @@ export default function TierBadge({ tier, style = {} }) {
   const cfg = TIER_CONFIG[tier] || TIER_CONFIG.t1
   return (
     <span style={{
-      fontFamily: "'Bunny Snaps', cursive",
+      fontFamily: "'Fredoka', cursive",
       fontSize: '22px',
       fontWeight: 'bold',
       padding: '6px 16px',

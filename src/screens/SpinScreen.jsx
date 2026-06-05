@@ -120,14 +120,14 @@ export default function SpinScreen() {
       {/* Header */}
       <div style={{ textAlign: 'center' }}>
         <h2 style={{
-          fontFamily: "'Bunny Snaps', cursive",
+          fontFamily: "'Fredoka', cursive",
           fontSize: 34, color: '#3D2B4F',
           marginBottom: 8,
         }}>
           ✦ SPIN TO WIN ✦
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
+          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             Active up to:
           </span>
           <TierBadge tier={`t${activeTier}`} />
@@ -145,10 +145,10 @@ export default function SpinScreen() {
         boxShadow: '0 4px 0 #C99A00, 0 6px 16px rgba(245,196,75,0.45)',
         animation: 'pulse-glow 2.4s ease-in-out infinite',
       }}>
-        <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 20, color: '#8A6A00', letterSpacing: '0.08em' }}>
+        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#8A6A00', letterSpacing: '0.08em' }}>
           ★ GRAND JACKPOT ★
         </div>
-        <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 30, color: '#5C3A00' }}>
+        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#5C3A00' }}>
           💎 {jackpotPool.toLocaleString()}
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function SpinScreen() {
       {/* Daily streak bonus */}
       {dailyBonus && (
         <div style={{
-          fontFamily: 'Nunito, sans-serif', fontSize: 20, fontWeight: 800, color: '#5CBFA0',
+          fontFamily: 'Mulish, sans-serif', fontSize: 20, fontWeight: 800, color: '#5CBFA0',
           background: '#E8FBF2', border: '2px solid #B4E0C8', borderRadius: 999,
           padding: '6px 16px', animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)',
         }}>
@@ -169,7 +169,7 @@ export default function SpinScreen() {
       {!mode && (
         <PixelPanel color="lavender" style={{ width: '100%', maxWidth: 380 }}>
           <div style={{
-            fontFamily: "'Bunny Snaps', cursive",
+            fontFamily: "'Fredoka', cursive",
             fontSize: 27, color: '#3D2B4F',
             textAlign: 'center', marginBottom: 16,
           }}>
@@ -178,19 +178,19 @@ export default function SpinScreen() {
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={() => pickMode('wheel')} style={modeBtn(tierColor)}>
               <div style={{ fontSize: 47, marginBottom: 6 }}>🎡</div>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 26 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26 }}>
                 WHEEL
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
                 1 spin
               </div>
             </button>
             <button onClick={() => pickMode('slots')} style={modeBtn(tierColor)}>
               <div style={{ fontSize: 47, marginBottom: 6 }}>🎰</div>
-              <div style={{ fontFamily: "'Bunny Snaps', cursive", fontSize: 26 }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26 }}>
                 SLOTS
               </div>
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
                 {SPINS_PER_TIER[activeTier] || 3} spins
               </div>
             </button>
@@ -219,7 +219,7 @@ export default function SpinScreen() {
           {wheelDone && wheelOutcome && (
             <div style={{ textAlign: 'center', animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
               <TierBadge tier={wheelOutcome.awardedResult} />
-              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 26, color: '#7B5EA7', marginTop: 8 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, color: '#7B5EA7', marginTop: 8 }}>
                 {wheelOutcome.isNearMiss && '(near miss!) '}
                 +{wheelOutcome.coinsAwarded} coins earned
               </div>

@@ -58,7 +58,7 @@ export default function KawaiiButton({
       onClick={handleClick}
       disabled={disabled}
       style={{
-        fontFamily: "'Bunny Snaps', cursive",
+        fontFamily: "'Fredoka', cursive",
         fontSize: s.fontSize,
         lineHeight: 1.4,
         color: disabled ? 'rgba(61,43,79,0.4)' : v.text,
