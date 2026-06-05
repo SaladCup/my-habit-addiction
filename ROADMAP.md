@@ -14,6 +14,8 @@ Last updated: 2026-06-05
 - **Cash-in flow** — every habit completion grants a spin: cash in matching beads for a higher tier, OR keep all beads and still play at Tier 1.
 - **Background** — framed sunburst scaled up to fill mobile dimensions; no scene behind it.
 - **Version control** — git repo initialized in `app/` with recovery checkpoints.
+- **Phase 0 complete (2026-06-05):** asset dimension spec locked (`ASSETS.md`); nav icons normalized to 216×216; fonts swapped — **Fredoka** (display) + **Mulish** (body, free Genshin-like sans) replacing Bunny Snaps + Nunito.
+- **Recovered** the Home PNG integrations after parallel sessions reverted them; fixed the cash-prompt so keeping a bead still lets you play (Tier 1).
 
 ---
 
