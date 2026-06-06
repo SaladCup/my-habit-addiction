@@ -11,8 +11,8 @@ const CX = BOX / 2, CY = BOX / 2            // SVG center
 const R = Math.round(BOX * 0.444)          // segment radius — tucks just under the rim's inner lip
 const R_TEXT = Math.round(BOX * 0.345)     // label center radius (labels run radially along the spoke)
 const HUB = Math.round(BOX * 0.25)         // center-cap display size
-const POINTER_W = Math.round(BOX * 0.244)  // pointer display width
-const POINTER_TOP = -Math.round(BOX * 0.08)// how far the pointer pokes above the wheel
+const POINTER_W = Math.round(BOX * 0.20)   // pointer display width (smaller triangle)
+const POINTER_TOP = -Math.round(BOX * 0.045)// how far the pointer pokes above the wheel
 
 // Themed wedge colors: T1 pink, T2 lavender, T3 mint; Bonus gold, Jackpot bright gold.
 const WEDGE_CFG = {

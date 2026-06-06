@@ -4,8 +4,8 @@ import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin } f
 
 // ── Cabinet geometry ──────────────────────────────────────────────
 // Fractions measured from /ui/slot_cabinet.png (900 x 1815).
-const CAB_W = 340
-const CAB_H = Math.round(CAB_W / (900 / 1815))   // ≈ 686, keeps the art's aspect
+const CAB_W = 400
+const CAB_H = Math.round(CAB_W / (900 / 1815))   // ≈ 807, keeps the art's aspect
 
 // 3 reel columns: [leftFrac, widthFrac]
 const COLS_F = [[0.162, 0.160], [0.419, 0.162], [0.676, 0.165]]
@@ -186,7 +186,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         animation: shaking ? 'slot-shake 0.38s ease-out' : 'none',
         filter: 'drop-shadow(0 12px 28px rgba(196,75,106,0.32))',
       }}>
-        <img src="/ui/slot_cabinet.png" alt="" draggable={false}
+        <img src="/ui/slot_cabinet.png?v=3" alt="" draggable={false}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', userSelect: 'none' }} />
 
         {/* Progressive jackpot pool → the "Grand Jackpot" display */}
