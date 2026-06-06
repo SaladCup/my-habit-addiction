@@ -212,29 +212,100 @@ export function resolveSpinOutcome(activeTier, luck = {}) {
 // ─────────────────────────────────────────────
 
 /**
- * Wheel segment layout (28 segments, matches PDF probability distribution).
- * Each segment has: type, startAngle, endAngle (degrees, 0 = top, clockwise).
+ * Fixed 50-slot wheel ring (slot 0 = top / 12 o'clock, going clockwise).
+ * Bonus (×7) and Jackpot (×1) sit at FIXED, intentionally-uneven positions
+ * (matched to the reference art) and never move or resize. The 't1'/'t2'/'t3'
+ * slots are prize slots that fill the gaps. Counts: 42 tier + 7 bonus + 1 jackpot.
  */
-export function buildWheelSegments() {
-  // 40 segments, each 9°, matching the reference wheel layout:
-  // t1=15, t2=11, t3=7, bonus=6, jackpot=1. Interleaved so no two
-  // bonus segments touch and the lone jackpot sits away from them.
-  const pattern = [
-    't1','t2','t1','t3','t2','t1','bonus','t2','t1','t3',
-    't1','t2','jackpot','t1','t2','t1','bonus','t3','t1','t2',
-    't1','t3','t2','bonus','t1','t2','t1','t3','t1','t2',
-    'bonus','t1','t2','t3','t1','bonus','t2','t1','t3','bonus',
-  ]
+export const WHEEL_RING = [
+  /* 0*/ 't2','t1','t3','t2',
+  /* 4*/ 'bonus',
+  /* 5*/ 't1','t3','t2',
+  /* 8*/ 'jackpot',
+  /* 9*/ 't1','t3','t2',
+  /*12*/ 'bonus',
+  /*13*/ 't1','t3','t2','t1','t3','t2','t1','t3',
+  /*21*/ 'bonus',
+  /*22*/ 't2','t1','t3',
+  /*25*/ 'bonus',
+  /*26*/ 't2','t1','t3','t2','t1',
+  /*31*/ 'bonus',
+  /*32*/ 't3','t2','t1','t3','t2',
+  /*37*/ 'bonus',
+  /*38*/ 't1','t3','t2','t1','t3','t2',
+  /*44*/ 'bonus',
+  /*45*/ 't1','t3','t2','t1','t3',
+]
+export const WHEEL_SLOTS = WHEEL_RING.length   // 50
+const TIER_VALUE = { t1: 1, t2: 2, t3: 3 }
 
-  const totalSegments = pattern.length
-  const degPerSegment = 360 / totalSegments
-  return pattern.map((type, i) => ({
-    type,
-    index: i,
-    startAngle: i * degPerSegment,
-    endAngle: (i + 1) * degPerSegment,
-    midAngle: (i + 0.5) * degPerSegment,
-  }))
+/**
+ * Remap the ring for a given unlocked tier: any prize slot above `activeTier`
+ * is converted down to an unlocked tier (alternating to keep T1/T2 balanced),
+ * so locked tiers visually fold into the ones you can actually win.
+ */
+function ringForTier(activeTier) {
+  let toggle = 0
+  return WHEEL_RING.map((type) => {
+    if (type === 'bonus' || type === 'jackpot') return type
+    const tv = TIER_VALUE[type]
+    if (tv <= activeTier) return type
+    if (activeTier === 1) return 't1'
+    return (toggle++ % 2 === 0) ? 't2' : 't1'   // tier 2: split former-T3 between T1/T2
+  })
+}
+
+/**
+ * Build the wheel's wedges for the active tier. Adjacent prize slots of the
+ * same value MERGE into one bigger wedge (bonus/jackpot never merge and act as
+ * separators) — so a Tier-1 wheel shows a few big T1 wedges, a Tier-3 wheel
+ * shows many small interleaved ones. Each wedge carries its coin value.
+ * @param {number} activeTier 1..3
+ */
+export function buildWheelSegments(activeTier = 3) {
+  const ring = ringForTier(Math.max(1, Math.min(activeTier, 3)))
+  const n = ring.length
+  const degPer = 360 / n
+
+  // Group consecutive equal prize slots into wedges; bonus/jackpot stay single.
+  const wedges = []
+  let i = 0
+  while (i < n) {
+    const type = ring[i]
+    let k = 1
+    if (type !== 'bonus' && type !== 'jackpot') {
+      while (i + k < n && ring[i + k] === type) k++
+    }
+    wedges.push({ type, slots: k, startSlot: i })
+    i += k
+  }
+  // Wrap-around merge: if the first and last wedges are the same prize type and
+  // touch across slot 0, fold the last into the first (so the top isn't split).
+  if (wedges.length > 1) {
+    const first = wedges[0], last = wedges[wedges.length - 1]
+    const prize = first.type !== 'bonus' && first.type !== 'jackpot'
+    if (prize && first.type === last.type) {
+      first.slots += last.slots
+      first.startSlot = last.startSlot - n   // start "before" 0 so angles stay monotonic
+      wedges.pop()
+    }
+  }
+
+  return wedges.map((w, idx) => {
+    const startAngle = w.startSlot * degPer
+    const endAngle = (w.startSlot + w.slots) * degPer
+    const tier = TIER_VALUE[w.type] || null
+    return {
+      type: w.type,
+      index: idx,
+      tier,
+      slots: w.slots,
+      coins: tier ? TIER_COINS[w.type] : (w.type === 'jackpot' ? TIER_COINS.jackpot : 0),
+      startAngle,
+      endAngle,
+      midAngle: (startAngle + endAngle) / 2,
+    }
+  })
 }
 
 /**
@@ -529,8 +600,11 @@ export function resolveSlotSession(activeTier = 1, luck = {}) {
 }
 
 /**
- * Resolve a WHEEL spin — the SAFE option: the full unlocked tier value, certain,
- * with bonus / jackpot as the only upside (same rates as the weights).
+ * Resolve a WHEEL spin. Bonus / jackpot stay on the luck engine (the dopamine
+ * hits). A regular win now lands on a prize wedge BY AREA among the wedges that
+ * exist at this tier, and pays that wedge's value — so higher tiers put bigger
+ * amounts on the wheel and raise your average win, while Tier 1 (only T1 wedges)
+ * still always pays the full T1 value.
  * @returns {{ awardedResult, rawResult, isNearMiss, coinsAwarded }}
  */
 export function resolveWheelSpin(activeTier = 1, luck = {}) {
@@ -546,7 +620,15 @@ export function resolveWheelSpin(activeTier = 1, luck = {}) {
   if (pick === 'jackpot') return { awardedResult: 'jackpot', rawResult: 'jackpot', isNearMiss: false, coinsAwarded: TIER_COINS.jackpot }
   // Bonus collects the highest unlocked tier's coins, THEN sends you to the bonus wheel.
   if (pick === 'bonus') return { awardedResult: 'bonus', rawResult: 'bonus', isNearMiss: false, coinsAwarded: TIER_COINS[`t${tier}`] }
-  return { awardedResult: `t${tier}`, rawResult: `t${tier}`, isNearMiss: false, coinsAwarded: TIER_COINS[`t${tier}`] }
+
+  // Regular win — pick a prize wedge weighted by its size (area = probability).
+  const prizeWedges = buildWheelSegments(tier).filter(s => s.tier)
+  const slotTotal = prizeWedges.reduce((s, w) => s + w.slots, 0)
+  let rr = Math.random() * slotTotal
+  let chosen = prizeWedges[0]
+  for (const w of prizeWedges) { rr -= w.slots; if (rr <= 0) { chosen = w; break } }
+  const res = `t${chosen.tier}`
+  return { awardedResult: res, rawResult: res, isNearMiss: false, coinsAwarded: TIER_COINS[res] }
 }
 
 // ─────────────────────────────────────────────

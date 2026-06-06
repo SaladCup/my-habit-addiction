@@ -408,3 +408,8 @@ const useStore = create(
 
 export { TIER_COINS }
 export default useStore
+
+// Dev-only: expose the store on window for quick manual testing in the preview.
+if (import.meta.env?.DEV && typeof window !== 'undefined') {
+  window.useStore = useStore
+}

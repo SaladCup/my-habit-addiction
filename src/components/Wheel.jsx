@@ -1,5 +1,5 @@
-import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
-import { buildWheelSegments, getWheelStopAngle } from '../engine/gameLogic'
+import { useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react'
+import { buildWheelSegments, getWheelStopAngle, WHEEL_SLOTS } from '../engine/gameLogic'
 import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/sounds'
 
 // ── Layout ──
@@ -9,21 +9,31 @@ import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/s
 const BOX = 480                            // wheel container (px) — fills most of the phone width
 const CX = BOX / 2, CY = BOX / 2            // SVG center
 const R = Math.round(BOX * 0.444)          // segment radius — tucks just under the rim's inner lip
-const R_TEXT = Math.round(BOX * 0.325)     // label radius (safely inside the ring)
+const R_TEXT = Math.round(BOX * 0.345)     // label center radius (labels run radially along the spoke)
 const HUB = Math.round(BOX * 0.25)         // center-cap display size
 const POINTER_W = Math.round(BOX * 0.244)  // pointer display width
 const POINTER_TOP = -Math.round(BOX * 0.08)// how far the pointer pokes above the wheel
-const FS = BOX / 320                        // font scale relative to the original design
 
-const TIER_CFG = {
-  t1:      { fill: '#FFB7C5', stroke: '#FF85A1', text: '#7A2040', label: 'T1',    fontSize: 15 },
-  t2:      { fill: '#C8B4E0', stroke: '#9B7EC8', text: '#3D1A6E', label: 'T2',    fontSize: 15 },
-  t3:      { fill: '#B4E0C8', stroke: '#5CBFA0', text: '#1A5C3A', label: 'T3',    fontSize: 15 },
-  bonus:   { fill: '#FFE9A0', stroke: '#F5C44B', text: '#5C3A00', label: 'BONUS', fontSize: 11 },
-  jackpot: { fill: '#FFD700', stroke: '#E6B800', text: '#5C3A00', label: '💎',    fontSize: 17 },
+// Themed wedge colors: T1 pink, T2 lavender, T3 mint; Bonus gold, Jackpot bright gold.
+const WEDGE_CFG = {
+  t1:      { fill: '#FFC2D2', stroke: '#FF8FB0', text: '#7A2040' },
+  t2:      { fill: '#D2BEEC', stroke: '#9B7EC8', text: '#3D1A6E' },
+  t3:      { fill: '#AEE3CC', stroke: '#5CBFA0', text: '#12533A' },
+  bonus:   { fill: '#FFE39A', stroke: '#E8B53A', text: '#6B4A00' },
+  jackpot: { fill: '#FFD23F', stroke: '#E0A800', text: '#5C3A00' },
 }
 
-const TIER_ORDER = { t1: 1, t2: 2, t3: 3, bonus: 99, jackpot: 99 }
+// Wedge label = the coins it pays (tiers), or the word (bonus/jackpot).
+function wedgeLabel(seg) {
+  if (seg.type === 'bonus') return 'BONUS'
+  if (seg.type === 'jackpot') return 'JACKPOT'
+  return String(seg.coins)
+}
+function wedgeFont(seg) {
+  if (seg.type === 'jackpot') return 11
+  if (seg.type === 'bonus') return 12
+  return 16   // coin numbers
+}
 
 function polar(cx, cy, r, deg) {
   const rad = (deg * Math.PI) / 180
@@ -37,13 +47,15 @@ function wedge(cx, cy, r, start, end) {
   return `M${cx},${cy} L${x1},${y1} A${r},${r},0,${large},1,${x2},${y2}Z`
 }
 
-const SEGMENTS = buildWheelSegments()
-const SEG_SIZE = 360 / SEGMENTS.length // for pointer-tick boundary detection
+const SEG_SIZE = 360 / WHEEL_SLOTS // pointer-tick cadence keyed to the 50-slot grid
 
 const Wheel = forwardRef(function Wheel(
   { activeTier = 1, awardedResult, rawResult, isNearMiss, onDone },
   ref
 ) {
+  // Wheel layout depends on the unlocked tier (locked tiers merge down).
+  const segments = useMemo(() => buildWheelSegments(activeTier), [activeTier])
+
   const wrapRef = useRef(null)
   const pointerRef = useRef(null)
   const rotRef = useRef(0)
@@ -100,7 +112,7 @@ const Wheel = forwardRef(function Wheel(
     if (!el) return
 
     const { stopAngle, nearMissAngle } = getWheelStopAngle(
-      awardedResult, rawResult || awardedResult, isNearMiss, SEGMENTS
+      awardedResult, rawResult || awardedResult, isNearMiss, segments
     )
     const start = rotRef.current
 
@@ -168,50 +180,36 @@ const Wheel = forwardRef(function Wheel(
           }}
         >
           <svg viewBox={`0 0 ${BOX} ${BOX}`} width={BOX} height={BOX} style={{ display: 'block', overflow: 'visible' }}>
-            <defs>
-              <pattern id="whl-stripes" width={5} height={5} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <rect width={2.5} height={5} fill="white" opacity={0.4} />
-              </pattern>
-            </defs>
-
             {/* Soft disc behind the wedges so any seam under the rim reads as wheel, not background */}
             <circle cx={CX} cy={CY} r={R} fill="#F3E3FA" />
 
-            {SEGMENTS.map((seg, i) => {
-              const cfg = TIER_CFG[seg.type] || TIER_CFG.t1
-              const tierNum = TIER_ORDER[seg.type] || 1
-              const inactive = tierNum < 99 && tierNum > activeTier
+            {segments.map((seg, i) => {
+              const cfg = WEDGE_CFG[seg.type] || WEDGE_CFG.t1
               const [tx, ty] = polar(CX, CY, R_TEXT, seg.midAngle)
 
               return (
-                <g key={i} opacity={inactive ? 0.42 : 1}>
+                <g key={i}>
                   <path
                     d={wedge(CX, CY, R, seg.startAngle, seg.endAngle)}
                     fill={cfg.fill}
                     stroke={cfg.stroke}
-                    strokeWidth={1.2}
+                    strokeWidth={1.5}
                   />
-                  {inactive && (
-                    <path
-                      d={wedge(CX, CY, R, seg.startAngle, seg.endAngle)}
-                      fill="url(#whl-stripes)"
-                    />
-                  )}
                   <text
                     x={tx} y={ty}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    fontSize={Math.round(cfg.fontSize * FS)}
+                    fontSize={wedgeFont(seg)}
                     fontFamily="'Fredoka', cursive"
-                    fontWeight={600}
+                    fontWeight={700}
                     fill={cfg.text}
-                    stroke="rgba(255,255,255,0.78)"
-                    strokeWidth={3}
+                    stroke="rgba(255,255,255,0.9)"
+                    strokeWidth={2}
                     paintOrder="stroke"
-                    transform={`rotate(${seg.midAngle}, ${tx}, ${ty})`}
+                    transform={`rotate(${seg.midAngle - 90}, ${tx}, ${ty})`}
                     style={{ userSelect: 'none', pointerEvents: 'none' }}
                   >
-                    {cfg.label}
+                    {wedgeLabel(seg)}
                   </text>
                 </g>
               )
