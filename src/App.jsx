@@ -11,7 +11,7 @@ import SpinScreen     from './screens/SpinScreen'
 import BonusScreen    from './screens/BonusScreen'
 import RewardScreen   from './screens/RewardScreen'
 
-const ICON_V = '5'   // bump to force browsers to reload updated icon art
+const ICON_V = '6'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
   { to: '/',         label: 'Home',     icon: `/ui/icon_home.png?v=${ICON_V}` },
   { to: '/wallet',   label: 'Beads',    icon: `/ui/icon_beads.png?v=${ICON_V}` },
