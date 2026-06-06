@@ -213,28 +213,31 @@ export function resolveSpinOutcome(activeTier, luck = {}) {
 
 /**
  * Fixed 50-slot wheel ring (slot 0 = top / 12 o'clock, going clockwise).
- * Bonus (×7) and Jackpot (×1) sit at FIXED, intentionally-uneven positions
+ * Bonus (×8) and Jackpot (×1) sit at FIXED, intentionally-uneven positions
  * (matched to the reference art) and never move or resize. The 't1'/'t2'/'t3'
- * slots are prize slots that fill the gaps. Counts: 42 tier + 7 bonus + 1 jackpot.
+ * slots are prize slots that fill the gaps. Counts: 41 tier + 8 bonus + 1 jackpot.
+ * Bonus clock positions ≈ 1, 3, 5, 6, 7:30, 9, 10, 11 o'clock; jackpot ≈ 2 o'clock.
  */
 export const WHEEL_RING = [
   /* 0*/ 't2','t1','t3','t2',
-  /* 4*/ 'bonus',
+  /* 4*/ 'bonus',            // ~1 o'clock
   /* 5*/ 't1','t3','t2',
-  /* 8*/ 'jackpot',
+  /* 8*/ 'jackpot',          // ~2 o'clock
   /* 9*/ 't1','t3','t2',
-  /*12*/ 'bonus',
+  /*12*/ 'bonus',            // ~3 o'clock (by the pointer)
   /*13*/ 't1','t3','t2','t1','t3','t2','t1','t3',
-  /*21*/ 'bonus',
+  /*21*/ 'bonus',            // ~5 o'clock
   /*22*/ 't2','t1','t3',
-  /*25*/ 'bonus',
+  /*25*/ 'bonus',            // ~6 o'clock (bottom)
   /*26*/ 't2','t1','t3','t2','t1',
-  /*31*/ 'bonus',
+  /*31*/ 'bonus',            // ~7:30
   /*32*/ 't3','t2','t1','t3','t2',
-  /*37*/ 'bonus',
-  /*38*/ 't1','t3','t2','t1','t3','t2',
-  /*44*/ 'bonus',
-  /*45*/ 't1','t3','t2','t1','t3',
+  /*37*/ 'bonus',            // ~9 o'clock
+  /*38*/ 't1','t3','t2','t1',
+  /*42*/ 'bonus',            // ~10 o'clock
+  /*43*/ 't3','t2','t1',
+  /*46*/ 'bonus',            // ~11 o'clock
+  /*47*/ 't3','t2','t1',
 ]
 export const WHEEL_SLOTS = WHEEL_RING.length   // 50
 const TIER_VALUE = { t1: 1, t2: 2, t3: 3 }
