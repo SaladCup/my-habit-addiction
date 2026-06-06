@@ -186,7 +186,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         animation: shaking ? 'slot-shake 0.38s ease-out' : 'none',
         filter: 'drop-shadow(0 12px 28px rgba(196,75,106,0.32))',
       }}>
-        <img src="/ui/slot_cabinet.png?v=5" alt="" draggable={false}
+        <img src="/ui/slot_cabinet.png?v=6" alt="" draggable={false}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', userSelect: 'none' }} />
 
         {/* Progressive jackpot pool → the "Grand Jackpot" display */}
