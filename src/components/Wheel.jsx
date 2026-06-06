@@ -2,14 +2,23 @@ import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { buildWheelSegments, getWheelStopAngle } from '../engine/gameLogic'
 import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/sounds'
 
-const CX = 150, CY = 150, R = 138, R_TEXT = 108
+// ── Layout ──
+// The decorative rim / hub / pointer are PNG art (public/ui/wheel_*.png).
+// Only the colored value segments are drawn dynamically in SVG and spin
+// underneath the static gold ring, so prize values can still scale by tier.
+const BOX = 320                    // wheel container (px)
+const CX = 160, CY = 160           // SVG center
+const R = 142                      // segment radius — tucks just under the rim's inner lip
+const R_TEXT = 104                 // label radius (safely inside the ring)
+const HUB = 80                     // center-cap display size
+const POINTER_W = 78               // pointer display width
 
 const TIER_CFG = {
-  t1:      { fill: '#FFB7C5', stroke: '#FF85A1', text: '#7A2040', label: 'T1',    fontSize: 14 },
-  t2:      { fill: '#C8B4E0', stroke: '#9B7EC8', text: '#3D1A6E', label: 'T2',    fontSize: 14 },
-  t3:      { fill: '#B4E0C8', stroke: '#5CBFA0', text: '#1A5C3A', label: 'T3',    fontSize: 14 },
-  bonus:   { fill: '#FFE9A0', stroke: '#F5C44B', text: '#5C3A00', label: 'BONUS', fontSize: 10 },
-  jackpot: { fill: '#FFD700', stroke: '#E6B800', text: '#5C3A00', label: '💎',    fontSize: 16 },
+  t1:      { fill: '#FFB7C5', stroke: '#FF85A1', text: '#7A2040', label: 'T1',    fontSize: 15 },
+  t2:      { fill: '#C8B4E0', stroke: '#9B7EC8', text: '#3D1A6E', label: 'T2',    fontSize: 15 },
+  t3:      { fill: '#B4E0C8', stroke: '#5CBFA0', text: '#1A5C3A', label: 'T3',    fontSize: 15 },
+  bonus:   { fill: '#FFE9A0', stroke: '#F5C44B', text: '#5C3A00', label: 'BONUS', fontSize: 11 },
+  jackpot: { fill: '#FFD700', stroke: '#E6B800', text: '#5C3A00', label: '💎',    fontSize: 17 },
 }
 
 const TIER_ORDER = { t1: 1, t2: 2, t3: 3, bonus: 99, jackpot: 99 }
@@ -49,7 +58,7 @@ const Wheel = forwardRef(function Wheel(
     // Restart the CSS animation by removing and re-applying it
     el.style.animation = 'none'
     void el.offsetWidth // force reflow
-    el.style.animation = 'pointer-tick 175ms ease-out forwards'
+    el.style.animation = 'wheel-peg-tick 175ms ease-out forwards'
   }
 
   function startPointerTracking() {
@@ -144,94 +153,109 @@ const Wheel = forwardRef(function Wheel(
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-      {/* Pointer — bounces on segment crossings */}
-      <div
-        ref={pointerRef}
-        style={{
-          fontSize: 42, lineHeight: 1, color: '#9B7EC8',
-          filter: 'drop-shadow(0 2px 6px rgba(155,126,200,0.6))',
-          zIndex: 2, position: 'relative',
-          display: 'inline-block',
-          transformOrigin: '50% 0%',
-        }}
-      >▼</div>
+      {/* Wheel stage (pointer pokes above the box, so overflow stays visible) */}
+      <div style={{ position: 'relative', width: BOX, height: BOX }}>
 
-      {/* Wheel container */}
-      <div
-        ref={wrapRef}
-        style={{
-          width: 300, height: 300,
-          transformOrigin: '50% 50%',
-          borderRadius: '50%',
-          boxShadow: '0 8px 32px rgba(155,126,200,0.35), 0 2px 8px rgba(0,0,0,0.12)',
-        }}
-      >
-        <svg viewBox="0 0 300 300" width={300} height={300} style={{ display: 'block', overflow: 'visible' }}>
-          <defs>
-            <pattern id="whl-stripes" width={5} height={5} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <rect width={2.5} height={5} fill="white" opacity={0.4} />
-            </pattern>
-            <filter id="whl-glow">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
+        {/* Spinning value segments (underneath the gold ring) */}
+        <div
+          ref={wrapRef}
+          style={{
+            position: 'absolute', inset: 0,
+            transformOrigin: '50% 50%',
+            zIndex: 1,
+          }}
+        >
+          <svg viewBox={`0 0 ${BOX} ${BOX}`} width={BOX} height={BOX} style={{ display: 'block', overflow: 'visible' }}>
+            <defs>
+              <pattern id="whl-stripes" width={5} height={5} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width={2.5} height={5} fill="white" opacity={0.4} />
+              </pattern>
+            </defs>
 
-          {/* Outer rim */}
-          <circle cx={CX} cy={CY} r={R + 8} fill="#E8D8F5" stroke="#9B7EC8" strokeWidth={5} />
+            {/* Soft disc behind the wedges so any seam under the rim reads as wheel, not background */}
+            <circle cx={CX} cy={CY} r={R} fill="#F3E3FA" />
 
-          {/* Segments */}
-          {SEGMENTS.map((seg, i) => {
-            const cfg = TIER_CFG[seg.type] || TIER_CFG.t1
-            const tierNum = TIER_ORDER[seg.type] || 1
-            const inactive = tierNum < 99 && tierNum > activeTier
-            const [tx, ty] = polar(CX, CY, R_TEXT, seg.midAngle)
+            {SEGMENTS.map((seg, i) => {
+              const cfg = TIER_CFG[seg.type] || TIER_CFG.t1
+              const tierNum = TIER_ORDER[seg.type] || 1
+              const inactive = tierNum < 99 && tierNum > activeTier
+              const [tx, ty] = polar(CX, CY, R_TEXT, seg.midAngle)
 
-            return (
-              <g key={i} opacity={inactive ? 0.42 : 1}>
-                <path
-                  d={wedge(CX, CY, R, seg.startAngle, seg.endAngle)}
-                  fill={cfg.fill}
-                  stroke={cfg.stroke}
-                  strokeWidth={1.2}
-                />
-                {inactive && (
+              return (
+                <g key={i} opacity={inactive ? 0.42 : 1}>
                   <path
                     d={wedge(CX, CY, R, seg.startAngle, seg.endAngle)}
-                    fill="url(#whl-stripes)"
+                    fill={cfg.fill}
+                    stroke={cfg.stroke}
+                    strokeWidth={1.2}
                   />
-                )}
-                <text
-                  x={tx} y={ty}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={cfg.fontSize}
-                  fontFamily="'Fredoka', cursive"
-                  fill={cfg.text}
-                  stroke="rgba(255,255,255,0.75)"
-                  strokeWidth={2.5}
-                  paintOrder="stroke"
-                  transform={`rotate(${seg.midAngle}, ${tx}, ${ty})`}
-                  style={{ userSelect: 'none', pointerEvents: 'none' }}
-                >
-                  {cfg.label}
-                </text>
-              </g>
-            )
-          })}
+                  {inactive && (
+                    <path
+                      d={wedge(CX, CY, R, seg.startAngle, seg.endAngle)}
+                      fill="url(#whl-stripes)"
+                    />
+                  )}
+                  <text
+                    x={tx} y={ty}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={cfg.fontSize}
+                    fontFamily="'Fredoka', cursive"
+                    fontWeight={600}
+                    fill={cfg.text}
+                    stroke="rgba(255,255,255,0.75)"
+                    strokeWidth={2.5}
+                    paintOrder="stroke"
+                    transform={`rotate(${seg.midAngle}, ${tx}, ${ty})`}
+                    style={{ userSelect: 'none', pointerEvents: 'none' }}
+                  >
+                    {cfg.label}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+        </div>
 
-          {/* Center cap */}
-          <circle cx={CX} cy={CY} r={26} fill="#FFF0F8" stroke="#C8B4E0" strokeWidth={3} />
-          <text
-            x={CX} y={CY + 1}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={18}
-            style={{ userSelect: 'none', pointerEvents: 'none' }}
-          >
-            🎰
-          </text>
-        </svg>
+        {/* Static ornate gold rim (frames the spinning segments) */}
+        <img
+          src="/ui/wheel_rim.png"
+          alt=""
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            zIndex: 3, pointerEvents: 'none',
+            filter: 'drop-shadow(0 10px 22px rgba(155,126,200,0.40))',
+          }}
+        />
+
+        {/* Static center hub (heart-gem medallion) */}
+        <img
+          src="/ui/wheel_hub.png"
+          alt=""
+          style={{
+            position: 'absolute', left: '50%', top: '50%',
+            width: HUB, height: HUB, transform: 'translate(-50%, -50%)',
+            zIndex: 4, pointerEvents: 'none',
+          }}
+        />
+
+        {/* Pointer at top, pivots from its top edge on each tick. Wrapper handles
+            horizontal centering so the tick animation can own `transform`. */}
+        <div style={{
+          position: 'absolute', top: -26, left: '50%', transform: 'translateX(-50%)',
+          width: POINTER_W, zIndex: 5, pointerEvents: 'none',
+        }}>
+          <img
+            ref={pointerRef}
+            src="/ui/wheel_pointer.png"
+            alt=""
+            style={{
+              width: '100%', display: 'block',
+              transformOrigin: '50% 0%',
+              filter: 'drop-shadow(0 3px 6px rgba(155,126,200,0.5))',
+            }}
+          />
+        </div>
       </div>
 
       {/* Status */}

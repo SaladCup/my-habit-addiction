@@ -161,6 +161,14 @@ body {
   100% { transform: translateY(0px)  rotate(0deg);   }
 }
 
+/* Gentler swing for the ornate PNG wheel pointer (pivots from its top). */
+@keyframes wheel-peg-tick {
+  0%   { transform: rotate(0deg);   }
+  35%  { transform: rotate(-11deg); }
+  70%  { transform: rotate(-4deg);  }
+  100% { transform: rotate(0deg);   }
+}
+
 @keyframes slot-shake {
   0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
   20%  { transform: translate3d(-4px, -2px, 0) rotate(-0.5deg); }

@@ -55,20 +55,27 @@ _Note: after we pick a font, future labels should be live text, not baked images
 
 ---
 
-## 🆕 To generate (Phase 2)
+## Phase 2 art
 
-### Beads — **256 × 256** each (square, transparent, centered, identical size & lighting)
-Current beads are ~171px and slightly inconsistent — regenerate the whole set uniform.
-`bead-1` `bead-2` `bead-3` `bead-4` `bead-5` `bead-6` `bead-gold` → 7 files, all **256×256**.
-Glossy glass-marble look; 6 distinct pastel colors + 1 gold (special).
+### Beads — **256 × 256** each (square, transparent, centered, identical size & lighting) ✅
+`bead-1..6` + `bead-gold` → 7 files, all **256×256**, sliced uniform from the marble sheet.
+Glossy glass-marble look; 6 pastels + 1 gold. Slot colors/names synced to the art
+(1 Rose Quartz · 2 Orchid · 3 Sky · 4 Mint · 5 Coral · 6 Cherry).
 
-### Wheel
-Pick ONE approach and tell me:
-- **A (preferred, keeps values dynamic):** decorative pieces only — `wheel_hub` **240×240** (center cap), `wheel_pointer` **180×260** (top ticker), optional `wheel_rim` **1024×1024** (outer ring). I draw the colored segments + numbers dynamically inside.
-- **B (fully painted):** `wheel_face` **1024×1024** square with segments + values baked in (then values are fixed and can't scale by tier).
+### Wheel — **Option A chosen** ✅ (decorative pieces; segments drawn dynamically so values scale by tier)
+| Asset | Spec | Actual | Status |
+|---|---|---|---|
+| `wheel_rim` (outer ring) | 1024×1024 | 1024×1024 | ✅ |
+| `wheel_hub` (center cap) | 240×240 | 240×240 | ✅ |
+| `wheel_pointer` (top ticker) | ~180×260 | **323×280** (native aspect kept; art is a downward heart-gem plaque, wider than tall) | ✅ |
+Wired in `components/Wheel.jsx`: rim/hub/pointer are static overlays; SVG value
+segments (R=142 in a 320 box) spin underneath the rim's inner lip.
 
-### Coin — **128 × 128** (for the Phase-3 coin cascade)
+### 🆕 Coin — **128 × 128** (for the Phase-3 coin cascade)
 `coin` 128×128, square, transparent, glossy gold coin (a heart or star face fits the theme). One is enough to start.
+
+### 🆕 Spend/Bank icon — **216 × 216** (still to make)
+For the "Spend" tab — coins going *out* (open coin pouch / cash-out / winged coin), NOT a piggy bank (reads as saving). Same pink heart-gem tile frame as the other nav icons.
 
 ---
 
