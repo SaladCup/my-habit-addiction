@@ -50,7 +50,7 @@ body {
   /* Framed sunburst is the page background on every screen (its gold/jewel
      corner frame is baked in). The larger scene (on <body>) fills the
      surrounding area on iPad / desktop so it accommodates any screen. */
-  background-image: url('/ui/bg_sunburst.png');
+  background-image: url('/ui/bg_sunburst.png?v=2');
   background-size: 100% 100%;   /* aspect matches the shell → full frame, no crop */
   background-position: center;
   background-repeat: no-repeat;
@@ -60,7 +60,7 @@ body {
 
 /* dreamy backgrounds reusable on full-screen game/reward views */
 .bg-sunburst {
-  background-image: url('/ui/bg_sunburst.png');
+  background-image: url('/ui/bg_sunburst.png?v=2');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
