@@ -6,12 +6,14 @@ import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/s
 // The decorative rim / hub / pointer are PNG art (public/ui/wheel_*.png).
 // Only the colored value segments are drawn dynamically in SVG and spin
 // underneath the static gold ring, so prize values can still scale by tier.
-const BOX = 320                    // wheel container (px)
-const CX = 160, CY = 160           // SVG center
-const R = 142                      // segment radius — tucks just under the rim's inner lip
-const R_TEXT = 104                 // label radius (safely inside the ring)
-const HUB = 80                     // center-cap display size
-const POINTER_W = 78               // pointer display width
+const BOX = 480                            // wheel container (px) — fills most of the phone width
+const CX = BOX / 2, CY = BOX / 2            // SVG center
+const R = Math.round(BOX * 0.444)          // segment radius — tucks just under the rim's inner lip
+const R_TEXT = Math.round(BOX * 0.325)     // label radius (safely inside the ring)
+const HUB = Math.round(BOX * 0.25)         // center-cap display size
+const POINTER_W = Math.round(BOX * 0.244)  // pointer display width
+const POINTER_TOP = -Math.round(BOX * 0.08)// how far the pointer pokes above the wheel
+const FS = BOX / 320                        // font scale relative to the original design
 
 const TIER_CFG = {
   t1:      { fill: '#FFB7C5', stroke: '#FF85A1', text: '#7A2040', label: 'T1',    fontSize: 15 },
@@ -199,12 +201,12 @@ const Wheel = forwardRef(function Wheel(
                     x={tx} y={ty}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    fontSize={cfg.fontSize}
+                    fontSize={Math.round(cfg.fontSize * FS)}
                     fontFamily="'Fredoka', cursive"
                     fontWeight={600}
                     fill={cfg.text}
-                    stroke="rgba(255,255,255,0.75)"
-                    strokeWidth={2.5}
+                    stroke="rgba(255,255,255,0.78)"
+                    strokeWidth={3}
                     paintOrder="stroke"
                     transform={`rotate(${seg.midAngle}, ${tx}, ${ty})`}
                     style={{ userSelect: 'none', pointerEvents: 'none' }}
@@ -242,7 +244,7 @@ const Wheel = forwardRef(function Wheel(
         {/* Pointer at top, pivots from its top edge on each tick. Wrapper handles
             horizontal centering so the tick animation can own `transform`. */}
         <div style={{
-          position: 'absolute', top: -26, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', top: POINTER_TOP, left: '50%', transform: 'translateX(-50%)',
           width: POINTER_W, zIndex: 5, pointerEvents: 'none',
         }}>
           <img
