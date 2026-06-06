@@ -53,13 +53,15 @@ export const KAWAII_COLORS = [
   { hex: '#E17055', name: 'Terracotta' },
 ]
 
+// Colors + names match the actual bead PNG art (public/beads/bead-1..6),
+// sampled from the marble art so the glow halo, medallion & label all agree.
 const DEFAULT_BEAD_SLOTS = [
-  { slot: 1, color: '#FFB7C5', name: 'Rose Quartz' },
-  { slot: 2, color: '#C8B4E0', name: 'Lavender' },
-  { slot: 3, color: '#4BC5F5', name: 'Aqua' },
-  { slot: 4, color: '#4BF5A0', name: 'Spearmint' },
-  { slot: 5, color: '#B4D4FF', name: 'Sky' },
-  { slot: 6, color: '#F5C44B', name: 'Honey' },
+  { slot: 1, color: '#FBB3CF', name: 'Rose Quartz' },
+  { slot: 2, color: '#E4A8EB', name: 'Orchid' },
+  { slot: 3, color: '#A9D2F5', name: 'Sky' },
+  { slot: 4, color: '#B2EAD8', name: 'Mint' },
+  { slot: 5, color: '#FCB8A3', name: 'Coral' },
+  { slot: 6, color: '#F87586', name: 'Cherry' },
 ]
 
 const DEFAULT_SESSION = {
@@ -336,7 +338,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -369,6 +371,21 @@ const useStore = create(
           // Retune: 1 coin = 2 sec & 1¢ (clean default)
           if (persisted.settings.secondsPerCoin) persisted.settings.secondsPerCoin = 2
           if (persisted.settings.moneyPerCoin) persisted.settings.moneyPerCoin = 0.01
+        }
+        if (version < 6 && persisted.settings?.beadSlots) {
+          // New bead PNG art — recolor/rename every slot to match the marble set
+          // (pink, orchid, sky, mint, coral, cherry) so glow + label match the image.
+          const NEW = {
+            1: { color: '#FBB3CF', name: 'Rose Quartz' },
+            2: { color: '#E4A8EB', name: 'Orchid' },
+            3: { color: '#A9D2F5', name: 'Sky' },
+            4: { color: '#B2EAD8', name: 'Mint' },
+            5: { color: '#FCB8A3', name: 'Coral' },
+            6: { color: '#F87586', name: 'Cherry' },
+          }
+          persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
+            NEW[s.slot] ? { ...s, ...NEW[s.slot] } : s
+          )
         }
         return persisted
       },
