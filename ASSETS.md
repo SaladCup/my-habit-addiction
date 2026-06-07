@@ -86,8 +86,9 @@ slices spin underneath (R=195 in a 440 box), same as the main wheel.
 ### 🆕 Coin — **128 × 128** (for the Phase-3 coin cascade)
 `coin` 128×128, square, transparent, glossy gold coin (a heart or star face fits the theme). One is enough to start.
 
-### 🆕 Spend/Bank icon — **216 × 216** (still to make)
-For the "Spend" tab — coins going *out* (open coin pouch / cash-out / winged coin), NOT a piggy bank (reads as saving). Same pink heart-gem tile frame as the other nav icons.
+### Spend tab icon — **216 × 216** ✅
+`icon_spend` — coin pouch spilling gold coins (cash-out, not a piggy bank). Wired as
+the 6th nav tab → `/spend` (`screens/SpendScreen.jsx`): balance + log-a-treat + history.
 
 ---
 
