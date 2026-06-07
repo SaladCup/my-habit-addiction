@@ -75,6 +75,7 @@ body {
 /* ── Screen container ── */
 .screen {
   flex: 1;
+  position: relative;            /* lets a screen fill it via position:absolute (e.g. Home's pinned header) */
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: calc(var(--nav-height) + 16px);

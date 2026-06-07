@@ -15,6 +15,23 @@ function darken(hex, amt = 20) {
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
   } catch { return '#888' }
 }
+function lighten(hex, amt = 24) {
+  try {
+    const n = parseInt(hex.replace('#', ''), 16)
+    const r = Math.min(255, (n >> 16) + amt)
+    const g = Math.min(255, ((n >> 8) & 0xff) + amt)
+    const b = Math.min(255, (n & 0xff) + amt)
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
+  } catch { return hex }
+}
+// Readable text color for a given background (dark plum on light pastels, white on dark).
+function textOn(hex) {
+  try {
+    const n = parseInt(hex.replace('#', ''), 16)
+    const lum = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 0xff) + 0.114 * (n & 0xff)
+    return lum > 158 ? '#5A2E4A' : '#FFFFFF'
+  } catch { return '#5A2E4A' }
+}
 function hashSlot(key) {
   const s = String(key || '')
   let h = 0
@@ -52,7 +69,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 2px' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width={150} height={150 * (H / W)} style={{ overflow: 'visible' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={122} height={122 * (H / W)} style={{ overflow: 'visible' }}>
         <defs>
           <clipPath id="jar-clip">
             <path d={`M${jarX} ${jarY} H${jarX + jarW} V${jarY + jarH - 18} Q${jarX + jarW} ${jarY + jarH} ${jarX + jarW - 18} ${jarY + jarH} H${jarX + 18} Q${jarX} ${jarY + jarH} ${jarX} ${jarY + jarH - 18} Z`} />
@@ -107,65 +124,48 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   )
 }
 
-// ── Habit row: ornate pink card (habit_card.png via border-image) ──
+// ── Habit row: the card background IS the habit's category color ──
 function HabitButton({ habit, color, onTap }) {
-  const beadSlot = habit.beadSlot || hashSlot(habit.categoryId || habit.id)
+  const text = textOn(color)
+  const soft = text === '#FFFFFF' ? 'rgba(255,255,255,0.88)' : 'rgba(90,46,74,0.78)'
   return (
     <button
       onClick={onTap}
       style={{
         width: '100%',
-        minHeight: 150,
-        background: 'transparent',
-        borderStyle: 'solid',
-        borderWidth: '30px 56px',
-        borderColor: 'transparent',
-        borderImage: 'url(/ui/habit_card.png) 120 150 fill / 30px 56px / 0 stretch',
+        minHeight: 58,
+        background: `linear-gradient(180deg, ${lighten(color, 16)} 0%, ${color} 100%)`,
+        border: `2.5px solid ${lighten(color, 38)}`,
+        borderRadius: 20,
+        boxShadow: `0 4px 0 ${darken(color, 34)}, 0 6px 14px ${color}66`,
         cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '0 10px',
-        filter: `drop-shadow(0 6px 10px ${color}44)`,
-        transition: 'transform 120ms ease',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '12px 18px',
+        transition: 'transform 110ms ease, box-shadow 110ms ease',
         userSelect: 'none',
       }}
-      onPointerDown={e => { e.currentTarget.style.transform = 'translateY(3px) scale(0.99)' }}
-      onPointerUp={e => { e.currentTarget.style.transform = '' }}
-      onPointerLeave={e => { e.currentTarget.style.transform = '' }}
+      onPointerDown={e => { e.currentTarget.style.transform = 'translateY(3px)'; e.currentTarget.style.boxShadow = `0 1px 0 ${darken(color, 34)}, 0 3px 8px ${color}55` }}
+      onPointerUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+      onPointerLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
     >
-      {/* category medallion */}
-      <div style={{
-        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-        background: `radial-gradient(circle at 35% 30%, #fff 0%, ${color} 55%, ${darken(color, 25)} 100%)`,
-        boxShadow: `0 0 0 2px #fff, 0 0 0 3px ${darken(color, 20)}55, 0 2px 4px rgba(0,0,0,0.18)`,
-      }} />
-
-      {/* name + description (centered) */}
-      <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+      <div style={{ minWidth: 0, textAlign: 'center' }}>
         <div style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: 26, color: '#9B3D6B', lineHeight: 1.1,
+          fontSize: 21, color: text, lineHeight: 1.15,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          textShadow: '0 1px 0 rgba(255,255,255,0.6)',
+          textShadow: text === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,0.25)' : '0 1px 0 rgba(255,255,255,0.45)',
         }}>
           {habit.name}
         </div>
         {habit.description && (
           <div style={{
-            fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#A36A87',
+            fontFamily: 'Mulish, sans-serif', fontSize: 13, color: soft, marginTop: 1,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {habit.description}
           </div>
         )}
       </div>
-
-      {/* category bead accent */}
-      <img
-        src={`/beads/bead-${beadSlot}.png`}
-        alt=""
-        onError={e => { e.currentTarget.style.display = 'none' }}
-        style={{ width: 30, height: 30, flexShrink: 0, filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.2))' }}
-      />
     </button>
   )
 }
@@ -257,39 +257,34 @@ function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSpinTier1 }) 
   )
 }
 
-// ── Wallet strip at bottom ──
+// ── Wallet tray: rounded "beads ready to spin" card pinned above the nav ──
 function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
   if (!wallet.length) return null
   return (
-    <div
-      onClick={onOpenWallet}
-      style={{
-        position: 'sticky', bottom: 0, zIndex: 50,
-        background: 'linear-gradient(180deg, rgba(255,245,249,0.97), rgba(252,231,243,0.97))',
-        backdropFilter: 'blur(10px)',
-        borderTop: '3px solid #C8B4E0',
-        margin: '10px -16px 0',
-        padding: '10px 16px',
-        display: 'flex', alignItems: 'center', gap: 10,
-        cursor: 'pointer',
-      }}
-    >
-      <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#7B5EA7', flexShrink: 0 }}>
-        WALLET
-      </span>
-      <div style={{ display: 'flex', gap: 5, flex: 1, overflow: 'hidden', flexWrap: 'nowrap', minWidth: 0 }}>
-        {wallet.slice(-14).map(b => (
-          <BeadDisplay key={b.id} color={getBeadColor(b.slot, b.isGold)} slot={b.slot} isGold={b.isGold} size="sm" />
-        ))}
-        {wallet.length > 14 && (
-          <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#9B7EC8', alignSelf: 'center', marginLeft: 4 }}>
-            +{wallet.length - 14}
-          </span>
-        )}
-      </div>
-      <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#9B7EC8', flexShrink: 0 }}>
-        ›
-      </span>
+    <div style={{ flexShrink: 0, position: 'relative', zIndex: 12, padding: '6px 16px 10px' }}>
+      <button
+        onClick={onOpenWallet}
+        style={{
+          width: '100%', maxWidth: 440, margin: '0 auto',
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'linear-gradient(180deg, #FFF8FC 0%, #F7E7F4 100%)',
+          border: '2.5px solid #ECC0DE',
+          borderRadius: 18,
+          boxShadow: '0 4px 0 #DBA9CD, 0 6px 14px rgba(180,120,160,0.25)',
+          padding: '9px 14px',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 17, color: '#9B3D6B', flexShrink: 0 }}>
+          👜 {wallet.length} ready
+        </span>
+        <div style={{ display: 'flex', gap: 4, flex: 1, overflow: 'hidden', justifyContent: 'flex-end', minWidth: 0 }}>
+          {wallet.slice(-10).map(b => (
+            <BeadDisplay key={b.id} color={getBeadColor(b.slot, b.isGold)} slot={b.slot} isGold={b.isGold} size="sm" />
+          ))}
+        </div>
+        <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C77FB0', flexShrink: 0 }}>›</span>
+      </button>
     </div>
   )
 }
@@ -417,7 +412,7 @@ export default function HomeScreen() {
   const navigate = useNavigate()
   const location = useLocation()
   const {
-    habits, wallet, jarBeads, milestones, settings,
+    habits, categories, wallet, jarBeads, milestones, settings,
     drawBead, cashInBeads, getBeadColor, setSession,
     addCategory, addHabit,
   } = useStore()
@@ -433,16 +428,18 @@ export default function HomeScreen() {
     }
   }, [])
 
-  // Map each habit to a stable bead-slot color (from settings.beadSlots)
+  // Each habit's card color = its CATEGORY color (falls back to its bead-slot color)
   const habitColor = useMemo(() => {
     const map = {}
     for (const h of habits) {
+      const cat = categories.find(c => c.id === h.categoryId)
+      if (cat?.color) { map[h.id] = cat.color; continue }
       const slot = h.beadSlot || hashSlot(h.categoryId || h.id)
       const found = settings.beadSlots.find(s => s.slot === slot)
       map[h.id] = found ? found.color : '#C8B4E0'
     }
     return map
-  }, [habits, settings.beadSlots])
+  }, [habits, categories, settings.beadSlots])
 
   function handleHabitTap(habit) {
     if (dropping || prompt || gold) return
@@ -487,29 +484,27 @@ export default function HomeScreen() {
   }
 
   return (
-    <div style={{ position: 'relative', minHeight: '100%', paddingBottom: 8 }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <FloatingDecor />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '12px 16px 0' }}>
-        {/* Logo */}
+      {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '6px 16px 2px' }}>
         <img
           src="/ui/logo.png"
           alt="My Habit Addiction — get addicted for good this time"
-          style={{ width: '100%', maxWidth: 340, height: 'auto', margin: '0 auto 4px', display: 'block',
+          style={{ width: '100%', maxWidth: 264, height: 'auto', margin: '0 auto', display: 'block',
             filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
         />
-
-        {/* Jar */}
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />
-
-        {/* Tap-a-habit banner */}
         <img
           src="/ui/tap_banner.png"
           alt="Tap a habit to earn a bead, silly!"
-          style={{ display: 'block', width: '80%', maxWidth: 330, height: 'auto', margin: '0 auto 8px' }}
+          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '2px auto 0' }}
         />
+      </div>
 
-        {/* Habit list */}
+      {/* ── Scrolling habit list ── */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', position: 'relative', zIndex: 10, padding: '8px 16px 14px' }}>
         {habits.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 440, width: '100%', margin: '0 auto' }}>
             {habits.map(habit => (
@@ -525,7 +520,7 @@ export default function HomeScreen() {
 
         {/* Quick cash-in shortcut when a tier-2+ match exists */}
         {wallet.length > 0 && isCashable(wallet).options.some(o => o.tier >= 2) && (
-          <div style={{ marginTop: 12 }}>
+          <div style={{ maxWidth: 440, margin: '12px auto 0' }}>
             <KawaiiButton
               variant="mint" size="md" fullWidth
               onClick={() => {
