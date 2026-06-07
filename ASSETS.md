@@ -71,6 +71,19 @@ Glossy glass-marble look; 6 pastels + 1 gold. Slot colors/names synced to the ar
 Wired in `components/Wheel.jsx`: rim/hub/pointer are static overlays; SVG value
 segments (R=142 in a 320 box) spin underneath the rim's inner lip.
 
+### 🆕 Bonus wheel — decorative pieces (same approach as the main wheel)
+The bonus round (`/bonus`, `components/BonusWheel.jsx`) — currently the old plain
+SVG. Give it the kawaii treatment with new chrome; I draw the 5 weighted slices +
+labels in code so the spin stays accurate. **Slices (fixed):** `75%` (biggest),
+`FREE 🎁`, `50%`, `25%`, `FREE 🎁`. Suggested theme: gift/bow/ribbon (distinct from
+the main wheel's roses) so the bonus round feels special.
+| Asset | Size | Notes |
+|---|---|---|
+| `bonus_rim` (outer ring) | **1024×1024** | transparent center hole; bonus theme (bows/ribbons/gift) |
+| `bonus_hub` (center cap) | **240×240** | a gift box 🎁 fits "bonus" |
+| `bonus_pointer` (top ticker) | **~320×280** | native aspect ok (like the main pointer) |
+_Or reuse the main wheel's `wheel_rim/hub/pointer` as-is for instant consistency — your call._
+
 ### 🆕 Coin — **128 × 128** (for the Phase-3 coin cascade)
 `coin` 128×128, square, transparent, glossy gold coin (a heart or star face fits the theme). One is enough to start.
 
