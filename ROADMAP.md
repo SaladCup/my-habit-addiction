@@ -105,6 +105,12 @@ in the "one-more-spin" zone:
 ## ✨ Physics & animation (the "juice")
 - [ ] **Beads fall into the jar with real physics** — bead drops, falls *through the jar opening*, and settles/stacks at the bottom in a believable pile (collision + gravity), clipped to the jar interior. Current version is a simple CSS drop + static fill.
 - [ ] **Coin cascade on wins** — a screen-filling shower of coins with good physics where the *number of coins* matches the amount won, paired with a clinking sound. This is the core reward moment.
+  - **Tech options (decide at build time):**
+    1. _2D coin that spins + cascades (recommended)_ — flat coin face PNG (optionally a few rotation frames), spun via CSS 3D flip, light 2D physics (matter.js or hand-rolled gravity). On-aesthetic, fast, safest for the iOS/WKWebView port.
+    2. _Flat face on a 3D cylinder_ — map a flat face onto a procedural Three.js cylinder for true spin + physics; no 3D modeling needed. Heavier.
+    3. _Full 3D model + physics_ — GLB coin + Rapier/cannon. Most realistic, heaviest, perf risk on phones, needs a modeled/AI-generated GLB.
+  - **Perf rule (any approach):** cap the *visible* coins (~60–100) and let the on-screen counter tick to the real amount — never spawn hundreds of bodies on mobile.
+  - _Status: asset format parked until we build this (Phase 3); user undecided on 2D vs 3D._
 
 ---
 
