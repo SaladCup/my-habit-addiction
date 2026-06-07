@@ -345,7 +345,7 @@ export function getWheelStopAngle(awardedResult, rawResult, isNearMiss, segments
     }
   }
 
-  const fullSpins = randomInt(5, 8) * 360
+  const fullSpins = randomInt(8, 12) * 360   // more rotations for the longer, slower spin
   return {
     stopAngle: fullSpins + stopAngle,
     nearMissAngle: nearMissAngle !== null ? fullSpins + nearMissAngle : null,
@@ -670,7 +670,7 @@ function bonusStopAngle(seg) {
   const span = seg.endAngle - seg.startAngle
   const segAngle = seg.startAngle + randomBetween(0.2, 0.8) * span
   const rotationToTop = (360 - segAngle + 360) % 360
-  return randomInt(4, 7) * 360 + rotationToTop
+  return randomInt(7, 10) * 360 + rotationToTop   // more rotations for the longer, slower bonus spin
 }
 
 /**

@@ -38,7 +38,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
 
     const anim = el.animate(
       [{ transform: 'rotate(0deg)' }, { transform: `rotate(${stopAngle}deg)` }],
-      { duration: 3200, easing: 'cubic-bezier(0.25, 0.05, 0.08, 1.0)', fill: 'forwards' }
+      { duration: 6500, easing: 'cubic-bezier(0.18, 0.04, 0.05, 1.0)', fill: 'forwards' }
     )
     anim.onfinish = () => {
       const final = stopAngle % 360

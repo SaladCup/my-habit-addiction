@@ -51,12 +51,14 @@ function Reel({ target, reelIndex, colW, spinning, onStopped }) {
     if (!el) return
     setBlur(true)
     const finalY = -(STRIP_FILL * CELL_H)
-    const dur = 1100 + reelIndex * 420
+    // Slow + heavily staggered: reels land ~2.4s / 3.8s / 5.2s so the LAST reel
+    // hangs in suspense (anticipation = dopamine).
+    const dur = 2400 + reelIndex * 1400
     const spin = el.animate(
       [{ transform: 'translateY(0)' }, { transform: `translateY(${finalY}px)` }],
-      { duration: dur, easing: 'cubic-bezier(0.12, 0, 0.04, 1)', fill: 'forwards' },
+      { duration: dur, easing: 'cubic-bezier(0.10, 0, 0.02, 1)', fill: 'forwards' },
     )
-    const unblur = setTimeout(() => setBlur(false), dur - 400)
+    const unblur = setTimeout(() => setBlur(false), dur - 450)
     spin.onfinish = () => {
       const bounce = el.animate(
         [
@@ -143,29 +145,29 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   async function reveal() {
     setPhase('revealing')
     const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-    await sleep(280)
+    await sleep(550)                                  // beat of suspense after reels land
     const spin = session.spins[index]
     const lines = spin.winningLines || []
     for (let i = 0; i < lines.length; i++) {
       setActiveLines(prev => [...prev, lines[i]])
       playLineWin(i)
-      await sleep(250)
+      await sleep(440)                                // reveal each winning line one at a time
     }
     const gained = spin.isJackpot ? session.jackpotAward : spin.coins
     if (gained > 0) {
       const start = runningRef.current
-      const steps = Math.min(gained, 14)
+      const steps = Math.min(gained, 26)
       for (let s = 1; s <= steps; s++) {
-        await sleep(40)
+        await sleep(70)                               // slower, satisfying coin count-up
         setRun(Math.round(start + (gained * s) / steps))
         if (s % 2) playCoinTick(s)
       }
       setRun(start + gained)
       if (spin.isJackpot) playSlotWin()
     } else {
-      await sleep(280)
+      await sleep(450)
     }
-    await sleep(spin.isJackpot || spin.isBonus ? 800 : 320)
+    await sleep(spin.isJackpot || spin.isBonus ? 1500 : 650)
     if (index + 1 >= spinCount) {
       setPhase('done')
       onComplete?.()
