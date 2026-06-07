@@ -338,7 +338,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 8,
+      version: 9,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -390,6 +390,11 @@ const useStore = create(
         if (version < 8) {
           // Jackpot reseed: start fresh at the new 2,000 seed (was 6,250)
           persisted.jackpotPool = JACKPOT_SEED
+        }
+        if (version < 9 && persisted.settings) {
+          // Bead slot names/colors are FIXED to the marble bead art now — hard-reset
+          // any stale/old names (e.g. "Hot Pink", "Honey") to the canonical set.
+          persisted.settings.beadSlots = DEFAULT_BEAD_SLOTS.map(s => ({ ...s }))
         }
         return persisted
       },
