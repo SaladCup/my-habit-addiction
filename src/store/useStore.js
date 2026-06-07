@@ -6,8 +6,8 @@ import {
 } from '../engine/gameLogic'
 
 // ── Progressive jackpot tuning (scaled to COIN_SCALE) ──
-const JACKPOT_SEED      = 250 * COIN_SCALE  // pool resets here after a jackpot
-const JACKPOT_PER_SPIN  = 5 * COIN_SCALE    // pool grows by this each spin (the more you play, the bigger)
+const JACKPOT_SEED      = 80 * COIN_SCALE   // 2,000 — pool starts here & resets here after a jackpot
+const JACKPOT_PER_SPIN  = 2 * COIN_SCALE    // 50/spin — slow progressive build the more you play
 const SESSION_GAP_MS    = 30 * 60 * 1000  // >30min idle starts a fresh "session" (warm-up)
 
 const DEFAULT_SPIN_STATS = {
@@ -338,7 +338,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 6,
+      version: 8,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -386,6 +386,10 @@ const useStore = create(
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
             NEW[s.slot] ? { ...s, ...NEW[s.slot] } : s
           )
+        }
+        if (version < 8) {
+          // Jackpot reseed: start fresh at the new 2,000 seed (was 6,250)
+          persisted.jackpotPool = JACKPOT_SEED
         }
         return persisted
       },
