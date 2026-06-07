@@ -123,7 +123,37 @@ in the "one-more-spin" zone:
 ---
 
 ## 🚀 Future / big ideas
-- [ ] **App blocking** — block distracting apps (TikTok, YouTube, etc.) on the phone when the user doesn't have enough coins. Requires native mobile integration (iOS Screen Time / Family Controls API, Android Accessibility/UsageStats) — well beyond the current web app; likely a native app or companion down the line.
+
+### 📱 App blocking — the killer feature (needs an iOS port)
+**The loop:** watching gated apps (TikTok, YouTube) *spends* coins, metered by watch
+time → run out of coins → those apps get *blocked* → do more habits to earn coins →
+apps unlock. A coin-gated, metered app-blocker. (Apps that already do this: Opal,
+one sec, Jomo, Brick.)
+
+**iOS mapping (Apple Screen Time / Family Controls stack):**
+- **FamilyControls** — user picks which apps to gate via Apple's `FamilyActivityPicker`
+  (privacy-preserving: app choices come back as opaque tokens, not bundle IDs/names).
+- **DeviceActivity** — monitors usage of the selected apps; fires a `DeviceActivityMonitor`
+  extension at time thresholds → deduct coins per interval of watch time.
+- **ManagedSettings** — applies a "shield" to the selected apps (custom block screen
+  via a Shield extension) when coins hit 0; remove the shield when balance > 0.
+
+**Port path (keeps the entire current web app):**
+1. Wrap this React/Vite app in **Capacitor** → real iOS app in a WKWebView; UI + coin
+   economy + `localStorage`/Zustand persistence ship as-is, ~no rewrite.
+2. Add a **native Swift blocking module + 2 app extensions** (DeviceActivityMonitor +
+   Shield) bridged to the JS.
+3. Share the **coin balance via an App Group** (extensions run in a separate process),
+   so the monitor/shield can read & deduct it. → _Keep the coin balance centralized in
+   the Zustand store now so this bridge stays clean._
+
+**Requirements (when we build it):** paid Apple Developer account ($99/yr) + the
+**Family Controls entitlement** (request from Apple; granted for legit wellness/
+screen-time apps). Blocking is native Swift work, but well-trodden.
+
+**Keep web-port-friendly now (already doing):** React + localStorage + plain assets,
+`viewport-fit=cover`, centralized coin logic. (Android later = UsageStats + Accessibility,
+a separate, hackier effort.)
 
 ---
 
