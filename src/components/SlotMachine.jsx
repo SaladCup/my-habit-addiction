@@ -207,7 +207,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         <div style={{
           position: 'absolute',
           left: `${0.620 * 100}%`, width: `${(0.920 - 0.620) * 100}%`,
-          top: `${0.125 * 100}%`, height: `${(0.197 - 0.125) * 100}%`,
+          top: `${0.134 * 100}%`, height: `${(0.185 - 0.134) * 100}%`,  // box = dark screen → vertically centered (matches jackpot)
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: "'Fredoka', cursive",
           fontSize: Math.round(CAB_H * 0.032),
