@@ -4,6 +4,7 @@ import './styles/global.css'
 import { WarningSplash } from './components/ui'
 import HomeScreen     from './screens/HomeScreen'
 import WalletScreen   from './screens/WalletScreen'
+import SpendScreen    from './screens/SpendScreen'
 import StatsScreen    from './screens/StatsScreen'
 import EditorScreen   from './screens/EditorScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -11,10 +12,11 @@ import SpinScreen     from './screens/SpinScreen'
 import BonusScreen    from './screens/BonusScreen'
 import RewardScreen   from './screens/RewardScreen'
 
-const ICON_V = '6'   // bump to force browsers to reload updated icon art
+const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
   { to: '/',         label: 'Home',     icon: `/ui/icon_home.png?v=${ICON_V}` },
   { to: '/wallet',   label: 'Beads',    icon: `/ui/icon_beads.png?v=${ICON_V}` },
+  { to: '/spend',    label: 'Spend',    icon: `/ui/icon_spend.png?v=${ICON_V}` },
   { to: '/stats',    label: 'Stats',    icon: `/ui/icon_stats.png?v=${ICON_V}` },
   { to: '/edit',     label: 'Habits',   icon: `/ui/icon_editor.png?v=${ICON_V}` },
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
@@ -71,6 +73,7 @@ function AppShell() {
         <Routes>
           <Route path="/"         element={<HomeScreen />} />
           <Route path="/wallet"   element={<WalletScreen />} />
+          <Route path="/spend"    element={<SpendScreen />} />
           <Route path="/stats"    element={<StatsScreen />} />
           <Route path="/edit"     element={<EditorScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
