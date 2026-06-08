@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
-import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin } from '../engine/sounds'
+import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
 
 // ── Cabinet geometry ──────────────────────────────────────────────
 // Fractions measured from /ui/slot_cabinet.png (900 x 1815).
@@ -36,13 +36,35 @@ const randomSym = () => SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.len
 const randomGrid = () =>
   Array.from({ length: ROWS }, () => Array.from({ length: COLS }, randomSym))
 
-// ── One reel: spins vertically, lands on its 3 target symbols ──
-function Reel({ target, reelIndex, colW, spinning, onStopped }) {
+// A "brewing line" on the first two reels (a row where col0 === col1) lets the
+// LAST reel tease — show the would-be-winning symbol sliding toward the line, then
+// roll one cell past it to the real (non-matching) symbol. Only fires on an actual
+// near-miss row (col2 differs); real wins just land cleanly (that's the payoff).
+function computeTease(grid) {
+  for (let r = 0; r < ROWS; r++) {
+    const a = grid[r][0], b = grid[r][1], cc = grid[r][2]
+    if (a && b && a.id === b.id && cc && cc.id !== a.id) {
+      return { active: true, symbol: a }
+    }
+  }
+  return null
+}
+
+// ── One reel: spins FAST + blurred (unreadable), then SNAPS to its 3 targets.
+// The last reel can TEASE: the would-be winner hangs on the line, then rolls off
+// to reveal the miss. Anticipation without spoiling the result early. ──
+function Reel({ target, reelIndex, colW, spinning, onStopped, tease }) {
   const ref = useRef(null)
+  const animRef = useRef(null)
   const [blur, setBlur] = useState(false)
+  const teased = !!tease?.active
   const [strip] = useState(() => {
     const fill = Array.from({ length: STRIP_FILL }, randomSym)
-    return [...fill, target[0], target[1], target[2]]
+    // teased reel gets the would-be-winning symbol spliced one cell ABOVE the
+    // targets, so it slides through the window during the slow final approach.
+    return teased
+      ? [...fill, tease.symbol, target[0], target[1], target[2]]
+      : [...fill, target[0], target[1], target[2]]
   })
 
   useEffect(() => {
@@ -50,27 +72,58 @@ function Reel({ target, reelIndex, colW, spinning, onStopped }) {
     const el = ref.current
     if (!el) return
     setBlur(true)
-    const finalY = -(STRIP_FILL * CELL_H)
-    // Slow + heavily staggered: reels land ~2.4s / 3.8s / 5.2s so the LAST reel
-    // hangs in suspense (anticipation = dopamine).
-    const dur = 2400 + reelIndex * 1400
-    const spin = el.animate(
-      [{ transform: 'translateY(0)' }, { transform: `translateY(${finalY}px)` }],
-      { duration: dur, easing: 'cubic-bezier(0.10, 0, 0.02, 1)', fill: 'forwards' },
-    )
-    const unblur = setTimeout(() => setBlur(false), dur - 450)
-    spin.onfinish = () => {
-      const bounce = el.animate(
-        [
-          { transform: `translateY(${finalY}px)` },
-          { transform: `translateY(${finalY - 8}px)` },
-          { transform: `translateY(${finalY}px)` },
-        ],
-        { duration: 220, easing: 'ease-out', fill: 'forwards' },
-      )
-      bounce.onfinish = () => { playReelStop(); onStopped() }
+    const base   = STRIP_FILL + (teased ? 1 : 0)
+    const finalY = -(base * CELL_H)
+    const preY   = finalY + CELL_H * 0.5          // half a cell short → the snap finishes it
+    const teaseY = finalY + CELL_H                // would-be winner resting on the top row
+    const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
+    const stopHere = () => {
+      el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
+      setBlur(false); playReelStop(); onStopped()
     }
-    return () => { clearTimeout(unblur); spin.cancel() }
+
+    // 1) FAST blurred scroll — stays fast so the result can't be read mid-spin.
+    //    Staggered so reels resolve left→right; the last reel runs longest.
+    const spinTime = 560 + reelIndex * 340
+    const scroll = el.animate(
+      [{ transform: 'translateY(0)' }, { transform: `translateY(${teased ? teaseY : preY}px)` }],
+      { duration: spinTime, easing: 'cubic-bezier(0.16, 0.45, 0.30, 1)', fill: 'forwards' },
+    )
+    animRef.current = scroll
+    scroll.onfinish = () => {
+      setBlur(false)
+      if (teased) {
+        // 2a) Hold the would-be winner on the line (suspense)…
+        const hold = el.animate(
+          [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${teaseY}px)` }],
+          { duration: 460, fill: 'forwards' },
+        )
+        animRef.current = hold
+        hold.onfinish = () => {
+          playNearMiss()                          // the "awww" as it starts to roll off
+          // 2b) …roll ONE cell to the real symbol — "so close!"
+          const nudge = el.animate(
+            [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${finalY}px)` }],
+            { duration: 320, easing: 'cubic-bezier(0.5, 0, 0.2, 1)', fill: 'forwards' },
+          )
+          animRef.current = nudge
+          nudge.onfinish = stopHere
+        }
+      } else {
+        // 2) Sharp snap with a tiny overshoot — "ka-chunk".
+        const snap = el.animate(
+          [
+            { transform: `translateY(${preY}px)` },
+            { transform: `translateY(${finalY - 6}px)` },
+            { transform: `translateY(${finalY}px)` },
+          ],
+          { duration: 230, easing: 'cubic-bezier(0.30, 1.5, 0.5, 1)', fill: 'forwards' },
+        )
+        animRef.current = snap
+        snap.onfinish = stopHere
+      }
+    }
+    return cancel
   }, [spinning])
 
   return (
@@ -87,8 +140,8 @@ function Reel({ target, reelIndex, colW, spinning, onStopped }) {
       )}
       <div ref={ref} style={{
         display: 'flex', flexDirection: 'column',
-        filter: blur ? 'blur(4px)' : 'blur(0)',
-        transition: blur ? 'none' : 'filter 400ms ease-out',
+        filter: blur ? 'blur(5px)' : 'blur(0)',
+        transition: blur ? 'none' : 'filter 120ms ease-out',
         willChange: 'transform',
       }}>
         {strip.map((s, i) => (
@@ -126,6 +179,8 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const displayGrid = showGrid && current ? current.grid : idleGrid.current
   const spinsLeft = phase === 'between' ? spinCount - index - 1 : spinCount - index
   const setRun = (v) => { runningRef.current = v; setRunning(v) }
+  // The last reel teases when a line is brewing on the first two reels (near-miss).
+  const teaseInfo = phase === 'spinning' && current ? computeTease(current.grid) : null
 
   function startSpin() {
     if (phase !== 'ready' && phase !== 'between') return
@@ -234,6 +289,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
               spinning={phase === 'spinning'}
               target={[displayGrid[0][c], displayGrid[1][c], displayGrid[2][c]]}
               onStopped={onReelStopped}
+              tease={c === 2 ? teaseInfo : null}
             />
           </div>
         ))}

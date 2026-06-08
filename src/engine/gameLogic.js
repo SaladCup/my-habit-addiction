@@ -718,21 +718,24 @@ function reshapeSessionOrder(spins, params) {
   return out
 }
 
-/** Build an HONEST near-miss grid: 2-of-a-kind on a payline + a breaker (0 coins). */
+/**
+ * Build an HONEST near-miss grid: 2-of-a-kind on a ROW (columns 0 & 1) with the
+ * 3rd column just missing (0 coins). Row + last-column shape is deliberate: the
+ * reels stop left→right, so the player sees two match and then the last reel
+ * teases the winning symbol before rolling off — the "so close!" moment.
+ */
 function makeNearMissGrid() {
   const grid = [[null, null, null], [null, null, null], [null, null, null]]
-  const line = SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]
   const sym = pickWinSymbol()
-  const cells = shuffled(line.cells)
-  grid[cells[0][0]][cells[0][1]] = sym
-  grid[cells[1][0]][cells[1][1]] = sym
-  // the 3rd cell BREAKS the line: a different symbol that completes no other line
-  const [br, bc] = cells[2]
+  const r = randomInt(0, 2)
+  grid[r][0] = sym
+  grid[r][1] = sym
+  // last cell BREAKS the line: a different symbol that completes no other line
   let breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
-  for (let t = 0; t < 24 && (breaker.id === sym.id || wouldCompleteLine(grid, br, bc, breaker)); t++) {
+  for (let t = 0; t < 24 && (breaker.id === sym.id || wouldCompleteLine(grid, r, 2, breaker)); t++) {
     breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
   }
-  grid[br][bc] = breaker
+  grid[r][2] = breaker
   fillBlanks(grid)
   return grid
 }
