@@ -22,19 +22,26 @@ const REEL_TOP_F = ROW_CY_F[0] - CELL_H_F / 2
 const REEL_H_F   = CELL_H_F * 3
 
 // ── Reel timing (researched real-slot cadence) ─────────────────────────────
-// Real machines spin all reels at the SAME visible speed, then lock them in
-// sequence at ~equal "rhythmic" intervals (documented as less fatiguing → longer
-// play), with a longer HOLD before the final reel for anticipation. Sources:
-// patents on "rhythmic reels" (US 8,047,910) & "stopping order for anticipation"
-// (US 8,342,934); On Mag "The Slow Spin Effect" (≈250–500ms reveal pauses,
-// 300–500ms hold before the last reel lands).
-const REEL_SPEED   = 34     // symbols scrolled per second (blurred) — the visible spin speed
-const SPIN_BASE_MS = 1150   // reel 0 spins this long before it locks
-const STOP_GAP_MS  = 640    // each later reel locks this much after the previous (the "pause")
-const LAST_HOLD_MS = 420    // extra anticipation hold before the FINAL reel drops
-const SNAP_MS      = 250    // the decisive settle ("ka-chunk")
-const reelSpinTime = (i) => SPIN_BASE_MS + i * STOP_GAP_MS
-const reelFill     = (i) => Math.min(48, Math.max(18, Math.round((reelSpinTime(i) / 1000) * REEL_SPEED)))  // cap DOM; later reels just read slower
+// Every reel spins at the SAME visible speed and locks left→right; later reels
+// just travel farther (more symbols) so they stop LATER — there is NO mid-spin
+// hold (that read as the reel "getting caught"). Anticipation is pure TIMING: the
+// final reel gets a longer gap, and spins EXTRA-long when a line is brewing (two
+// reels already matched) — the research shows players read a longer final reel as
+// the near-miss/"maybe" signal, and that stretching suspense this way doesn't
+// touch the odds. Sources: patents "stopping order for anticipation" (US 8,342,934)
+// & "rhythmic reels" (US 8,047,910); On Mag "The Slow Spin Effect"; near-miss
+// anticipation-timing literature.
+const REEL_SPEED    = 30    // symbols/sec (blurred) — IDENTICAL on every reel
+const SPIN_BASE_MS  = 1150  // reel 0 spins this long before it locks
+const STOP_GAP_MS   = 640   // stagger between reels 0 → 1
+const LAST_GAP_MS   = 980   // LONGER gap before the final reel locks (anticipation by timing, not a hold)
+const BREW_EXTRA_MS = 720   // final reel spins this much LONGER when a line is brewing (the subtle near-miss)
+const SNAP_MS       = 250   // the decisive settle ("ka-chunk")
+const REEL_MAX_FILL = 110   // safety bound on strip length
+const reelSpinTime = (i, isLast, brewing) =>
+  isLast ? SPIN_BASE_MS + STOP_GAP_MS + LAST_GAP_MS + (brewing ? BREW_EXTRA_MS : 0)
+         : SPIN_BASE_MS + i * STOP_GAP_MS
+const reelFill = (spinMs) => Math.min(REEL_MAX_FILL, Math.max(18, Math.round((spinMs / 1000) * REEL_SPEED)))
 
 const px = { w: (f) => f * CAB_W, h: (f) => f * CAB_H }
 const COL_LEFT = COLS_F.map(c => px.w(c[0]))
@@ -63,14 +70,16 @@ function computeTease(grid) {
 }
 
 // ── One reel: spins TOP→BOTTOM at a steady blurred speed (unreadable), then
-// locks. Reels lock left→right at equal intervals; the LAST reel holds for
-// anticipation (longer when a line is brewing — the tease) and drops its final
-// symbol in from the top. Every reel lands with a subtle impact bounce. ──
+// locks. All reels spin at the SAME speed and lock left→right; the last reel just
+// travels farther so it stops LATER (longer still when a line is brewing). No hold
+// — every reel lands the same way, with a subtle impact bounce. ──
 function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
   const ref = useRef(null)
   const animRef = useRef(null)
   const [blur, setBlur] = useState(false)
-  const fill = reelFill(reelIndex)
+  const brewing  = !!tease?.brewing                 // two reels already matched → longer final reel
+  const spinTime = reelSpinTime(reelIndex, isLast, brewing)
+  const fill     = reelFill(spinTime)               // more time → more symbols → same speed, stops later
   // Strip, top→bottom: one filler (gives the bounce headroom), the 3 targets,
   // then the spin fillers. The reel starts pulled UP (showing the lower fillers)
   // and slides DOWN so the targets settle just below the top filler.
@@ -88,9 +97,8 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     el.style.transform = `translateY(${startY}px)`  // park at spin-start before paint (no flash)
     setBlur(true)
     const preY = finalY - CELL_H * 0.5              // a hair before the stop; the bounce finishes it
-    const spinTime = reelSpinTime(reelIndex)
-    // Near-miss = the last reel, with the first two matched but this one breaking it.
-    const nearMiss = isLast && !!tease?.brewing && !tease?.willWin
+    // Near-miss = the last reel, first two matched but this one breaking it.
+    const nearMiss = isLast && brewing && !tease?.willWin
     const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
