@@ -4,7 +4,7 @@ import { KawaiiButton, PixelPanel } from '../components/ui'
 
 const BLANK_HABIT = {
   name: '', description: '', categoryId: null,
-  rewards: { t1: '', t2: '', t3: '', jackpot: '', bonusActivity: '' },
+  rewards: { bonusActivity: '' },
 }
 
 function ColorSwatches({ selected, onSelect }) {
@@ -174,16 +174,6 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
       </div>
 
       <div>
-        <label style={labelStyle}>REWARDS (what you give yourself when you win)</label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <RewardRow tier="T1" hint="small treat" value={form.rewards.t1} onChange={v => setReward('t1', v)} />
-          <RewardRow tier="T2" hint="medium reward" value={form.rewards.t2} onChange={v => setReward('t2', v)} />
-          <RewardRow tier="T3" hint="big reward" value={form.rewards.t3} onChange={v => setReward('t3', v)} />
-          <RewardRow tier="🌟 JACKPOT" hint="dream reward" value={form.rewards.jackpot} onChange={v => setReward('jackpot', v)} />
-        </div>
-      </div>
-
-      <div>
         <label style={labelStyle}>BONUS CHALLENGE (shown during bonus round)</label>
         <input
           style={inputStyle}
@@ -202,25 +192,6 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
         </KawaiiButton>
       </div>
     </form>
-  )
-}
-
-function RewardRow({ tier, hint, value, onChange }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{
-        fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7',
-        minWidth: 78, textAlign: 'right',
-      }}>
-        {tier}
-      </div>
-      <input
-        style={{ ...inputStyle, fontSize: 20, padding: '8px 10px' }}
-        placeholder={hint}
-        value={value || ''}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
   )
 }
 
