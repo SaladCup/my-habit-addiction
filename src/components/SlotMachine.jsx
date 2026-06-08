@@ -34,7 +34,7 @@ const STOP_GAP_MS  = 640    // each later reel locks this much after the previou
 const LAST_HOLD_MS = 420    // extra anticipation hold before the FINAL reel drops
 const SNAP_MS      = 250    // the decisive settle ("ka-chunk")
 const reelSpinTime = (i) => SPIN_BASE_MS + i * STOP_GAP_MS
-const reelFill     = (i) => Math.max(18, Math.round((reelSpinTime(i) / 1000) * REEL_SPEED))
+const reelFill     = (i) => Math.min(48, Math.max(18, Math.round((reelSpinTime(i) / 1000) * REEL_SPEED)))  // cap DOM; later reels just read slower
 
 const px = { w: (f) => f * CAB_W, h: (f) => f * CAB_H }
 const COL_LEFT = COLS_F.map(c => px.w(c[0]))
@@ -92,32 +92,34 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     const holdY  = finalY + CELL_H                // last reel: one FULL cell short → a clean,
                                                   // ALIGNED anticipation hold (no half-row jank)
     const spinTime = reelSpinTime(reelIndex)
-    const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
+    let timer = 0
+    const cancel = () => {
+      clearTimeout(timer)
+      try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {}
+    }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); onStopped()
     }
-    // Land with a subtle impact BOUNCE: travel in, drive a hair PAST the stop,
-    // rebound a touch, then settle — the satisfying "clunk" real reels have.
+    // Land with a subtle, SMOOTH impact bounce: a single overshoot past the stop,
+    // eased on the way IN and BACK so there's no jerky direction-flip.
     const settle = (fromY, duration) => {
-      const over = Math.max(4, CELL_H * 0.15)     // overshoot past the stop
-      const reb  = Math.max(2, CELL_H * 0.055)    // small rebound the other way
+      const over = Math.max(4, CELL_H * 0.13)
       const a = el.animate(
         [
-          { transform: `translateY(${fromY}px)`,          offset: 0 },
-          { transform: `translateY(${finalY - over}px)`,  offset: 0.55 },   // impact (past rest)
-          { transform: `translateY(${finalY + reb}px)`,   offset: 0.80 },   // rebound
-          { transform: `translateY(${finalY}px)`,         offset: 1 },      // settle
+          { transform: `translateY(${fromY}px)`,         easing: 'cubic-bezier(0.33, 0, 0.30, 1)' }, // travel in (decelerate)
+          { transform: `translateY(${finalY - over}px)`, offset: 0.62, easing: 'ease-out' },          // overshoot past rest
+          { transform: `translateY(${finalY}px)`,        offset: 1,    easing: 'ease-in-out' },        // ease back to rest
         ],
-        { duration, easing: 'cubic-bezier(0.22, 0.68, 0.30, 1)', fill: 'forwards' },
+        { duration, fill: 'forwards' },
       )
       animRef.current = a
       a.onfinish = stopHere
     }
 
-    // 1) Steady blurred scroll at a CONSTANT speed (same on every reel; later reels
-    //    just travel farther so they lock later — the rhythmic stop cadence). The
-    //    final reel stops one FULL cell short (holdY) for a clean anticipation hold.
+    // 1) Steady blurred scroll at a constant speed; later reels travel farther so
+    //    they lock later (the rhythmic cadence). The final reel stops one cell short
+    //    (holdY) for a clean anticipation hold, then rolls its last symbol in.
     const scroll = el.animate(
       [{ transform: 'translateY(0)' }, { transform: `translateY(${isLast ? holdY : preY}px)` }],
       { duration: spinTime, easing: 'linear', fill: 'forwards' },
@@ -125,19 +127,14 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     animRef.current = scroll
     scroll.onfinish = () => {
       setBlur(false)
-      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: snap in with a bounce
-      // Final reel: hold one symbol short (cleanly aligned), then roll the last
-      // symbol into place — bouncing on impact. Teased = the would-be winner is
-      // sitting there and rolls OFF to the miss; otherwise the real symbol clicks in.
-      const hold = el.animate(
-        [{ transform: `translateY(${holdY}px)` }, { transform: `translateY(${holdY}px)` }],
-        { duration: teased ? 600 : LAST_HOLD_MS, fill: 'forwards' },
-      )
-      animRef.current = hold
-      hold.onfinish = () => {
-        if (teased) playNearMiss()                // the "awww" as the near-symbol rolls away
-        settle(holdY, 460)                        // roll ONE clean cell in, bounce on impact
-      }
+      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: snap in with the bounce
+      // Anticipation hold via a TIMER (the scroll's fill keeps the reel parked at
+      // holdY — no extra animation = no hand-off jank), then roll the last cell in.
+      // Teased = the would-be winner is sitting there and rolls OFF to the miss.
+      timer = setTimeout(() => {
+        if (teased) playNearMiss()                // the "awww" as the near-symbol rolls off
+        settle(holdY, 460)
+      }, teased ? 600 : LAST_HOLD_MS)
     }
     return cancel
   }, [spinning])
@@ -146,10 +143,10 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     <div style={{
       width: colW, height: CELL_H * ROWS, overflow: 'hidden',
       position: 'relative',
-      // Blur the small CLIPPED window (not the ~4000px-tall strip) — far cheaper
-      // per frame, which fixes the last reel (the tallest strip) stuttering.
+      // Blur the small CLIPPED window (not the tall strip) — far cheaper per frame.
+      // Toggle INSTANTLY (no transition): transitioning the blur re-rasterized it
+      // every frame right as the reel settled, which made the stop look jagged.
       filter: blur ? 'blur(4px)' : 'none',
-      transition: blur ? 'none' : 'filter 110ms ease-out',
     }}>
       {spinning && blur && (
         <div style={{
@@ -167,7 +164,7 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
             width: colW, height: CELL_H, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: Math.round(CELL_H * 0.56),
-            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
+            textShadow: '0 1px 2px rgba(0,0,0,0.45)',   // cheap shadow (no per-cell filter layer)
           }}>
             {s.emoji}
           </div>
