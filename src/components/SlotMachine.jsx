@@ -121,13 +121,15 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
   const spinCount = session.spinCount
   const current = session.spins[index]
-  const showGrid = (phase === 'spinning' || phase === 'revealing' || phase === 'done')
+  // 'between' = a spin just revealed; its result + explanation stay up until SPIN is tapped.
+  const showGrid = ['spinning', 'revealing', 'between', 'done'].includes(phase)
   const displayGrid = showGrid && current ? current.grid : idleGrid.current
-  const spinsLeft = spinCount - index
+  const spinsLeft = phase === 'between' ? spinCount - index - 1 : spinCount - index
   const setRun = (v) => { runningRef.current = v; setRunning(v) }
 
   function startSpin() {
-    if (phase !== 'ready') return
+    if (phase !== 'ready' && phase !== 'between') return
+    if (phase === 'between') setIndex(i => i + 1)   // advance to the next spin now (was deferred so the result stayed up)
     stoppedRef.current = 0
     setActiveLines([])
     setReelKey(k => k + 1)
@@ -172,9 +174,8 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       setPhase('done')
       onComplete?.()
     } else {
-      setIndex(index + 1)
-      setActiveLines([])
-      setPhase('ready')
+      // Keep this spin's grid + explanation up; SPIN advances to the next one.
+      setPhase('between')
     }
   }
 
@@ -256,11 +257,11 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           })}
         </svg>
 
-        {/* Win breakdown + "why", overlaid on the lower deck (visible near the reels) */}
-        {(phase === 'revealing' || phase === 'done') && current && (
+        {/* Win breakdown + "why", overlaid above the SPIN button — stays up until next spin */}
+        {(phase === 'revealing' || phase === 'between' || phase === 'done') && current && (
           <div style={{
-            position: 'absolute', left: '9%', right: '9%', top: '64%', zIndex: 7,
-            background: 'rgba(255,248,253,0.95)', border: '2px solid #E3B7D6',
+            position: 'absolute', left: '8%', right: '8%', bottom: '28%', zIndex: 7,
+            background: 'rgba(255,248,253,0.96)', border: '2px solid #E3B7D6',
             borderRadius: 14, padding: '7px 11px', boxShadow: '0 3px 0 #D9A6CC',
             display: 'flex', flexDirection: 'column', gap: 3, pointerEvents: 'none',
             animation: 'bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1)',
@@ -290,7 +291,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         )}
 
         {/* SPIN hotspot over the painted button */}
-        {phase === 'ready' && (
+        {(phase === 'ready' || phase === 'between') && (
           <button
             onClick={startSpin}
             aria-label={`Spin (${spinsLeft} left)`}
@@ -313,6 +314,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       }}>
         {phase === 'spinning' ? 'SPINNING…'
           : phase === 'done' ? '✦ ALL DONE ✦'
+          : phase === 'between' ? `TAP SPIN FOR NEXT · ${spinsLeft} left`
           : phase === 'ready' ? `TAP SPIN! · ${spinsLeft} left`
           : `SPIN ${Math.min(index + 1, spinCount)} / ${spinCount}`}
       </div>
