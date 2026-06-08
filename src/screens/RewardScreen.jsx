@@ -79,7 +79,7 @@ export default function RewardScreen() {
 
   const cfg = RESULT_CFG[spinResult] || RESULT_CFG.t1
   const coins = coinsEarned || TIER_COINS[spinResult] || 0
-  const coinName = settings?.coinName || 'coins'
+  const coinName = 'coins'
   const moneyVal = settings?.moneyPerCoin ? (coins * settings.moneyPerCoin).toFixed(2) : null
   const timeVal = settings?.secondsPerCoin ? formatTime(coins * settings.secondsPerCoin) : null
   const timeActivity = settings?.timeActivity || 'free time'

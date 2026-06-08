@@ -121,7 +121,7 @@ const Wheel = forwardRef(function Wheel(
     if (isNearMiss && nearMissAngle != null) {
       const a1 = el.animate(
         [{ transform: `rotate(${start}deg)` }, { transform: `rotate(${nearMissAngle}deg)` }],
-        { duration: 7000, easing: 'cubic-bezier(0.2, 0.0, 0.08, 1.0)', fill: 'forwards' }
+        { duration: 8500, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
       )
       await a1.finished
       trackingRef.current = false // stop ticking before near-miss snap
@@ -132,19 +132,20 @@ const Wheel = forwardRef(function Wheel(
       )
       await a2.finished
     } else {
-      // Phase 1: long, suspenseful deceleration to a slight overshoot past target
-      const overshoot = stopAngle + 8
+      // Phase 1: long, suspenseful deceleration — a quick whip up front, then a
+      // long, increasingly slow crawl that nearly stops dead (overshoots by a hair).
+      const overshoot = stopAngle + 4
       const a1 = el.animate(
         [{ transform: `rotate(${start}deg)` }, { transform: `rotate(${overshoot}deg)` }],
-        { duration: 8000, easing: 'cubic-bezier(0.18, 0.04, 0.04, 1.0)', fill: 'forwards' }
+        { duration: 10000, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
       )
       await a1.finished
       trackingRef.current = false // stop ticking before spring settle
 
-      // Phase 2: spring settle back to exact target
+      // Phase 2: gentle settle back to the exact target (soft stop, no hard snap)
       const a2 = el.animate(
         [{ transform: `rotate(${overshoot}deg)` }, { transform: `rotate(${stopAngle}deg)` }],
-        { duration: 520, easing: 'cubic-bezier(0.34, 1.3, 0.64, 1)', fill: 'forwards' }
+        { duration: 650, easing: 'cubic-bezier(0.33, 1.1, 0.66, 1)', fill: 'forwards' }
       )
       await a2.finished
     }

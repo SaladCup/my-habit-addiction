@@ -249,15 +249,6 @@ export default function SettingsScreen() {
       <PixelPanel color="yellow" title="COIN SETTINGS" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={labelStyle}>COIN NAME</label>
-            <input
-              style={inputStyle}
-              placeholder="coins"
-              value={settings.coinName}
-              onChange={e => updateSettings({ coinName: e.target.value })}
-            />
-          </div>
-          <div>
             <label style={labelStyle}>$ PER COIN (0 = disabled)</label>
             <input
               style={inputStyle}

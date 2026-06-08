@@ -122,7 +122,6 @@ const useStore = create(
       daily:       { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
       settings: {
         beadSlots:      DEFAULT_BEAD_SLOTS,
-        coinName:       'coins',
         moneyPerCoin:   0.01,   // 1 coin = 1¢
         secondsPerCoin: 2,      // 1 coin = 2 sec → T1/T2/T3 ≈ 4/8/12.5 min
         timeActivity:   'free time',

@@ -13,7 +13,8 @@ function fmtTime(sec) {
 export default function SpendScreen() {
   const { coinLog, settings, spendCoins, getCoinsAvailable } = useStore()
   const coins = getCoinsAvailable()
-  const { moneyPerCoin, secondsPerCoin, coinName, timeActivity } = settings
+  const { moneyPerCoin, secondsPerCoin, timeActivity } = settings
+  const coinName = 'coins'
 
   const [dollars, setDollars] = useState('')
   const [note, setNote] = useState('')

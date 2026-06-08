@@ -112,7 +112,7 @@ export default function StatsScreen() {
   const [tab, setTab] = useState('Week')
   const { chartData, totalBeads, totalCoins, streak, best, habitCounts, slotCounts, habits } = useStats(tab)
   const { settings, getTotalCoinsEarned, getCoinsAvailable } = useStore()
-  const coinName = settings.coinName || 'coins'
+  const coinName = 'coins'
 
   const moneyValue = settings.moneyPerCoin > 0
     ? `$${(totalCoins * settings.moneyPerCoin).toFixed(2)}`
