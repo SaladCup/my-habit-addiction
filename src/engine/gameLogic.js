@@ -362,15 +362,25 @@ export function getWheelStopAngle(awardedResult, rawResult, isNearMiss, segments
  * then reel symbols are chosen to match/show that outcome.
  */
 export const SLOT_SYMBOLS = [
-  { id: 'sakura',   emoji: '🌸', tier: 't1',      weight: 30 },
-  { id: 'heart',    emoji: '💗', tier: 't1',      weight: 25 },
-  { id: 'star',     emoji: '⭐', tier: 't2',      weight: 20 },
-  { id: 'butterfly',emoji: '🦋', tier: 't2',      weight: 15 },
-  { id: 'ribbon',   emoji: '🎀', tier: 't3',      weight: 8  },
-  { id: 'moon',     emoji: '🌙', tier: 't3',      weight: 6  },
-  { id: 'bonus',    emoji: '🎰', tier: 'bonus',   weight: 4  },
-  { id: 'gold',     emoji: '✨', tier: 'jackpot', weight: 1  },
+  { id: 'sakura',   emoji: '🌸', tier: 't1',      weight: 30, coins: 25 },
+  { id: 'heart',    emoji: '💗', tier: 't1',      weight: 25, coins: 30 },
+  { id: 'star',     emoji: '⭐', tier: 't2',      weight: 20, coins: 40 },
+  { id: 'butterfly',emoji: '🦋', tier: 't2',      weight: 15, coins: 50 },
+  { id: 'ribbon',   emoji: '🎀', tier: 't3',      weight: 8,  coins: 70 },
+  { id: 'moon',     emoji: '🌙', tier: 't3',      weight: 6,  coins: 90 },
+  { id: 'bonus',    emoji: '🎰', tier: 'bonus',   weight: 4,  coins: 0  },
+  { id: 'gold',     emoji: '✨', tier: 'jackpot', weight: 1,  coins: 0  },
 ]
+
+// Human names for win-explanation copy.
+const SYMBOL_NAME = {
+  sakura: 'Sakura', heart: 'Heart', star: 'Star', butterfly: 'Butterfly',
+  ribbon: 'Ribbon', moon: 'Moon', bonus: 'Bonus', gold: 'Gold Sparkle',
+}
+const LINE_LABEL = {
+  row0: 'Top Row', row1: 'Middle Row', row2: 'Bottom Row',
+  diagTLBR: 'Diagonal ↘', diagBLTR: 'Diagonal ↗',
+}
 
 const SYMBOLS_BY_TIER = {
   t1:      SLOT_SYMBOLS.filter(s => s.tier === 't1'),
@@ -465,8 +475,44 @@ const FILLERS = SLOT_SYMBOLS.filter(s => ['t1', 't2', 't3'].includes(s.tier))
 // so totals average T1≈125 / T2≈250 / T3≈375 ($1.25 / $2.50 / $3.75).
 export const SPINS_PER_TIER = { 1: 3, 2: 6, 3: 9 }
 
-// One slot spin's payout curve (in display coins). Constant across tiers.
-const PER_SPIN = { loss: 0.15, min: 10, mode: 40, max: 100 }  // EV ≈ 0.85·50 ≈ 42
+// ── Paytable-driven slot model ──
+// Each symbol pays its fixed value; a payline pays its symbol's value; a spin's
+// coins = SUM of matching lines. Monte-Carlo-tuned to reproduce the prior
+// distribution (per-tier avg ≈ 122/251/381, bonus ~15%, jackpot ~1.2%) within ~1.5%.
+const WIN_SYMBOL_WEIGHTS = [   // how likely each symbol is to be THE winning one
+  { id: 'sakura', weight: 26 }, { id: 'heart', weight: 24 }, { id: 'star', weight: 19 },
+  { id: 'butterfly', weight: 14 }, { id: 'ribbon', weight: 11 }, { id: 'moon', weight: 6 },
+]
+const LINE_COUNT_DIST = [       // winning lines per spin: 16% none, 64% one, 20% two
+  { value: 0, weight: 16 }, { value: 1, weight: 64 }, { value: 2, weight: 20 },
+]
+const PAY_BY_ID = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s]))
+const ROW_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('row'))
+const pickWinSymbol = () =>
+  weightedRandom(WIN_SYMBOL_WEIGHTS.map(x => ({ value: PAY_BY_ID[x.id], weight: x.weight })))
+
+// Build the per-line explanation object (used by both wins and bonus/jackpot specials).
+function makeWinningLine(line, sym, special) {
+  const label = LINE_LABEL[line.id] || line.id
+  const tail = special === 'jackpot' ? 'JACKPOT!' : special === 'bonus' ? 'BONUS!' : `+${sym.coins}`
+  return {
+    lineId: line.id, index: SLOT_PAYLINES.indexOf(line), cells: line.cells,
+    symbol: sym, coins: special ? 0 : sym.coins, label, special: special || null,
+    tagText: `${label} ${sym.emoji}${sym.emoji}${sym.emoji} ${tail}`,
+  }
+}
+// One-line "why you won this" summary.
+function buildSpinSummary(winningLines) {
+  if (!winningLines.length) return 'So close — keep spinning! 💕'
+  const sp = winningLines[0].special
+  if (sp === 'jackpot') return '💎 THREE Gold Sparkles — JACKPOT! The whole pool is yours!'
+  if (sp === 'bonus') return '🎰 Triple Bonus — spin the bonus wheel for a free bead!'
+  if (winningLines.length === 1) {
+    const w = winningLines[0]
+    return `3 ${SYMBOL_NAME[w.symbol.id]}s on the ${w.label} — +${w.coins} coins!`
+  }
+  return `${winningLines.length} lines paid out — +${winningLines.reduce((s, w) => s + w.coins, 0)} coins! ✨`
+}
 
 function shuffled(arr) {
   const a = arr.slice()
@@ -475,31 +521,6 @@ function shuffled(arr) {
     ;[a[i], a[j]] = [a[j], a[i]]
   }
   return a
-}
-
-// Triangular distribution — peaks at `mode`, tapers to `min`/`max`.
-function triangular(min, mode, max) {
-  const u = Math.random()
-  const f = (mode - min) / (max - min)
-  return u < f
-    ? min + Math.sqrt(u * (max - min) * (mode - min))
-    : max - Math.sqrt((1 - u) * (max - min) * (max - mode))
-}
-
-// Split a scaled total into L tidy chunks (multiples of 5), each ≥5, summing exactly.
-function splitTotal(total, L) {
-  const unit = 5
-  L = Math.max(1, Math.min(L, Math.floor(total / unit)))
-  const parts = Array(L).fill(1)
-  let extra = total / unit - L
-  while (extra-- > 0) parts[randomInt(0, L - 1)]++
-  return parts.map(p => p * unit)
-}
-
-// Pick a symbol for a chunk of coins (bigger chunk → fancier symbol). Cosmetic.
-function chunkSymbol(chunk) {
-  const tier = chunk >= 70 ? 3 : chunk >= 45 ? 2 : 1
-  return pickSymbolForTier(`t${tier}`)
 }
 
 // Would placing `sym` at (r,c) complete any payline into 3-of-a-kind?
@@ -525,51 +546,38 @@ function fillBlanks(grid) {
   }
 }
 
-function specialLine(symbol) {
+function specialLine(symbol, kind) {
   const grid = [[null, null, null], [null, null, null], [null, null, null]]
   const line = SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]
   line.cells.forEach(([r, c]) => { grid[r][c] = symbol })
   fillBlanks(grid)
-  return {
-    grid,
-    winningLines: [{ lineId: line.id, index: SLOT_PAYLINES.indexOf(line), cells: line.cells, symbol, coins: 0 }],
-  }
+  const winningLines = [makeWinningLine(line, symbol, kind)]
+  return { grid, winningLines, summary: buildSpinSummary(winningLines) }
 }
 
 /**
  * Resolve ONE small slot spin (no specials — those are rolled per session).
- * @returns {{ grid, winningLines, coins }}
+ * Honest paytable: 0/1/2 winning lines (weighted), each placed as real 3-of-a-kind
+ * of a weighted symbol; coins = SUM of those lines' symbol values. The grid is then
+ * filled with non-completing fillers, so what you SEE is exactly what paid.
+ * @returns {{ grid, winningLines, coins, summary }}
  */
-export function resolveSlotSpin(luck = {}) {
+export function resolveSlotSpin() {
   const grid = [[null, null, null], [null, null, null], [null, null, null]]
-  const drought = Math.min(luck.spinsSinceGood || 0, 10)
-  const warm = (luck.sessionSpins ?? 99) < 2
-  const lossP = (warm || drought >= 4) ? PER_SPIN.loss * 0.5 : PER_SPIN.loss
+  const nLines = weightedRandom(LINE_COUNT_DIST.map(x => ({ value: x.value, weight: x.weight })))
 
-  if (Math.random() < lossP) {
-    fillBlanks(grid)
-    return { grid, winningLines: [], coins: 0 }
-  }
+  let lines = []
+  if (nLines === 1) lines = [SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]]
+  else if (nLines === 2) lines = shuffled(ROW_LINES).slice(0, 2)  // 2 distinct rows (no shared centre)
 
-  let total = triangular(PER_SPIN.min, PER_SPIN.mode, PER_SPIN.max)
-  total = Math.max(5, Math.round(total / 5) * 5)
-  const L = total <= 55 ? 1 : 2
-  const chunks = splitTotal(total, L)
-
-  const rows = SLOT_PAYLINES.filter(l => l.id.startsWith('row'))
-  const lines = chunks.length <= 1
-    ? shuffled(SLOT_PAYLINES).slice(0, 1)
-    : shuffled(rows).slice(0, chunks.length)
-
-  const winningLines = []
-  lines.forEach((line, i) => {
-    const coins = chunks[i]
-    const sym = chunkSymbol(coins)
+  const winningLines = lines.map(line => {
+    const sym = pickWinSymbol()
     line.cells.forEach(([r, c]) => { grid[r][c] = sym })
-    winningLines.push({ lineId: line.id, index: SLOT_PAYLINES.indexOf(line), cells: line.cells, symbol: sym, coins })
+    return makeWinningLine(line, sym)
   })
   fillBlanks(grid)
-  return { grid, winningLines, coins: winningLines.reduce((s, w) => s + w.coins, 0) }
+  const coins = winningLines.reduce((s, w) => s + w.coins, 0)
+  return { grid, winningLines, coins, summary: buildSpinSummary(winningLines) }
 }
 
 /**
@@ -591,11 +599,11 @@ export function resolveSlotSession(activeTier = 1, luck = {}) {
   const isBonus = !isJackpot && Math.random() < bonusChance
 
   const spins = []
-  for (let i = 0; i < spinCount; i++) spins.push(resolveSlotSpin(luck))
+  for (let i = 0; i < spinCount; i++) spins.push(resolveSlotSpin())
 
   // The special reveals on the last spin.
-  if (isJackpot) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0]), coins: 0, isJackpot: true }
-  else if (isBonus) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.bonus[0]), coins: 0, isBonus: true }
+  if (isJackpot) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0], 'jackpot'), coins: 0, isJackpot: true }
+  else if (isBonus) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.bonus[0], 'bonus'), coins: 0, isBonus: true }
 
   const baseCoins = spins.reduce((s, sp) => s + sp.coins, 0)
   const awardedResult = isJackpot ? 'jackpot' : isBonus ? 'bonus' : (baseCoins > 0 ? 't1' : 'nothing')

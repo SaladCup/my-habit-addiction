@@ -256,6 +256,39 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           })}
         </svg>
 
+        {/* Win breakdown + "why", overlaid on the lower deck (visible near the reels) */}
+        {(phase === 'revealing' || phase === 'done') && current && (
+          <div style={{
+            position: 'absolute', left: '9%', right: '9%', top: '64%', zIndex: 7,
+            background: 'rgba(255,248,253,0.95)', border: '2px solid #E3B7D6',
+            borderRadius: 14, padding: '7px 11px', boxShadow: '0 3px 0 #D9A6CC',
+            display: 'flex', flexDirection: 'column', gap: 3, pointerEvents: 'none',
+            animation: 'bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+          }}>
+            {activeLines.map((l, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#3D2B4F',
+                animation: 'bounce-in 0.32s cubic-bezier(0.34,1.56,0.64,1)',
+              }}>
+                <span style={{ fontSize: 17, letterSpacing: '1px' }}>{l.symbol.emoji}{l.symbol.emoji}{l.symbol.emoji}</span>
+                <span style={{ flex: 1 }}>{l.label}</span>
+                <span style={{ color: l.special ? '#C99A00' : '#5CBFA0', fontWeight: 700 }}>
+                  {l.special ? `${l.special === 'jackpot' ? 'JACKPOT' : 'BONUS'}!` : `+${l.coins}`}
+                </span>
+              </div>
+            ))}
+            {current.summary && (
+              <div style={{
+                fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7',
+                textAlign: 'center', marginTop: activeLines.length ? 3 : 0, lineHeight: 1.25,
+              }}>
+                {current.summary}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* SPIN hotspot over the painted button */}
         {phase === 'ready' && (
           <button
