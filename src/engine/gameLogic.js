@@ -643,11 +643,11 @@ export function resolveWheelSpin(activeTier = 1, luck = {}) {
 // non-adjacent so the wheel reads like the reference.
 //   75%≈33%  25%≈22%  50%≈19%  +  two FREE ≈13% each
 export const BONUS_WHEEL_SEGMENTS = [
-  { value: '75',   label: '75%',      weight: 33, color: '#FF85A1' },
-  { value: 'free', label: 'FREE 🎁', weight: 13, color: '#5CCFA0' },
-  { value: '50',   label: '50%',      weight: 19, color: '#9B7EC8' },
-  { value: '25',   label: '25%',      weight: 22, color: '#F5C44B' },
-  { value: 'free', label: 'FREE 🎁', weight: 13, color: '#4BF5A0' },
+  { value: '75',   label: '75%',      weight: 33, color: '#FBC0D4' },
+  { value: 'free', label: 'FREE 🎁', weight: 13, color: '#BCE8D2' },
+  { value: '50',   label: '50%',      weight: 19, color: '#D3C0EC' },
+  { value: '25',   label: '25%',      weight: 22, color: '#FBDFA8' },
+  { value: 'free', label: 'FREE 🎁', weight: 13, color: '#C9ECDA' },
 ]
 
 /**
