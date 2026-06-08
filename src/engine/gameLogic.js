@@ -379,6 +379,7 @@ const SYMBOL_NAME = {
 }
 const LINE_LABEL = {
   row0: 'Top Row', row1: 'Middle Row', row2: 'Bottom Row',
+  col0: 'Left Column', col1: 'Middle Column', col2: 'Right Column',
   diagTLBR: 'Diagonal ↘', diagBLTR: 'Diagonal ↗',
 }
 
@@ -464,6 +465,9 @@ export const SLOT_PAYLINES = [
   { id: 'row0',     cells: [[0, 0], [0, 1], [0, 2]] },
   { id: 'row1',     cells: [[1, 0], [1, 1], [1, 2]] },
   { id: 'row2',     cells: [[2, 0], [2, 1], [2, 2]] },
+  { id: 'col0',     cells: [[0, 0], [1, 0], [2, 0]] },
+  { id: 'col1',     cells: [[0, 1], [1, 1], [2, 1]] },
+  { id: 'col2',     cells: [[0, 2], [1, 2], [2, 2]] },
   { id: 'diagTLBR', cells: [[0, 0], [1, 1], [2, 2]] },
   { id: 'diagBLTR', cells: [[2, 0], [1, 1], [0, 2]] },
 ]
@@ -488,6 +492,7 @@ const LINE_COUNT_DIST = [       // winning lines per spin: 16% none, 64% one, 20
 ]
 const PAY_BY_ID = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s]))
 const ROW_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('row'))
+const COL_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('col'))
 const pickWinSymbol = () =>
   weightedRandom(WIN_SYMBOL_WEIGHTS.map(x => ({ value: PAY_BY_ID[x.id], weight: x.weight })))
 
@@ -567,8 +572,12 @@ export function resolveSlotSpin() {
   const nLines = weightedRandom(LINE_COUNT_DIST.map(x => ({ value: x.value, weight: x.weight })))
 
   let lines = []
-  if (nLines === 1) lines = [SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]]
-  else if (nLines === 2) lines = shuffled(ROW_LINES).slice(0, 2)  // 2 distinct rows (no shared centre)
+  if (nLines === 1) lines = [SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]]  // any of 8: 3 rows, 3 cols, 2 diagonals
+  else if (nLines === 2) {
+    // two PARALLEL lines (2 rows or 2 columns) so they never cross / share a cell
+    const group = Math.random() < 0.5 ? ROW_LINES : COL_LINES
+    lines = shuffled(group).slice(0, 2)
+  }
 
   const winningLines = lines.map(line => {
     const sym = pickWinSymbol()
