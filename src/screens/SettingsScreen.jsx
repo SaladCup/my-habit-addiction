@@ -2,7 +2,7 @@ import { useState } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
-import { BeadDisplay, KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel } from '../components/ui'
 
 function ColorSwatches({ selected, onSelect }) {
   return (
@@ -73,13 +73,11 @@ const inputStyle = {
 
 export default function SettingsScreen() {
   const {
-    settings, updateSettings, updateBeadSlotColor,
+    settings, updateSettings,
     categories, addCategory, updateCategory, deleteCategory,
     milestones, addMilestone, updateMilestone, deleteMilestone,
     resetEverything,
   } = useStore()
-
-  const [colorPickerSlot, setColorPickerSlot] = useState(null)
 
   const [editingCat, setEditingCat]   = useState(null)  // category id being edited
   const [editName, setEditName]       = useState('')
@@ -165,38 +163,6 @@ export default function SettingsScreen() {
         ✦ SETTINGS ✦
       </h2>
 
-      {/* Bead Slot Colors */}
-      <PixelPanel color="sky" title="BEAD SLOT COLORS" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
-          Tap a slot to change its color from the 30-color kawaii palette.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          {settings.beadSlots.map(bs => (
-            <button
-              key={bs.slot}
-              onClick={() => setColorPickerSlot(bs.slot)}
-              style={{
-                background: `${bs.color}22`,
-                border: `2px solid ${bs.color}`,
-                borderRadius: 14,
-                padding: '10px 6px',
-                cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                transition: 'transform 140ms ease',
-              }}
-            >
-              <BeadDisplay color={bs.color} slot={bs.slot} size="lg" />
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#3D2B4F' }}>
-                SLOT {bs.slot}
-              </div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#7B5EA7', textAlign: 'center' }}>
-                {bs.name}
-              </div>
-            </button>
-          ))}
-        </div>
-      </PixelPanel>
-
       {/* Categories */}
       <PixelPanel color="lavender" title="CATEGORIES" style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
@@ -235,11 +201,6 @@ export default function SettingsScreen() {
                 background: `${cat.color}22`, border: `2px solid ${cat.color}`,
                 borderRadius: 14, padding: '10px 14px',
               }}>
-                <div style={{
-                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  background: `radial-gradient(circle at 35% 30%, white 0%, ${cat.color} 50%, ${darken(cat.color, 20)} 100%)`,
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-                }} />
                 <span style={{
                   fontFamily: 'Mulish, sans-serif', fontSize: 24, fontWeight: 700,
                   color: '#3D2B4F', flex: 1,
@@ -397,72 +358,6 @@ export default function SettingsScreen() {
           No sound? Reload the page and tap once — browsers block audio until you interact.
         </div>
       </PixelPanel>
-
-      {/* Color picker modal */}
-      {colorPickerSlot !== null && (
-        <div
-          onClick={() => setColorPickerSlot(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 400,
-            background: 'rgba(61,43,79,0.55)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#FFF5F9',
-              border: '3px solid #C8B4E0',
-              borderRadius: 20,
-              boxShadow: '6px 6px 0 #9B7EC8',
-              padding: 18,
-              maxWidth: 380, width: '100%',
-              maxHeight: '85vh', overflowY: 'auto',
-            }}
-          >
-            <div style={{
-              fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F',
-              textAlign: 'center', marginBottom: 12,
-            }}>
-              SLOT {colorPickerSlot} COLOR
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(6, 1fr)',
-              gap: 10,
-              justifyItems: 'center',
-              marginBottom: 14,
-            }}>
-              {KAWAII_COLORS.map(c => {
-                const current = settings.beadSlots.find(s => s.slot === colorPickerSlot)?.color
-                const active = current === c.hex
-                return (
-                  <button
-                    key={c.hex}
-                    title={c.name}
-                    onClick={() => {
-                      updateBeadSlotColor(colorPickerSlot, c.hex, c.name)
-                      setColorPickerSlot(null)
-                    }}
-                    style={{
-                      background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
-                      transform: active ? 'scale(1.1)' : 'scale(1)',
-                      transition: 'transform 140ms ease',
-                    }}
-                  >
-                    <BeadDisplay color={c.hex} slot={colorPickerSlot} size="md" selected={active} />
-                  </button>
-                )
-              })}
-            </div>
-            <KawaiiButton variant="ghost" size="sm" fullWidth onClick={() => setColorPickerSlot(null)}>
-              CANCEL
-            </KawaiiButton>
-          </div>
-        </div>
-      )}
 
       {/* Danger zone */}
       <PixelPanel color="pink" title="DANGER ZONE" style={{ marginBottom: 14 }}>

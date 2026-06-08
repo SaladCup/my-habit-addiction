@@ -1,43 +1,10 @@
 import { useState } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
-import { BeadDisplay, KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel } from '../components/ui'
 
 const BLANK_HABIT = {
-  name: '', description: '', categoryId: null, beadSlot: 1,
+  name: '', description: '', categoryId: null,
   rewards: { t1: '', t2: '', t3: '', jackpot: '', bonusActivity: '' },
-}
-
-function BeadSlotPicker({ value, onSelect, beadSlots }) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 6 }}>
-      {beadSlots.map(bs => {
-        const active = value === bs.slot
-        return (
-          <button
-            key={bs.slot}
-            type="button"
-            title={bs.name}
-            onClick={() => onSelect(bs.slot)}
-            style={{
-              background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              transform: active ? 'translateY(-2px) scale(1.05)' : 'none',
-              transition: 'transform 140ms ease',
-            }}
-          >
-            <BeadDisplay color={bs.color} slot={bs.slot} size="lg" selected={active} />
-            <span style={{
-              fontFamily: 'Mulish, sans-serif', fontSize: 14,
-              color: active ? '#3D2B4F' : '#9B7EC8',
-              fontWeight: active ? 700 : 500,
-            }}>
-              {bs.name}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
 }
 
 function ColorSwatches({ selected, onSelect }) {
@@ -154,7 +121,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
   )
 }
 
-function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory, beadSlots }) {
+function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) {
   const [form, setForm] = useState(() => {
     const base = initial || BLANK_HABIT
     return {
@@ -203,15 +170,6 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory, be
           onChange={v => set('categoryId', v)}
           categories={categories}
           onCreateCategory={onCreateCategory}
-        />
-      </div>
-
-      <div>
-        <label style={labelStyle}>BEAD SLOT</label>
-        <BeadSlotPicker
-          value={form.beadSlot}
-          onSelect={v => set('beadSlot', v)}
-          beadSlots={beadSlots}
         />
       </div>
 
@@ -267,7 +225,7 @@ function RewardRow({ tier, hint, value, onChange }) {
 }
 
 export default function EditorScreen() {
-  const { habits, categories, addHabit, updateHabit, deleteHabit, addCategory, settings } = useStore()
+  const { habits, categories, addHabit, updateHabit, deleteHabit, addCategory } = useStore()
   const [editing, setEditing] = useState(null)
 
   const categoryMap = categories.reduce((acc, c) => { acc[c.id] = c; return acc }, {})
@@ -305,7 +263,6 @@ export default function EditorScreen() {
             onCancel={() => setEditing(null)}
             categories={categories}
             onCreateCategory={addCategory}
-            beadSlots={settings.beadSlots}
           />
         </PixelPanel>
       )}
@@ -313,12 +270,13 @@ export default function EditorScreen() {
       {habits.map(habit => {
         const cat = categoryMap[habit.categoryId]
         const color = cat?.color || '#C8B4E0'
-        const slot = habit.beadSlot || 1
-        const slotInfo = settings.beadSlots.find(s => s.slot === slot)
         return (
           <PixelPanel key={habit.id} color="cream" style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <BeadDisplay color={slotInfo?.color || color} slot={slot} size="md" />
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                background: color, boxShadow: `0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,0.15)`,
+              }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#3D2B4F', marginBottom: 3 }}>
                   {habit.name}
