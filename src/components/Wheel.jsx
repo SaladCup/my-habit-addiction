@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { buildWheelSegments, getWheelStopAngle, WHEEL_SLOTS } from '../engine/gameLogic'
+import { buildWheelSegments, getWheelStopAngle } from '../engine/gameLogic'
 import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/sounds'
 
 // ── Layout ──
@@ -47,8 +47,6 @@ function wedge(cx, cy, r, start, end) {
   return `M${cx},${cy} L${x1},${y1} A${r},${r},0,${large},1,${x2},${y2}Z`
 }
 
-const SEG_SIZE = 360 / WHEEL_SLOTS // pointer-tick cadence keyed to the 50-slot grid
-
 const Wheel = forwardRef(function Wheel(
   { activeTier = 1, awardedResult, rawResult, isNearMiss, onDone },
   ref
@@ -75,6 +73,18 @@ const Wheel = forwardRef(function Wheel(
     el.style.animation = 'wheel-peg-tick 175ms ease-out forwards'
   }
 
+  // Which VISIBLE wedge sits under the top pointer at wheel-frame angle `a`?
+  // Uses the actual (merged) segments so we tick once per REAL boundary — not per
+  // 50-slot grid step, which made big merged wedges (e.g. Tier 1) click nonstop.
+  function segmentUnderPointer(a) {
+    for (let i = 0; i < segments.length; i++) {
+      const s = segments[i]
+      if ((a >= s.startAngle && a < s.endAngle) ||
+          (a - 360 >= s.startAngle && a - 360 < s.endAngle)) return i   // handles the wrap-around wedge
+    }
+    return -1
+  }
+
   function startPointerTracking() {
     let lastSegIndex = -1
     let lastTickTime = 0
@@ -85,14 +95,15 @@ const Wheel = forwardRef(function Wheel(
       const el = wrapRef.current
       if (!el) { requestAnimationFrame(track); return }
 
-      const style = window.getComputedStyle(el)
-      const mat = new DOMMatrixReadOnly(style.transform)
-      // atan2(b, a) gives the clockwise rotation angle
-      const angleDeg = ((Math.atan2(mat.b, mat.a) * 180 / Math.PI) + 360) % 360
-      const segIndex = Math.floor(angleDeg / SEG_SIZE)
+      const mat = new DOMMatrixReadOnly(window.getComputedStyle(el).transform)
+      // atan2(b, a) = clockwise rotation; the wheel-frame angle under the fixed
+      // top pointer is (360 − rotation).
+      const rot = ((Math.atan2(mat.b, mat.a) * 180 / Math.PI) + 360) % 360
+      const segIndex = segmentUnderPointer((360 - rot) % 360)
       const now = performance.now()
 
-      if (segIndex !== lastSegIndex && lastSegIndex !== -1 && now - lastTickTime > 60) {
+      // Tick only when the wedge under the pointer actually CHANGES (a real boundary).
+      if (segIndex !== lastSegIndex && lastSegIndex !== -1 && segIndex !== -1 && now - lastTickTime > 40) {
         triggerPointerTick()
         lastTickTime = now
       }
