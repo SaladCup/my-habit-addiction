@@ -87,21 +87,17 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     if (!spinning) { el.style.transform = `translateY(${finalY}px)`; return }  // idle/result: show targets
     el.style.transform = `translateY(${startY}px)`  // park at spin-start before paint (no flash)
     setBlur(true)
-    const preY  = finalY - CELL_H * 0.5             // reels 0/1: a hair before the stop
-    const holdY = finalY - CELL_H                   // last reel: one cell before → anticipation hold
+    const preY = finalY - CELL_H * 0.5              // a hair before the stop; the bounce finishes it
     const spinTime = reelSpinTime(reelIndex)
-    const brewing = !!tease?.brewing
-    let timer = 0
-    const cancel = () => {
-      clearTimeout(timer)
-      try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {}
-    }
+    // Near-miss = the last reel, with the first two matched but this one breaking it.
+    const nearMiss = isLast && !!tease?.brewing && !tease?.willWin
+    const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
-      setBlur(false); playReelStop(); onStopped()
+      setBlur(false); playReelStop(); if (nearMiss) playNearMiss(); onStopped()
     }
-    // Subtle, smooth DOWNWARD impact bounce: drop in, overshoot a hair further
-    // down past the stop, then ease back up to rest.
+    // Subtle, smooth DOWNWARD impact bounce: drop in, overshoot a hair past the
+    // stop, then ease back up to rest. IDENTICAL on all three reels.
     const settle = (fromY, duration) => {
       const over = Math.max(4, CELL_H * 0.13)
       const a = el.animate(
@@ -116,25 +112,16 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       a.onfinish = stopHere
     }
 
-    // Steady blurred DOWNWARD scroll (translateY increases toward the stop); later
-    // reels travel farther so they lock later (the rhythmic cadence). The final
-    // reel stops one cell short for a clean anticipation hold.
+    // ONE steady blurred DOWNWARD scroll straight into the bounce — NO mid-spin
+    // hold, so the last reel can't read as "caught". It just stops LATER than the
+    // others (longer scroll) for the staggered left→right reveal. All reels behave
+    // identically; only the duration differs.
     const scroll = el.animate(
-      [{ transform: `translateY(${startY}px)` }, { transform: `translateY(${isLast ? holdY : preY}px)` }],
+      [{ transform: `translateY(${startY}px)` }, { transform: `translateY(${preY}px)` }],
       { duration: spinTime, easing: 'linear', fill: 'forwards' },
     )
     animRef.current = scroll
-    scroll.onfinish = () => {
-      setBlur(false)
-      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: drop in with the bounce
-      // Final reel: anticipation hold (longer when a line is brewing — the tease),
-      // then drop the last symbol in from the top and bounce. Near-miss sound only
-      // if it actually misses (the engine puts the near-miss break on the top row).
-      timer = setTimeout(() => {
-        settle(holdY, 480)
-        if (brewing && !tease?.willWin) playNearMiss()
-      }, brewing ? 760 : LAST_HOLD_MS)
-    }
+    scroll.onfinish = () => { setBlur(false); settle(preY, SNAP_MS + 60) }
     return cancel
   }, [spinning])
 
