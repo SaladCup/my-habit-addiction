@@ -723,15 +723,15 @@ function reshapeSessionOrder(spins, params) {
 }
 
 /**
- * Build an HONEST near-miss grid: 2-of-a-kind on a ROW (columns 0 & 1) with the
- * 3rd column just missing (0 coins). Row + last-column shape is deliberate: the
- * reels stop left→right, so the player sees two match and then the last reel
- * teases the winning symbol before rolling off — the "so close!" moment.
+ * Build an HONEST near-miss grid: 2-of-a-kind on the TOP ROW (columns 0 & 1) with
+ * the 3rd column just missing (0 coins). Top-row + last-column shape is deliberate:
+ * reels stop left→right and the final reel drops its top symbol in LAST, so the
+ * player sees two match up top and the deciding symbol falls in — the "so close!".
  */
 function makeNearMissGrid() {
   const grid = [[null, null, null], [null, null, null], [null, null, null]]
   const sym = pickWinSymbol()
-  const r = randomInt(0, 2)
+  const r = 0
   grid[r][0] = sym
   grid[r][1] = sym
   // last cell BREAKS the line: a different symbol that completes no other line

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect } from 'react'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
 import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
 
@@ -49,49 +49,48 @@ const randomSym = () => SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.len
 const randomGrid = () =>
   Array.from({ length: ROWS }, () => Array.from({ length: COLS }, randomSym))
 
-// A "brewing line" on the first two reels (a row where col0 === col1) lets the
-// LAST reel tease — show the would-be-winning symbol sliding toward the line, then
-// roll one cell past it to the real (non-matching) symbol. Only fires on an actual
-// near-miss row (col2 differs); real wins just land cleanly (that's the payoff).
+// A "brewing line" = the first two reels match on a row (col0 === col1). The LAST
+// reel then holds LONGER (the tease) before dropping its final symbol in. willWin
+// = the third reel actually completes it; otherwise it's a near-miss ("so close").
 function computeTease(grid) {
   for (let r = 0; r < ROWS; r++) {
-    const a = grid[r][0], b = grid[r][1], cc = grid[r][2]
-    if (a && b && a.id === b.id && cc && cc.id !== a.id) {
-      return { active: true, symbol: a }
+    const a = grid[r][0], b = grid[r][1]
+    if (a && b && a.id === b.id) {
+      return { brewing: true, willWin: !!(grid[r][2] && grid[r][2].id === a.id) }
     }
   }
   return null
 }
 
-// ── One reel: spins at a steady blurred speed (unreadable), then locks. Reels
-// lock left→right at equal intervals; the LAST reel holds for anticipation, and
-// can TEASE — the would-be winner hangs on the line, then rolls off to the miss.
+// ── One reel: spins TOP→BOTTOM at a steady blurred speed (unreadable), then
+// locks. Reels lock left→right at equal intervals; the LAST reel holds for
+// anticipation (longer when a line is brewing — the tease) and drops its final
+// symbol in from the top. Every reel lands with a subtle impact bounce. ──
 function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
   const ref = useRef(null)
   const animRef = useRef(null)
   const [blur, setBlur] = useState(false)
-  const teased = !!tease?.active
   const fill = reelFill(reelIndex)
-  const [strip] = useState(() => {
-    const cells = Array.from({ length: fill }, randomSym)
-    // teased reel gets the would-be-winning symbol spliced one cell ABOVE the
-    // targets, so it slides through the window right before the miss lands.
-    return teased
-      ? [...cells, tease.symbol, target[0], target[1], target[2]]
-      : [...cells, target[0], target[1], target[2]]
-  })
+  // Strip, top→bottom: one filler (gives the bounce headroom), the 3 targets,
+  // then the spin fillers. The reel starts pulled UP (showing the lower fillers)
+  // and slides DOWN so the targets settle just below the top filler.
+  const [strip] = useState(() => [
+    randomSym(), target[0], target[1], target[2],
+    ...Array.from({ length: fill }, randomSym),
+  ])
+  const finalY = -CELL_H                            // window shows strip[1..3] = the 3 targets
+  const startY = -((fill + 1) * CELL_H)             // pulled up, showing the lower fillers
 
-  useEffect(() => {
-    if (!spinning) return
+  useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    if (!spinning) { el.style.transform = `translateY(${finalY}px)`; return }  // idle/result: show targets
+    el.style.transform = `translateY(${startY}px)`  // park at spin-start before paint (no flash)
     setBlur(true)
-    const base   = fill + (teased ? 1 : 0)
-    const finalY = -(base * CELL_H)
-    const preY   = finalY + CELL_H * 0.5          // reels 0/1: half a cell short → quick snap
-    const holdY  = finalY + CELL_H                // last reel: one FULL cell short → a clean,
-                                                  // ALIGNED anticipation hold (no half-row jank)
+    const preY  = finalY - CELL_H * 0.5             // reels 0/1: a hair before the stop
+    const holdY = finalY - CELL_H                   // last reel: one cell before → anticipation hold
     const spinTime = reelSpinTime(reelIndex)
+    const brewing = !!tease?.brewing
     let timer = 0
     const cancel = () => {
       clearTimeout(timer)
@@ -101,15 +100,15 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); onStopped()
     }
-    // Land with a subtle, SMOOTH impact bounce: a single overshoot past the stop,
-    // eased on the way IN and BACK so there's no jerky direction-flip.
+    // Subtle, smooth DOWNWARD impact bounce: drop in, overshoot a hair further
+    // down past the stop, then ease back up to rest.
     const settle = (fromY, duration) => {
       const over = Math.max(4, CELL_H * 0.13)
       const a = el.animate(
         [
           { transform: `translateY(${fromY}px)`,         easing: 'cubic-bezier(0.33, 0, 0.30, 1)' }, // travel in (decelerate)
-          { transform: `translateY(${finalY - over}px)`, offset: 0.62, easing: 'ease-out' },          // overshoot past rest
-          { transform: `translateY(${finalY}px)`,        offset: 1,    easing: 'ease-in-out' },        // ease back to rest
+          { transform: `translateY(${finalY + over}px)`, offset: 0.62, easing: 'ease-out' },          // overshoot past rest (further down)
+          { transform: `translateY(${finalY}px)`,        offset: 1,    easing: 'ease-in-out' },        // ease back up to rest
         ],
         { duration, fill: 'forwards' },
       )
@@ -117,24 +116,24 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       a.onfinish = stopHere
     }
 
-    // 1) Steady blurred scroll at a constant speed; later reels travel farther so
-    //    they lock later (the rhythmic cadence). The final reel stops one cell short
-    //    (holdY) for a clean anticipation hold, then rolls its last symbol in.
+    // Steady blurred DOWNWARD scroll (translateY increases toward the stop); later
+    // reels travel farther so they lock later (the rhythmic cadence). The final
+    // reel stops one cell short for a clean anticipation hold.
     const scroll = el.animate(
-      [{ transform: 'translateY(0)' }, { transform: `translateY(${isLast ? holdY : preY}px)` }],
+      [{ transform: `translateY(${startY}px)` }, { transform: `translateY(${isLast ? holdY : preY}px)` }],
       { duration: spinTime, easing: 'linear', fill: 'forwards' },
     )
     animRef.current = scroll
     scroll.onfinish = () => {
       setBlur(false)
-      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: snap in with the bounce
-      // Anticipation hold via a TIMER (the scroll's fill keeps the reel parked at
-      // holdY — no extra animation = no hand-off jank), then roll the last cell in.
-      // Teased = the would-be winner is sitting there and rolls OFF to the miss.
+      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: drop in with the bounce
+      // Final reel: anticipation hold (longer when a line is brewing — the tease),
+      // then drop the last symbol in from the top and bounce. Near-miss sound only
+      // if it actually misses (the engine puts the near-miss break on the top row).
       timer = setTimeout(() => {
-        if (teased) playNearMiss()                // the "awww" as the near-symbol rolls off
-        settle(holdY, 460)
-      }, teased ? 600 : LAST_HOLD_MS)
+        settle(holdY, 480)
+        if (brewing && !tease?.willWin) playNearMiss()
+      }, brewing ? 760 : LAST_HOLD_MS)
     }
     return cancel
   }, [spinning])
@@ -144,8 +143,6 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       width: colW, height: CELL_H * ROWS, overflow: 'hidden',
       position: 'relative',
       // Blur the small CLIPPED window (not the tall strip) — far cheaper per frame.
-      // Toggle INSTANTLY (no transition): transitioning the blur re-rasterized it
-      // every frame right as the reel settled, which made the stop look jagged.
       filter: blur ? 'blur(4px)' : 'none',
     }}>
       {spinning && blur && (
