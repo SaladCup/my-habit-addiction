@@ -103,14 +103,17 @@ high-quit profiles — 122/251/380 — with 0 phantom lines).
   "so close!" 2-of-a-kind (motivation lever, Clark et al. 2009); density scales
   with quit-risk. **Coins shown always = coins awarded.**
 
-**🚫 Deliberately NOT built (ethical red lines from the same research):**
-- ❌ **Losses-disguised-as-wins** — celebrating a net loss as a win causally
-  distorts a player's sense of their real economy (Dixon et al. 2010). Refuted
-  3-0: "engineer more arousing LDWs to boost reinforcement."
-- ❌ **Engineered loss streaks** to exploit the partial-reinforcement extinction
-  effect (Horsley 2012) — antithetical to durable positive habits.
-- ❌ Anything that changes the long-run total, or makes a session drier than it
-  rolled. The engine only ever improves *feel*.
+**Design stance — maximize engagement on purpose (2026-06-08 direction):**
+No real money is ever staked or lost, and the spin loop is gated behind completing
+a real habit, so the gambling-harm red lines don't apply — the harder the game
+pulls, the more habits get done. Engagement levers run as hot as they go (near-
+misses now at ~0.55–0.85 density, peak biased to re-hook before drift, no session
+caps). Only two **FUNCTIONAL** invariants remain — neither limits engagement:
+- ✅ **Displayed coins = awarded coins** — only so the Spend/redeem tab (coins →
+  real money/time) stays correct. There's no losing bet to disguise, so honest
+  numbers cost nothing while the *feel* is cranked (hot near-misses + juice).
+- ✅ **Long-run redeemable total** stays at the product spec (~125/250/375/tier)
+  until deliberately retuned — a product choice, not ethics.
 
 **Citations** (deep-research, 2026-06-08, 5 angles → 26 sources → 20 verified claims):
 James, O'Malley & Tunney 2016 (Frontiers in Psych — timing/frequency are the
@@ -121,7 +124,8 @@ Clark et al. 2009 (Neuron — near-miss raises motivation, recruits win circuitr
 Dixon/Harrigan/Fugelsang et al. 2010 (Addiction — LDWs & win-miscounting);
 Murch & Clark 2016 (The Neuroscientist — the 4-mechanic toolkit + public-health framing).
 - _Intentional by design — this app weaponizes casino dopamine loops toward positive
-  habit completion (durable RETURN + habit adherence), within hard ethical bounds._
+  habit completion (durable RETURN + habit adherence), pulling as hard as it will go;
+  the loop is gated behind real habits, so more pull = more habits done._
 
 **Parked / future engine work:**
 - [ ] Surface the learned profile to the user (transparency) — a gentle "the game
@@ -129,8 +133,7 @@ Murch & Clark 2016 (The Neuroscientist — the 4-mechanic toolkit + public-healt
 - [ ] A/B-test the parameter envelope per-user (warm-up strength, near-miss density)
   — current values are research-informed *starting hypotheses*, not validated for a
   fixed-odds habit app (the literature's numbers come from money-gambling).
-- [ ] Optional daily-spins awareness / soft session cap for anti-compulsion (the
-  spin is already gated behind a real completed habit — the prosocial anchor).
+- [ ] (Dropped: anti-compulsion session caps — not wanted; max engagement by design.)
 
 ## 🔤 Fonts
 - [ ] Bunny Snaps no longer fits the new aesthetic. Research & choose font(s) that match the glossy kawaii / magical-girl style for editable & dynamic text (habit names, numbers, labels).

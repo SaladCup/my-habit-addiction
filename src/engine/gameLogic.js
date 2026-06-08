@@ -608,18 +608,20 @@ export function resolveSlotSpin() {
 //   • Near-misses raise motivation to continue — but ONLY as HONEST 0-coin
 //     losses ("so close!"), never as wins (Clark et al. 2009, Neuron).
 //
-// HARD ETHICAL GUARDRAILS (derived from the same evidence):
-//   1. No losses-disguised-as-wins. Coins SHOWN always equal coins AWARDED;
-//      a near-miss stays at 0 coins with honest copy (Dixon et al. 2010 showed
-//      LDW celebration causally distorts a player's sense of their real economy).
-//   2. No engineered loss streaks. The reshape is a pure PERMUTATION of the
-//      session's already-rolled spins — it can only make a dry run feel better,
-//      never make the session drier than it rolled (Horsley 2012 red line).
-//   3. Long-run economy is mathematically untouched: permuting a multiset and
-//      replacing a special on a UNIFORMLY-RANDOM spin both preserve the sum's
-//      expectation, so per-tier totals stay anchored (~125/250/375).
-// The engine optimises for durable RETURN + habit completion (the prosocial
-// anchor: a spin is always the reward for a real habit), not standalone spinning.
+// DESIGN STANCE: this app MAXIMIZES engagement on purpose. The compulsive spin
+// loop is gated behind completing a real habit, so the harder it pulls, the more
+// habits get done — and no real money is ever staked or lost, so the gambling-harm
+// red lines don't apply. Run the engagement levers as hot as they go. Only two
+// FUNCTIONAL invariants remain, and neither limits engagement:
+//   1. Displayed coins == awarded coins — ONLY because coins redeem for real
+//      money/time (the Spend tab), so a fake number would break redemption. There
+//      is no losing BET to disguise here, so honest numbers cost nothing — we make
+//      the FEEL huge (hot near-misses + juice) while the number stays real.
+//   2. Long-run redeemable total per tier stays at the product spec (~125/250/375)
+//      until deliberately retuned — a product choice, not ethics. The reshape is a
+//      pure PERMUTATION (+ special on a uniformly-random spin), so this holds for free.
+// Within those two, everything is fair game: hot near-misses, suspense, escalation,
+// no session caps.
 
 function clamp01(x) { return Math.max(0, Math.min(1, x || 0)) }
 
@@ -657,11 +659,13 @@ export function getSlotEngineParams(profile = {}) {
   return {
     warmUp: true,                                   // open on a win when one exists (the hook)
     peakEnd: true,                                  // finish on a win/special (peak–end rule)
-    // 0 → biggest win lands at the END; 1 → right after the warm-up. Bias the
-    // peak EARLIER when the user is new or likely to drift, so they actually see it.
-    peakBias: clamp01((newish ? 0.35 : 0.15) + 0.45 * quitRisk),
-    // Gentle, capped HONEST near-miss rate; a small bump when quit-risk is high.
-    nearMissDensity: clamp01(0.18 + 0.14 * quitRisk),   // ≈ 0.18–0.32
+    // 0 → biggest win lands at the END; 1 → right after the warm-up. Bias the peak
+    // EARLIER when the user is new or likely to drift, to re-hook before they put
+    // the phone down.
+    peakBias: clamp01((newish ? 0.45 : 0.25) + 0.45 * quitRisk),
+    // Run near-misses HOT — the strongest per-spin "keep going" lever (Clark 2009).
+    // Most 0-coin spins read as "so close!"; even denser when quit-risk is high.
+    nearMissDensity: clamp01(0.55 + 0.30 * quitRisk),   // ≈ 0.55–0.85
   }
 }
 
@@ -744,7 +748,7 @@ function applyNearMisses(spins, density) {
   for (const sp of spins) {
     if (sp.coins > 0 || sp.special || sp.isJackpot || sp.isBonus) { dry = 0; continue }
     dry++
-    const p = Math.min(0.55, density + 0.08 * (dry - 1))
+    const p = Math.min(0.92, density + 0.10 * (dry - 1))   // run hot; near-certain deep into a dry run
     if (Math.random() < p) { sp.grid = makeNearMissGrid(); sp.nearMiss = true }
   }
 }
