@@ -9,20 +9,27 @@ import SlotMachine from '../components/SlotMachine'
 
 const KAWAII_COLORS = ['#FF85A1', '#C8B4E0', '#B4E0C8', '#FFD700', '#FF6B9D', '#9B7EC8']
 
-function fireConfetti(result) {
-  if (result === 'jackpot') {
-    confetti({ particleCount: 200, spread: 360, startVelocity: 55,
-      origin: { x: 0.5, y: 0.45 }, colors: KAWAII_COLORS, scalar: 1.3 })
+// Escalating juice: particle count, spread, velocity & side-cannons all scale
+// with the SIZE of the win (coins), so a big haul feels visibly bigger than a
+// small one. Jackpot/bonus keep their signature bursts on top.
+function fireConfetti(result, coins = 0) {
+  const mag = Math.max(0, Math.min(1, coins / 750))          // 0..1 across the win range
+  const main = 45 + Math.round(mag * 165)                    // 45..210 particles
+  confetti({
+    particleCount: main, spread: 70 + mag * 90, startVelocity: 32 + mag * 26,
+    origin: { x: 0.5, y: 0.5 }, colors: KAWAII_COLORS, scalar: 1 + mag * 0.4,
+  })
+  // Bigger wins (or any jackpot/bonus) add dual side-cannons.
+  if (result === 'jackpot' || result === 'bonus' || coins >= 350) {
     setTimeout(() => {
-      confetti({ angle: 60,  spread: 55, origin: { x: 0 }, colors: KAWAII_COLORS })
-      confetti({ angle: 120, spread: 55, origin: { x: 1 }, colors: KAWAII_COLORS })
-    }, 300)
-  } else if (result === 't3') {
-    confetti({ particleCount: 90, spread: 70, startVelocity: 40,
-      origin: { x: 0.5, y: 0.45 }, colors: ['#B4E0C8', '#5CBFA0', '#FFD700', '#FF85A1'] })
-  } else if (result === 'bonus') {
-    confetti({ particleCount: 60, spread: 90, startVelocity: 30,
-      origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#F5C44B', '#FF85A1', '#FFE9A0'] })
+      confetti({ angle: 60,  spread: 55, startVelocity: 55, particleCount: 60 + Math.round(mag * 60), origin: { x: 0 }, colors: KAWAII_COLORS })
+      confetti({ angle: 120, spread: 55, startVelocity: 55, particleCount: 60 + Math.round(mag * 60), origin: { x: 1 }, colors: KAWAII_COLORS })
+    }, 240)
+  }
+  // Jackpot: a full 360° bloom for the grand moment.
+  if (result === 'jackpot') {
+    setTimeout(() => confetti({ particleCount: 220, spread: 360, startVelocity: 55,
+      origin: { x: 0.5, y: 0.45 }, colors: KAWAII_COLORS, scalar: 1.3 }), 120)
   }
 }
 
@@ -79,7 +86,7 @@ export default function SpinScreen() {
     // Set coinsEarned to THIS spin's coins only (awardCoins also folds in any
     // daily-login bonus claimed on mount — don't let that inflate the reward total).
     setSession({ spinResult: awardedResult, isNearMiss: wheelOutcome.isNearMiss, coinsEarned: coinsAwarded, phase: 'reward' })
-    fireConfetti(awardedResult)
+    fireConfetti(awardedResult, coinsAwarded)
     if (awardedResult === 'bonus') {
       const bonus = spinBonusWheel()
       setSession({ bonusResult: bonus.result, bonusTimerEnd: Date.now() + 10 * 60 * 1000 })
@@ -100,7 +107,7 @@ export default function SpinScreen() {
       : `t${activeTier}`   // show the tier you played (not a generic t1)
     awardCoins(slotSession.totalCoins, result, session.selectedHabit?.id)
     setSession({ spinResult: result, coinsEarned: slotSession.totalCoins, phase: 'reward' })
-    fireConfetti(slotSession.isJackpot ? 'jackpot' : result)
+    fireConfetti(slotSession.isJackpot ? 'jackpot' : result, slotSession.totalCoins)
     if (slotSession.isBonus) {
       const bonus = spinBonusWheel()
       setSession({ bonusResult: bonus.result, bonusTimerEnd: Date.now() + 10 * 60 * 1000 })
