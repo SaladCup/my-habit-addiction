@@ -21,7 +21,20 @@ const CELL_H_F   = (ROW_CY_F[2] - ROW_CY_F[0]) / 2
 const REEL_TOP_F = ROW_CY_F[0] - CELL_H_F / 2
 const REEL_H_F   = CELL_H_F * 3
 
-const STRIP_FILL = 30
+// ── Reel timing (researched real-slot cadence) ─────────────────────────────
+// Real machines spin all reels at the SAME visible speed, then lock them in
+// sequence at ~equal "rhythmic" intervals (documented as less fatiguing → longer
+// play), with a longer HOLD before the final reel for anticipation. Sources:
+// patents on "rhythmic reels" (US 8,047,910) & "stopping order for anticipation"
+// (US 8,342,934); On Mag "The Slow Spin Effect" (≈250–500ms reveal pauses,
+// 300–500ms hold before the last reel lands).
+const REEL_SPEED   = 34     // symbols scrolled per second (blurred) — the visible spin speed
+const SPIN_BASE_MS = 1150   // reel 0 spins this long before it locks
+const STOP_GAP_MS  = 640    // each later reel locks this much after the previous (the "pause")
+const LAST_HOLD_MS = 420    // extra anticipation hold before the FINAL reel drops
+const SNAP_MS      = 250    // the decisive settle ("ka-chunk")
+const reelSpinTime = (i) => SPIN_BASE_MS + i * STOP_GAP_MS
+const reelFill     = (i) => Math.max(18, Math.round((reelSpinTime(i) / 1000) * REEL_SPEED))
 
 const px = { w: (f) => f * CAB_W, h: (f) => f * CAB_H }
 const COL_LEFT = COLS_F.map(c => px.w(c[0]))
@@ -50,21 +63,22 @@ function computeTease(grid) {
   return null
 }
 
-// ── One reel: spins FAST + blurred (unreadable), then SNAPS to its 3 targets.
-// The last reel can TEASE: the would-be winner hangs on the line, then rolls off
-// to reveal the miss. Anticipation without spoiling the result early. ──
-function Reel({ target, reelIndex, colW, spinning, onStopped, tease }) {
+// ── One reel: spins at a steady blurred speed (unreadable), then locks. Reels
+// lock left→right at equal intervals; the LAST reel holds for anticipation, and
+// can TEASE — the would-be winner hangs on the line, then rolls off to the miss.
+function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
   const ref = useRef(null)
   const animRef = useRef(null)
   const [blur, setBlur] = useState(false)
   const teased = !!tease?.active
+  const fill = reelFill(reelIndex)
   const [strip] = useState(() => {
-    const fill = Array.from({ length: STRIP_FILL }, randomSym)
+    const cells = Array.from({ length: fill }, randomSym)
     // teased reel gets the would-be-winning symbol spliced one cell ABOVE the
-    // targets, so it slides through the window during the slow final approach.
+    // targets, so it slides through the window right before the miss lands.
     return teased
-      ? [...fill, tease.symbol, target[0], target[1], target[2]]
-      : [...fill, target[0], target[1], target[2]]
+      ? [...cells, tease.symbol, target[0], target[1], target[2]]
+      : [...cells, target[0], target[1], target[2]]
   })
 
   useEffect(() => {
@@ -72,55 +86,64 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease }) {
     const el = ref.current
     if (!el) return
     setBlur(true)
-    const base   = STRIP_FILL + (teased ? 1 : 0)
+    const base   = fill + (teased ? 1 : 0)
     const finalY = -(base * CELL_H)
     const preY   = finalY + CELL_H * 0.5          // half a cell short → the snap finishes it
     const teaseY = finalY + CELL_H                // would-be winner resting on the top row
+    const spinTime = reelSpinTime(reelIndex)
     const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); onStopped()
     }
+    const snapTo = () => {                         // decisive settle with a tiny overshoot ("ka-chunk")
+      const snap = el.animate(
+        [
+          { transform: `translateY(${preY}px)` },
+          { transform: `translateY(${finalY - 6}px)` },
+          { transform: `translateY(${finalY}px)` },
+        ],
+        { duration: SNAP_MS, easing: 'cubic-bezier(0.30, 1.5, 0.5, 1)', fill: 'forwards' },
+      )
+      animRef.current = snap
+      snap.onfinish = stopHere
+    }
 
-    // 1) FAST blurred scroll — stays fast so the result can't be read mid-spin.
-    //    Staggered so reels resolve left→right; the last reel runs longest.
-    const spinTime = 560 + reelIndex * 340
+    // 1) Steady blurred scroll at a CONSTANT speed (same on every reel; later reels
+    //    just travel farther so they lock later — the rhythmic stop cadence).
     const scroll = el.animate(
       [{ transform: 'translateY(0)' }, { transform: `translateY(${teased ? teaseY : preY}px)` }],
-      { duration: spinTime, easing: 'cubic-bezier(0.16, 0.45, 0.30, 1)', fill: 'forwards' },
+      { duration: spinTime, easing: 'linear', fill: 'forwards' },
     )
     animRef.current = scroll
     scroll.onfinish = () => {
       setBlur(false)
       if (teased) {
-        // 2a) Hold the would-be winner on the line (suspense)…
+        // Hold the would-be winner on the line (suspense)…
         const hold = el.animate(
           [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${teaseY}px)` }],
-          { duration: 460, fill: 'forwards' },
+          { duration: 600, fill: 'forwards' },
         )
         animRef.current = hold
         hold.onfinish = () => {
           playNearMiss()                          // the "awww" as it starts to roll off
-          // 2b) …roll ONE cell to the real symbol — "so close!"
-          const nudge = el.animate(
+          const nudge = el.animate(               // …roll ONE cell to the real symbol — "so close!"
             [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${finalY}px)` }],
-            { duration: 320, easing: 'cubic-bezier(0.5, 0, 0.2, 1)', fill: 'forwards' },
+            { duration: 340, easing: 'cubic-bezier(0.5, 0, 0.2, 1)', fill: 'forwards' },
           )
           animRef.current = nudge
           nudge.onfinish = stopHere
         }
-      } else {
-        // 2) Sharp snap with a tiny overshoot — "ka-chunk".
-        const snap = el.animate(
-          [
-            { transform: `translateY(${preY}px)` },
-            { transform: `translateY(${finalY - 6}px)` },
-            { transform: `translateY(${finalY}px)` },
-          ],
-          { duration: 230, easing: 'cubic-bezier(0.30, 1.5, 0.5, 1)', fill: 'forwards' },
+      } else if (isLast) {
+        // Anticipation hold before the FINAL reel drops (even on non-tease spins).
+        const hold = el.animate(
+          [{ transform: `translateY(${preY}px)` }, { transform: `translateY(${preY}px)` }],
+          { duration: LAST_HOLD_MS, fill: 'forwards' },
         )
-        animRef.current = snap
-        snap.onfinish = stopHere
+        animRef.current = hold
+        hold.onfinish = snapTo
+      } else {
+        snapTo()
       }
     }
     return cancel
@@ -290,6 +313,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
               target={[displayGrid[0][c], displayGrid[1][c], displayGrid[2][c]]}
               onStopped={onReelStopped}
               tease={c === 2 ? teaseInfo : null}
+              isLast={c === COLS - 1}
             />
           </div>
         ))}
