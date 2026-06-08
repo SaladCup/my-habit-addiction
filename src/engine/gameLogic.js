@@ -483,12 +483,16 @@ export const SPINS_PER_TIER = { 1: 3, 2: 6, 3: 9 }
 // Each symbol pays its fixed value; a payline pays its symbol's value; a spin's
 // coins = SUM of matching lines. Monte-Carlo-tuned to reproduce the prior
 // distribution (per-tier avg ≈ 122/251/381, bonus ~15%, jackpot ~1.2%) within ~1.5%.
+// Skewed toward the SMALL symbols so wins land OFTEN but each is modest; the big
+// symbols (ribbon/moon) are rarer, so a big line feels special. The long-run total
+// is held constant by pairing this with the line-count distribution below
+// (E[coins/spin] = E[lines] × E[value] ≈ 1.16 × 37.0 ≈ 42.9, same as before).
 const WIN_SYMBOL_WEIGHTS = [   // how likely each symbol is to be THE winning one
-  { id: 'sakura', weight: 26 }, { id: 'heart', weight: 24 }, { id: 'star', weight: 19 },
-  { id: 'butterfly', weight: 14 }, { id: 'ribbon', weight: 11 }, { id: 'moon', weight: 6 },
+  { id: 'sakura', weight: 34 }, { id: 'heart', weight: 28 }, { id: 'star', weight: 17 },
+  { id: 'butterfly', weight: 11 }, { id: 'ribbon', weight: 6 }, { id: 'moon', weight: 4 },
 ]
-const LINE_COUNT_DIST = [       // winning lines per spin: 16% none, 64% one, 20% two
-  { value: 0, weight: 16 }, { value: 1, weight: 64 }, { value: 2, weight: 20 },
+const LINE_COUNT_DIST = [       // winning lines per spin: 12% none, 60% one, 28% two
+  { value: 0, weight: 12 }, { value: 1, weight: 60 }, { value: 2, weight: 28 },
 ]
 const PAY_BY_ID = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s]))
 const ROW_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('row'))
@@ -776,7 +780,9 @@ export function resolveSlotSession(activeTier = 1, luck = {}, profile = {}) {
   const aw = getAdjustedWeights(luck)
   const awTotal = aw.reduce((s, o) => s + o.weight, 0)
   const bonusChance = aw.find(o => o.value === 'bonus').weight / awTotal
-  const jackpotChance = 0.012 * (1 + Math.min(luck.spinsSinceJackpot || 0, 60) / 15)
+  // Rarer base (0.6%) so the pool climbs higher between hits — rarer, BIGGER
+  // jackpots. Long-run contribution is ~unchanged (rarer × bigger pool).
+  const jackpotChance = 0.006 * (1 + Math.min(luck.spinsSinceJackpot || 0, 90) / 20)
   const isJackpot = Math.random() < jackpotChance
   const isBonus = !isJackpot && Math.random() < bonusChance
 
