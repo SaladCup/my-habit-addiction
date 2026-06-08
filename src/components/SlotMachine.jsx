@@ -97,17 +97,22 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); onStopped()
     }
-    const snapTo = () => {                         // reels 0/1: decisive settle with a tiny overshoot
-      const snap = el.animate(
+    // Land with a subtle impact BOUNCE: travel in, drive a hair PAST the stop,
+    // rebound a touch, then settle — the satisfying "clunk" real reels have.
+    const settle = (fromY, duration) => {
+      const over = Math.max(4, CELL_H * 0.15)     // overshoot past the stop
+      const reb  = Math.max(2, CELL_H * 0.055)    // small rebound the other way
+      const a = el.animate(
         [
-          { transform: `translateY(${preY}px)` },
-          { transform: `translateY(${finalY - 6}px)` },
-          { transform: `translateY(${finalY}px)` },
+          { transform: `translateY(${fromY}px)`,          offset: 0 },
+          { transform: `translateY(${finalY - over}px)`,  offset: 0.55 },   // impact (past rest)
+          { transform: `translateY(${finalY + reb}px)`,   offset: 0.80 },   // rebound
+          { transform: `translateY(${finalY}px)`,         offset: 1 },      // settle
         ],
-        { duration: SNAP_MS, easing: 'cubic-bezier(0.30, 1.5, 0.5, 1)', fill: 'forwards' },
+        { duration, easing: 'cubic-bezier(0.22, 0.68, 0.30, 1)', fill: 'forwards' },
       )
-      animRef.current = snap
-      snap.onfinish = stopHere
+      animRef.current = a
+      a.onfinish = stopHere
     }
 
     // 1) Steady blurred scroll at a CONSTANT speed (same on every reel; later reels
@@ -120,10 +125,10 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     animRef.current = scroll
     scroll.onfinish = () => {
       setBlur(false)
-      if (!isLast) { snapTo(); return }
+      if (!isLast) { settle(preY, SNAP_MS + 60); return }   // reels 0/1: snap in with a bounce
       // Final reel: hold one symbol short (cleanly aligned), then roll the last
-      // symbol into place. Teased = the would-be winner is sitting there and rolls
-      // OFF to the miss ("so close"); otherwise the real symbol just clicks in.
+      // symbol into place — bouncing on impact. Teased = the would-be winner is
+      // sitting there and rolls OFF to the miss; otherwise the real symbol clicks in.
       const hold = el.animate(
         [{ transform: `translateY(${holdY}px)` }, { transform: `translateY(${holdY}px)` }],
         { duration: teased ? 600 : LAST_HOLD_MS, fill: 'forwards' },
@@ -131,12 +136,7 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       animRef.current = hold
       hold.onfinish = () => {
         if (teased) playNearMiss()                // the "awww" as the near-symbol rolls away
-        const roll = el.animate(                  // roll ONE clean cell into the final position
-          [{ transform: `translateY(${holdY}px)` }, { transform: `translateY(${finalY}px)` }],
-          { duration: 360, easing: 'cubic-bezier(0.32, 0, 0.18, 1)', fill: 'forwards' },
-        )
-        animRef.current = roll
-        roll.onfinish = stopHere
+        settle(holdY, 460)                        // roll ONE clean cell in, bounce on impact
       }
     }
     return cancel
