@@ -88,15 +88,16 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     setBlur(true)
     const base   = fill + (teased ? 1 : 0)
     const finalY = -(base * CELL_H)
-    const preY   = finalY + CELL_H * 0.5          // half a cell short → the snap finishes it
-    const teaseY = finalY + CELL_H                // would-be winner resting on the top row
+    const preY   = finalY + CELL_H * 0.5          // reels 0/1: half a cell short → quick snap
+    const holdY  = finalY + CELL_H                // last reel: one FULL cell short → a clean,
+                                                  // ALIGNED anticipation hold (no half-row jank)
     const spinTime = reelSpinTime(reelIndex)
     const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); onStopped()
     }
-    const snapTo = () => {                         // decisive settle with a tiny overshoot ("ka-chunk")
+    const snapTo = () => {                         // reels 0/1: decisive settle with a tiny overshoot
       const snap = el.animate(
         [
           { transform: `translateY(${preY}px)` },
@@ -110,40 +111,32 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     }
 
     // 1) Steady blurred scroll at a CONSTANT speed (same on every reel; later reels
-    //    just travel farther so they lock later — the rhythmic stop cadence).
+    //    just travel farther so they lock later — the rhythmic stop cadence). The
+    //    final reel stops one FULL cell short (holdY) for a clean anticipation hold.
     const scroll = el.animate(
-      [{ transform: 'translateY(0)' }, { transform: `translateY(${teased ? teaseY : preY}px)` }],
+      [{ transform: 'translateY(0)' }, { transform: `translateY(${isLast ? holdY : preY}px)` }],
       { duration: spinTime, easing: 'linear', fill: 'forwards' },
     )
     animRef.current = scroll
     scroll.onfinish = () => {
       setBlur(false)
-      if (teased) {
-        // Hold the would-be winner on the line (suspense)…
-        const hold = el.animate(
-          [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${teaseY}px)` }],
-          { duration: 600, fill: 'forwards' },
+      if (!isLast) { snapTo(); return }
+      // Final reel: hold one symbol short (cleanly aligned), then roll the last
+      // symbol into place. Teased = the would-be winner is sitting there and rolls
+      // OFF to the miss ("so close"); otherwise the real symbol just clicks in.
+      const hold = el.animate(
+        [{ transform: `translateY(${holdY}px)` }, { transform: `translateY(${holdY}px)` }],
+        { duration: teased ? 600 : LAST_HOLD_MS, fill: 'forwards' },
+      )
+      animRef.current = hold
+      hold.onfinish = () => {
+        if (teased) playNearMiss()                // the "awww" as the near-symbol rolls away
+        const roll = el.animate(                  // roll ONE clean cell into the final position
+          [{ transform: `translateY(${holdY}px)` }, { transform: `translateY(${finalY}px)` }],
+          { duration: 360, easing: 'cubic-bezier(0.32, 0, 0.18, 1)', fill: 'forwards' },
         )
-        animRef.current = hold
-        hold.onfinish = () => {
-          playNearMiss()                          // the "awww" as it starts to roll off
-          const nudge = el.animate(               // …roll ONE cell to the real symbol — "so close!"
-            [{ transform: `translateY(${teaseY}px)` }, { transform: `translateY(${finalY}px)` }],
-            { duration: 340, easing: 'cubic-bezier(0.5, 0, 0.2, 1)', fill: 'forwards' },
-          )
-          animRef.current = nudge
-          nudge.onfinish = stopHere
-        }
-      } else if (isLast) {
-        // Anticipation hold before the FINAL reel drops (even on non-tease spins).
-        const hold = el.animate(
-          [{ transform: `translateY(${preY}px)` }, { transform: `translateY(${preY}px)` }],
-          { duration: LAST_HOLD_MS, fill: 'forwards' },
-        )
-        animRef.current = hold
-        hold.onfinish = snapTo
-      } else {
-        snapTo()
+        animRef.current = roll
+        roll.onfinish = stopHere
       }
     }
     return cancel
@@ -153,6 +146,10 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     <div style={{
       width: colW, height: CELL_H * ROWS, overflow: 'hidden',
       position: 'relative',
+      // Blur the small CLIPPED window (not the ~4000px-tall strip) — far cheaper
+      // per frame, which fixes the last reel (the tallest strip) stuttering.
+      filter: blur ? 'blur(4px)' : 'none',
+      transition: blur ? 'none' : 'filter 110ms ease-out',
     }}>
       {spinning && blur && (
         <div style={{
@@ -163,8 +160,6 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
       )}
       <div ref={ref} style={{
         display: 'flex', flexDirection: 'column',
-        filter: blur ? 'blur(5px)' : 'blur(0)',
-        transition: blur ? 'none' : 'filter 120ms ease-out',
         willChange: 'transform',
       }}>
         {strip.map((s, i) => (
