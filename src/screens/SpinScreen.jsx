@@ -30,7 +30,7 @@ const TIER_LABEL = { t1: 'Tier 1', t2: 'Tier 2', t3: 'Tier 3', jackpot: 'JACKPOT
 
 export default function SpinScreen() {
   const navigate = useNavigate()
-  const { session, setSession, awardCoins, addBonusBead, spinWheel, spinSlots, claimDailyBonus } = useStore()
+  const { session, setSession, awardCoins, addBonusBead, spinWheel, spinSlots, claimDailyBonus, markSlotSessionComplete } = useStore()
   const jackpotPool = useStore(s => s.jackpotPool)
   const activeTier = session.activeTier || 1
 
@@ -93,6 +93,8 @@ export default function SpinScreen() {
   function handleSlotsComplete() {
     if (slotGuard.current || !slotSession) return
     slotGuard.current = true
+    markSlotSessionComplete()   // learned signal: this user finished the session
+
     const result = slotSession.isJackpot ? 'jackpot'
       : slotSession.isBonus ? 'bonus'
       : `t${activeTier}`   // show the tier you played (not a generic t1)

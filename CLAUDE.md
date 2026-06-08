@@ -19,8 +19,8 @@ Weaponizes casino dopamine loops toward *positive* habits.
 
 ## File map (src/)
 - `App.jsx` — router shell + bottom nav (5 PNG icons; active = glow only, no scale).
-- `store/useStore.js` — all state + actions (habits, categories, wallet, jarBeads, coinLog, milestones, jackpotPool, spinStats, daily, settings) and the engagement engine helpers.
-- `engine/gameLogic.js` — pure game math: outcome weights, `getAdjustedWeights` (luck/pity/warmup/jackpot-due), slots (`resolveSlotSession`/`resolveSlotSpin`), wheel, bonus wheel, paylines, coin tables.
+- `store/useStore.js` — all state + actions (habits, categories, wallet, jarBeads, coinLog, milestones, jackpotPool, spinStats, **engagement**, daily, settings) and the engagement-engine helpers. `engagement` = the LEARNED per-user profile (EMA rhythm / sitting length / return cadence / completion rate / time-of-day); `getEngagementProfile()` + `getQuitRisk()` feed the adaptive slot engine. Persist **v10**.
+- `engine/gameLogic.js` — pure game math: outcome weights, `getAdjustedWeights` (luck/pity/warmup/jackpot-due), slots (`resolveSlotSession`/`resolveSlotSpin`), wheel, bonus wheel, **8 paylines** (3 rows + 3 cols + 2 diagonals), coin tables. **Adaptive engine** (`getSlotEngineParams`/`computeQuitRisk`/`reshapeSessionOrder`/`applyNearMisses`): reshapes the TIMING & FEEL of a session's spins per user — pure PERMUTATION, so the long-run total is unchanged (verified sum-invariant across profiles). Hard rules: coins shown = coins awarded; no losses-disguised-as-wins; no engineered loss streaks. Citations in ROADMAP.
 - `engine/sounds.js` — SFX hooks. `engine/probability.js` — RNG helpers.
 - `screens/` — HomeScreen, SpinScreen, BonusScreen, RewardScreen, WalletScreen, StatsScreen, EditorScreen, SettingsScreen.
 - `components/` — SlotMachine, Wheel, BonusWheel, ui/ (KawaiiButton, BeadDisplay, PixelPanel, TierBadge, TimerDisplay, WarningSplash, FloatingDecor, NearMissOverlay).

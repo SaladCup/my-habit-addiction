@@ -589,13 +589,179 @@ export function resolveSlotSpin() {
   return { grid, winningLines, coins, summary: buildSpinSummary(winningLines) }
 }
 
+// ═════════════════════════════════════════════════════════════════════════
+// ADAPTIVE ENGAGEMENT ENGINE — reshapes the TIMING & FEEL of wins, never the total
+// ═════════════════════════════════════════════════════════════════════════
+//
+// Grounded in the gambling-psychology literature (see ROADMAP "Engagement
+// engine"). The load-bearing, fact-checked findings this engine is built on:
+//
+//   • The two levers that move engagement WITHOUT changing total payout are the
+//     TIMING (when/where a win lands) and CADENCE of wins — they interact, and
+//     this is the single most directly actionable finding for a fixed-odds game.
+//     (James, O'Malley & Tunney 2016, Frontiers in Psych; Clark & Zack 2023,
+//     Addictive Behaviors.)
+//   • Front-loaded "warm-up" generosity drives in-session engagement
+//     (acquisition); a strong finish exploits the peak–end rule. New/low-
+//     engagement users benefit most; experienced users tolerate leaner schedules
+//     (Horsley et al. 2012) — so warm-up strength scales DOWN with engagement.
+//   • Near-misses raise motivation to continue — but ONLY as HONEST 0-coin
+//     losses ("so close!"), never as wins (Clark et al. 2009, Neuron).
+//
+// HARD ETHICAL GUARDRAILS (derived from the same evidence):
+//   1. No losses-disguised-as-wins. Coins SHOWN always equal coins AWARDED;
+//      a near-miss stays at 0 coins with honest copy (Dixon et al. 2010 showed
+//      LDW celebration causally distorts a player's sense of their real economy).
+//   2. No engineered loss streaks. The reshape is a pure PERMUTATION of the
+//      session's already-rolled spins — it can only make a dry run feel better,
+//      never make the session drier than it rolled (Horsley 2012 red line).
+//   3. Long-run economy is mathematically untouched: permuting a multiset and
+//      replacing a special on a UNIFORMLY-RANDOM spin both preserve the sum's
+//      expectation, so per-tier totals stay anchored (~125/250/375).
+// The engine optimises for durable RETURN + habit completion (the prosocial
+// anchor: a spin is always the reward for a real habit), not standalone spinning.
+
+function clamp01(x) { return Math.max(0, Math.min(1, x || 0)) }
+
+/**
+ * Real-time quit-risk (0..1) inferred from learned per-user signals. Used only
+ * to decide WHERE a win lands (earlier when the user is likely to stop), so the
+ * most-probably-final interaction is rewarding — never to trap or chase.
+ */
+export function computeQuitRisk(profile = {}) {
+  const {
+    curSessionPlays = 0, sessionPlayCountEMA = 0, lossStreak = 0,
+    lastGap = 0, interSpinGapEMA = 0,
+  } = profile
+  let risk = 0
+  // (a) at/over their typical session length → likely to stop soon
+  if (sessionPlayCountEMA > 0)
+    risk += clamp01((curSessionPlays - sessionPlayCountEMA) / Math.max(2, sessionPlayCountEMA)) * 0.5
+  // (b) cold-streak fatigue
+  risk += clamp01(lossStreak / 6) * 0.3
+  // (c) slowing rhythm — this gap noticeably longer than their norm
+  if (interSpinGapEMA > 0 && lastGap > 0)
+    risk += clamp01((lastGap - interSpinGapEMA) / (interSpinGapEMA * 2)) * 0.2
+  return clamp01(risk)
+}
+
+/**
+ * Map a learned engagement profile → concrete reshape parameters. Outputs only
+ * affect spin ORDER and honest near-miss framing — never coin totals.
+ * @param {{phase?:string, quitRisk?:number}} profile
+ */
+export function getSlotEngineParams(profile = {}) {
+  const phase = profile.phase || 'new'
+  const quitRisk = clamp01(profile.quitRisk)
+  const newish = phase === 'new'
+  return {
+    warmUp: true,                                   // open on a win when one exists (the hook)
+    peakEnd: true,                                  // finish on a win/special (peak–end rule)
+    // 0 → biggest win lands at the END; 1 → right after the warm-up. Bias the
+    // peak EARLIER when the user is new or likely to drift, so they actually see it.
+    peakBias: clamp01((newish ? 0.35 : 0.15) + 0.45 * quitRisk),
+    // Gentle, capped HONEST near-miss rate; a small bump when quit-risk is high.
+    nearMissDensity: clamp01(0.18 + 0.14 * quitRisk),   // ≈ 0.18–0.32
+  }
+}
+
+/**
+ * Reorder a session's spins for better FEEL (warm-up win, spread so zeros never
+ * bunch into a dead run, biggest win at the personalised "peak" slot, strong
+ * finish). Pure permutation → the multiset of coin values (and the total) is
+ * identical to the input.
+ */
+function reshapeSessionOrder(spins, params) {
+  const n = spins.length
+  if (n < 3) return spins.slice()
+  const wins = spins.filter(s => s.coins > 0).sort((a, b) => a.coins - b.coins)  // ascending
+  const losses = spins.filter(s => s.coins === 0)
+  const k = wins.length
+  if (k === 0 || k === n) return spins.slice()      // all-loss / all-win: nothing to arrange
+
+  // 1) Spread k win-slots roughly evenly across the session (no long zero runs).
+  const used = new Set()
+  const winSlots = []
+  for (let i = 0; i < k; i++) {
+    let s = Math.max(0, Math.min(n - 1, Math.round((i + 0.5) * n / k)))
+    while (used.has(s)) s = (s + 1) % n
+    used.add(s); winSlots.push(s)
+  }
+  // 2) Guarantee warm-up (slot 0) and, with ≥2 wins, peak-end (slot n-1).
+  const forceWinSlot = (target) => {
+    if (used.has(target)) return
+    let bi = 0, bd = Infinity
+    winSlots.forEach((s, idx) => { const d = Math.abs(s - target); if (d < bd) { bd = d; bi = idx } })
+    used.delete(winSlots[bi]); used.add(target); winSlots[bi] = target
+  }
+  if (params.warmUp) forceWinSlot(0)
+  if (params.peakEnd && k >= 2) forceWinSlot(n - 1)
+
+  // 3) Pick the peak slot (gets the biggest win) by peakBias: 0→last, 1→first.
+  const sorted = winSlots.slice().sort((a, b) => a - b)
+  const peakSlot = sorted[Math.max(0, Math.min(sorted.length - 1,
+    Math.round((1 - (params.peakBias ?? 0)) * (sorted.length - 1))))]
+
+  // 4) Biggest win → peak; remaining wins (desc) → nearest-to-peak slots; losses fill the rest.
+  const out = new Array(n).fill(null)
+  const winsDesc = wins.slice().reverse()
+  out[peakSlot] = winsDesc.shift()
+  sorted.filter(s => s !== peakSlot)
+    .sort((a, b) => Math.abs(a - peakSlot) - Math.abs(b - peakSlot))
+    .forEach(s => { out[s] = winsDesc.shift() })
+  let li = 0
+  for (let i = 0; i < n; i++) if (!out[i]) out[i] = losses[li++]
+  return out
+}
+
+/** Build an HONEST near-miss grid: 2-of-a-kind on a payline + a breaker (0 coins). */
+function makeNearMissGrid() {
+  const grid = [[null, null, null], [null, null, null], [null, null, null]]
+  const line = SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]
+  const sym = pickWinSymbol()
+  const cells = shuffled(line.cells)
+  grid[cells[0][0]][cells[0][1]] = sym
+  grid[cells[1][0]][cells[1][1]] = sym
+  // the 3rd cell BREAKS the line: a different symbol that completes no other line
+  const [br, bc] = cells[2]
+  let breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
+  for (let t = 0; t < 24 && (breaker.id === sym.id || wouldCompleteLine(grid, br, bc, breaker)); t++) {
+    breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
+  }
+  grid[br][bc] = breaker
+  fillBlanks(grid)
+  return grid
+}
+
+/**
+ * Convert some 0-coin spins into HONEST near-misses (visual only — coins stay 0,
+ * summary stays "so close!"). Slightly likelier the longer the current dry run,
+ * to sustain motivation through a cold patch without ever faking a win.
+ */
+function applyNearMisses(spins, density) {
+  if (!density) return
+  let dry = 0
+  for (const sp of spins) {
+    if (sp.coins > 0 || sp.special || sp.isJackpot || sp.isBonus) { dry = 0; continue }
+    dry++
+    const p = Math.min(0.55, density + 0.08 * (dry - 1))
+    if (Math.random() < p) { sp.grid = makeNearMissGrid(); sp.nearMiss = true }
+  }
+}
+
 /**
  * Resolve a full slots SESSION = a sequence of spins (count set by tier).
  * One bonus/jackpot is rolled for the whole session (so a bonus is exactly as
- * likely per cash-in as on the wheel), revealed on the final spin.
- * @returns {{ spinCount, spins:[{grid,winningLines,coins,isJackpot?,isBonus?}], baseCoins, isJackpot, isBonus, awardedResult }}
+ * likely per cash-in as on the wheel), revealed on the final spin. The adaptive
+ * engine then reshapes the ORDER/FEEL of the spins for this user (warm-up, peak
+ * placement, honest near-misses) — a pure permutation, so `baseCoins` is
+ * unchanged in expectation and the long-run economy stays anchored.
+ * @param {1|2|3} activeTier
+ * @param {object} luck     pity/warm-up/jackpot-due inputs (bonus & jackpot rates)
+ * @param {object} profile  learned engagement profile (phase, quitRisk, …)
+ * @returns {{ spinCount, spins:[{grid,winningLines,coins,nearMiss?,isJackpot?,isBonus?}], baseCoins, isJackpot, isBonus, awardedResult, engineParams }}
  */
-export function resolveSlotSession(activeTier = 1, luck = {}) {
+export function resolveSlotSession(activeTier = 1, luck = {}, profile = {}) {
   const tier = Math.max(1, Math.min(activeTier, 3))
   const spinCount = SPINS_PER_TIER[tier]
 
@@ -607,16 +773,32 @@ export function resolveSlotSession(activeTier = 1, luck = {}) {
   const isJackpot = Math.random() < jackpotChance
   const isBonus = !isJackpot && Math.random() < bonusChance
 
-  const spins = []
+  // Generate the session's i.i.d. spins (total is fixed by the paytable).
+  let spins = []
   for (let i = 0; i < spinCount; i++) spins.push(resolveSlotSpin())
 
-  // The special reveals on the last spin.
-  if (isJackpot) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0], 'jackpot'), coins: 0, isJackpot: true }
-  else if (isBonus) spins[spinCount - 1] = { ...specialLine(SYMBOLS_BY_TIER.bonus[0], 'bonus'), coins: 0, isBonus: true }
+  const params = getSlotEngineParams(profile)
+  let special = null
+  if (isJackpot) special = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0], 'jackpot'), coins: 0, isJackpot: true }
+  else if (isBonus) special = { ...specialLine(SYMBOLS_BY_TIER.bonus[0], 'bonus'), coins: 0, isBonus: true }
+
+  if (special) {
+    // The special occupies the final (peak-end) slot and pays 0 itself. To keep
+    // the economy IDENTICAL to the unshaped model — which dropped the LAST i.i.d.
+    // spin — we drop a UNIFORMLY-RANDOM spin instead (same expected value), then
+    // reshape the remainder and reveal the special last.
+    spins.splice(randomInt(0, spins.length - 1), 1)
+    spins = reshapeSessionOrder(spins, params)
+    applyNearMisses(spins, params.nearMissDensity)
+    spins.push(special)
+  } else {
+    spins = reshapeSessionOrder(spins, params)
+    applyNearMisses(spins, params.nearMissDensity)
+  }
 
   const baseCoins = spins.reduce((s, sp) => s + sp.coins, 0)
   const awardedResult = isJackpot ? 'jackpot' : isBonus ? 'bonus' : (baseCoins > 0 ? 't1' : 'nothing')
-  return { spinCount, spins, baseCoins, isJackpot, isBonus, awardedResult }
+  return { spinCount, spins, baseCoins, isJackpot, isBonus, awardedResult, engineParams: params }
 }
 
 /**

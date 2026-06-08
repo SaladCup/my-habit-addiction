@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
 import {
   resolveWheelSpin, resolveSlotSession, isGoodResult, TIER_COINS, COIN_SCALE,
+  computeQuitRisk,
 } from '../engine/gameLogic'
 
 // ── Progressive jackpot tuning (scaled to COIN_SCALE) ──
@@ -18,6 +19,28 @@ const DEFAULT_SPIN_STATS = {
   lossStreak: 0,
   lastSpinAt: 0,
 }
+
+// ── Adaptive engagement profile (LEARNED per-user, persisted) ──
+// These signals let the slot engine reshape the TIMING/feel of wins for this
+// specific user (warm-up strength, where the peak lands, near-miss density) while
+// the long-run total stays fixed. All EMAs are exponentially-smoothed so the
+// engine tracks the user's CURRENT rhythm and forgets stale behaviour.
+const DEFAULT_ENGAGEMENT = {
+  interSpinGapEMA:     0,   // ms — typical gap between cash-ins within a sitting (rhythm)
+  sessionPlayCountEMA: 0,   // typical # cash-ins per active sitting (predicts quit point)
+  returnGapEMA:        0,   // ms — typical gap between sittings (return cadence / churn)
+  curSessionPlays:     0,   // cash-ins so far in the current sitting
+  lastSessionStartAt:  0,   // when the current sitting began
+  lastGap:             0,   // ms — most recent inter-cash-in gap
+  playCount:           0,   // total cash-ins the engine has observed (engagement phase)
+  startedSessions:     0,   // slot sessions begun     ┐ completion rate = within-session
+  completedSessions:   0,   // slot sessions finished  ┘ engagement signal
+  todBuckets:          [0, 0, 0, 0],  // plays by time-of-day: night/morning/afternoon/evening
+}
+
+const EMA_ALPHA = 0.25                                   // smoothing for all engagement EMAs
+const ema = (prev, x) => (prev > 0 ? prev * (1 - EMA_ALPHA) + x * EMA_ALPHA : x)
+const todBucket = (ts) => Math.floor((new Date(ts).getHours() % 24) / 6)  // 0..3
 
 // ── 30-color kawaii palette ──
 export const KAWAII_COLORS = [
@@ -95,6 +118,7 @@ const useStore = create(
       // ── Engagement systems (persisted) ──
       jackpotPool: JACKPOT_SEED,                 // progressive jackpot, grows as you play
       spinStats:   { ...DEFAULT_SPIN_STATS },    // drives the luck engine
+      engagement:  { ...DEFAULT_ENGAGEMENT },    // LEARNED per-user profile (adaptive engine)
       daily:       { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
       settings: {
         beadSlots:      DEFAULT_BEAD_SLOTS,
@@ -226,11 +250,13 @@ const useStore = create(
         }
       },
 
-      // Update stats + grow/reset the jackpot pool. Returns the enriched outcome.
+      // Update stats + grow/reset the jackpot pool + LEARN the engagement profile.
+      // Returns the enriched outcome.
       _finalizeSpin: (outcome) => {
         const now = Date.now()
-        const { spinStats, jackpotPool } = get()
-        const newSession = now - spinStats.lastSpinAt > SESSION_GAP_MS ? 1 : spinStats.sessionSpins + 1
+        const { spinStats, jackpotPool, engagement } = get()
+        const fresh = now - spinStats.lastSpinAt > SESSION_GAP_MS
+        const newSession = fresh ? 1 : spinStats.sessionSpins + 1
         const good = isGoodResult(outcome.awardedResult)
         const isJackpot = outcome.awardedResult === 'jackpot'
 
@@ -243,8 +269,24 @@ const useStore = create(
           pool = JACKPOT_SEED       // reset
         }
 
+        // ── Learn this user's rhythm / sitting length / return cadence ──
+        const lastGap = spinStats.lastSpinAt ? now - spinStats.lastSpinAt : 0
+        const e = { ...engagement, lastGap, playCount: engagement.playCount + 1 }
+        if (fresh) {
+          // A new sitting begins: fold the sitting just ended into the EMAs.
+          if (engagement.curSessionPlays > 0) e.sessionPlayCountEMA = ema(engagement.sessionPlayCountEMA, engagement.curSessionPlays)
+          if (engagement.lastSessionStartAt)  e.returnGapEMA        = ema(engagement.returnGapEMA, now - engagement.lastSessionStartAt)
+          e.curSessionPlays    = 1
+          e.lastSessionStartAt = now
+        } else {
+          if (lastGap > 0) e.interSpinGapEMA = ema(engagement.interSpinGapEMA, lastGap)
+          e.curSessionPlays = engagement.curSessionPlays + 1
+        }
+        e.todBuckets = engagement.todBuckets.map((c, i) => (i === todBucket(now) ? c + 1 : c))
+
         set({
           jackpotPool: pool,
+          engagement: e,
           spinStats: {
             totalSpins:        spinStats.totalSpins + 1,
             sessionSpins:      newSession,
@@ -257,6 +299,29 @@ const useStore = create(
         return { ...outcome, coinsAwarded, jackpotAward }
       },
 
+      // The learned per-user profile the adaptive slot engine reads. `phase`
+      // gates warm-up generosity (new users get the strongest hook; experienced
+      // ones tolerate leaner schedules); `quitRisk` biases WHERE the peak lands.
+      getEngagementProfile: () => {
+        const e = get().engagement
+        const { lossStreak } = get().spinStats
+        const phase = e.playCount < 8 ? 'new' : e.playCount < 30 ? 'warming' : 'established'
+        const completionRate = e.startedSessions > 0 ? e.completedSessions / e.startedSessions : 1
+        const todPeak = e.todBuckets.indexOf(Math.max(...e.todBuckets))
+        const quitRisk = computeQuitRisk({
+          curSessionPlays: e.curSessionPlays, sessionPlayCountEMA: e.sessionPlayCountEMA,
+          lossStreak, lastGap: e.lastGap, interSpinGapEMA: e.interSpinGapEMA,
+        })
+        return { ...e, phase, completionRate, todPeak, quitRisk, lossStreak }
+      },
+      getQuitRisk: () => get().getEngagementProfile().quitRisk,
+
+      // Record that a slot session was fully revealed (within-session completion
+      // signal — low completion → strengthen front-loading next time).
+      markSlotSessionComplete: () => set(s => ({
+        engagement: { ...s.engagement, completedSessions: s.engagement.completedSessions + 1 },
+      })),
+
       // Wheel = SAFE: one certain spin for the full tier value (+ bonus/jackpot upside).
       spinWheel: (activeTier) => {
         const luck = get()._luckSnapshot()
@@ -265,9 +330,13 @@ const useStore = create(
 
       // Slots = GAMBLE: a session of N spins (tier sets the count), coins accumulate.
       // One special is rolled for the whole session; jackpot pays the pool on top.
+      // The adaptive engine reshapes the spin ORDER/feel for THIS user (timing
+      // only — the total is unchanged) using the learned engagement profile.
       spinSlots: (activeTier) => {
         const luck = get()._luckSnapshot()
-        const session = resolveSlotSession(activeTier, luck)
+        const profile = get().getEngagementProfile()
+        set(s => ({ engagement: { ...s.engagement, startedSessions: s.engagement.startedSessions + 1 } }))
+        const session = resolveSlotSession(activeTier, luck, profile)
         const fin = get()._finalizeSpin({
           awardedResult: session.isJackpot ? 'jackpot' : session.isBonus ? 'bonus' : 't1',
           rawResult: session.awardedResult, isNearMiss: false,
@@ -332,13 +401,14 @@ const useStore = create(
         milestones: [],
         jackpotPool: JACKPOT_SEED,
         spinStats:  { ...DEFAULT_SPIN_STATS },
+        engagement: { ...DEFAULT_ENGAGEMENT },
         daily:      { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
         session:    { ...DEFAULT_SESSION },
       }),
     }),
     {
       name: 'my-habit-addiction',
-      version: 9,
+      version: 10,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -396,6 +466,10 @@ const useStore = create(
           // any stale/old names (e.g. "Hot Pink", "Honey") to the canonical set.
           persisted.settings.beadSlots = DEFAULT_BEAD_SLOTS.map(s => ({ ...s }))
         }
+        if (version < 10) {
+          // Adaptive engagement engine — seed the learned per-user profile.
+          persisted.engagement = { ...DEFAULT_ENGAGEMENT, ...(persisted.engagement || {}) }
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -409,6 +483,7 @@ const useStore = create(
         settings:   state.settings,
         jackpotPool: state.jackpotPool,
         spinStats:  state.spinStats,
+        engagement: state.engagement,
         daily:      state.daily,
       }),
     }

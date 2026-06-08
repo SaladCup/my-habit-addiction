@@ -2,12 +2,14 @@
 
 _Kawaii casino-psychology habit tracker. React 19 + Vite, Zustand (persist), plain inline CSS. Fonts currently Bunny Snaps + Nunito. Local dev on port 5173 (launcher) / 5175 (preview)._
 
-Last updated: 2026-06-05
+Last updated: 2026-06-08
 
 ---
 
 ## ✅ Done so far
 - **Game/engagement engine** — variable-ratio reinforcement, pity timer, session warm-up, progressive jackpot, daily login streak, near-miss injection. Distributions verified (slots avg ~125/250/375 coins by tier; bonus ~15% on both wheel & slots; jackpot ~1–2.5%).
+- **Adaptive engagement engine (2026-06-08)** — research-grounded per-user learning that reshapes the **timing/feel** of wins (warm-up, peak placement at predicted quit-point, honest near-misses) while the long-run total stays anchored. Verified sum-invariant across engagement profiles. See the engine section below for mechanics, citations & ethical red lines.
+- **Vertical slot wins** — 8 paylines (3 rows + 3 columns + 2 diagonals); no economy rebalance (constructed-grid model decouples win frequency from payline count).
 - **Two games** — multi-spin tier-scaled slot machine (3/6/9 spins by tier) + wheel; bonus equally likely on both. Coin economy: 1 coin = 1¢ = 2 sec.
 - **Full kawaii PNG asset integration** — nav icons (castle/orb/stats/quill/gear), logo, jar, "tap a habit" banner, ornate habit-card rows, slot-machine cabinet, framed sunburst background, popup frames (cash prompt / onboarding / gold-bead).
 - **App icon** — browser favicon + macOS Dock icon (the jar-with-face).
@@ -76,16 +78,59 @@ determine the coin amount. That's why payouts feel arbitrary.
 - [ ] Show **per-line payouts** on the highlighted lines + a running breakdown (e.g. "Row 1 🌸🌸🌸 +30", "Diagonal ⭐⭐⭐ +50") so the total is self-explanatory.
 - [ ] Add a viewable **paytable** screen/sheet (what each symbol & line pays).
 
-**"Max addiction" engine — adaptive win/loss tuning.**
-Formalize the existing luck logic (`getAdjustedWeights`, pity timer, session
-warm-up, near-miss injection, jackpot-due) into ONE tunable, documented
-**engagement engine** that targets the optimal win/loss ratio to keep the player
-in the "one-more-spin" zone:
-- [ ] Dynamic difficulty / reinforcement schedule that adapts to the individual's play pattern (variable-ratio with a moving target hit-rate).
-- [ ] Loss-streak rescue (inject a win when quit-risk is high) + session pacing (generous warm-up, escalate near likely quit points).
-- [ ] Tunable RTP / hit-frequency parameters; track per-player history; near-miss frequency tuning.
-- [ ] Keep it all in one parameterized module so the ratios can be tuned/A-B tested.
-- _Intentional by design — this app weaponizes casino dopamine loops toward positive habit completion._
+**✅ Vertical (column) wins (2026-06-07)** — slots now have **8 paylines** (3 rows
++ 3 columns + 2 diagonals). Because the constructed-grid model sets win
+frequency/value independently of payline count, adding columns needed **zero
+rebalance**: re-sim (8 paylines, 200k/tier) = 129/258/388, 84% hit, 0 phantom.
+
+**✅ Adaptive engagement engine (2026-06-08)** — _research-grounded; reshapes the
+TIMING & FEEL of wins, never the total._ Built on a fact-checked literature pass
+(20 verified claims; see citations below). The economy stays mathematically
+anchored because every operation is a **pure permutation** of the session's
+already-rolled spins (verified: per-tier totals identical across new/established/
+high-quit profiles — 122/251/380 — with 0 phantom lines).
+- ✅ **Per-user learning** (`useStore.engagement`, persisted v10) — EMA-smoothed
+  signals: inter-spin rhythm, sitting length (`sessionPlayCountEMA`), return
+  cadence, time-of-day histogram, within-session completion rate, play-count phase.
+- ✅ **Timing reshape** (`reshapeSessionOrder`, `gameLogic.js`) — warm-up win up
+  front (the hook; strongest for **new** users, lighter for experienced ones who
+  tolerate leaner schedules), wins spread so zeros never bunch, **peak-end** finish,
+  biggest win placed at the personalised peak slot.
+- ✅ **Quit-risk response** (`computeQuitRisk`) — when the user is likely to stop
+  (at/over their typical sitting length, on a cold streak, or slowing), bias the
+  peak **earlier** so the probably-final spin is rewarding — never to trap/chase.
+- ✅ **Honest near-misses** (`applyNearMisses`) — some 0-coin losses render as
+  "so close!" 2-of-a-kind (motivation lever, Clark et al. 2009); density scales
+  with quit-risk. **Coins shown always = coins awarded.**
+
+**🚫 Deliberately NOT built (ethical red lines from the same research):**
+- ❌ **Losses-disguised-as-wins** — celebrating a net loss as a win causally
+  distorts a player's sense of their real economy (Dixon et al. 2010). Refuted
+  3-0: "engineer more arousing LDWs to boost reinforcement."
+- ❌ **Engineered loss streaks** to exploit the partial-reinforcement extinction
+  effect (Horsley 2012) — antithetical to durable positive habits.
+- ❌ Anything that changes the long-run total, or makes a session drier than it
+  rolled. The engine only ever improves *feel*.
+
+**Citations** (deep-research, 2026-06-08, 5 angles → 26 sources → 20 verified claims):
+James, O'Malley & Tunney 2016 (Frontiers in Psych — timing/frequency are the
+levers that move engagement at fixed payout); Clark & Zack 2023 (Addictive
+Behaviors — uncertainty/VR drives dopamine even for non-monetary rewards);
+Horsley et al. 2012 (PREE larger in high-frequency players → scale by engagement);
+Clark et al. 2009 (Neuron — near-miss raises motivation, recruits win circuitry);
+Dixon/Harrigan/Fugelsang et al. 2010 (Addiction — LDWs & win-miscounting);
+Murch & Clark 2016 (The Neuroscientist — the 4-mechanic toolkit + public-health framing).
+- _Intentional by design — this app weaponizes casino dopamine loops toward positive
+  habit completion (durable RETURN + habit adherence), within hard ethical bounds._
+
+**Parked / future engine work:**
+- [ ] Surface the learned profile to the user (transparency) — a gentle "the game
+  is learning your rhythm" note in Stats; honesty is itself an ethical guardrail.
+- [ ] A/B-test the parameter envelope per-user (warm-up strength, near-miss density)
+  — current values are research-informed *starting hypotheses*, not validated for a
+  fixed-odds habit app (the literature's numbers come from money-gambling).
+- [ ] Optional daily-spins awareness / soft session cap for anti-compulsion (the
+  spin is already gated behind a real completed habit — the prosocial anchor).
 
 ## 🔤 Fonts
 - [ ] Bunny Snaps no longer fits the new aesthetic. Research & choose font(s) that match the glossy kawaii / magical-girl style for editable & dynamic text (habit names, numbers, labels).
