@@ -488,11 +488,11 @@ export default function HomeScreen() {
       <FloatingDecor />
 
       {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
-      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '6px 16px 2px' }}>
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '30px 16px 2px' }}>
         <img
           src="/ui/logo.png"
           alt="My Habit Addiction — get addicted for good this time"
-          style={{ width: '100%', maxWidth: 264, height: 'auto', margin: '0 auto', display: 'block',
+          style={{ width: '100%', maxWidth: 420, height: 'auto', margin: '0 auto', display: 'block',
             filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
         />
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />
