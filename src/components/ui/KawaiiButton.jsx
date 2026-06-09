@@ -3,7 +3,10 @@ import { useRef } from 'react'
 const VARIANTS = {
   primary:   { bg: '#FF85A1', shadow: '#C44B6A', text: '#fff' },
   secondary: { bg: '#C8B4E0', shadow: '#8B6BAE', text: '#fff' },
-  mint:      { bg: '#4BF5A0', shadow: '#28B870', text: '#1A5C3A' },
+  // "mint" key kept so all 11 call sites stay valid, but restyled from the loud
+  // spring-green to a warm pastel gold. Flat (no shimmer) so it stays clearly
+  // distinct from the special `gold` SPIN button when both share a screen.
+  mint:      { bg: '#FFD96B', shadow: '#E0A52E', text: '#5C3A00' },
   gold:      { bg: '#FFD700', shadow: '#C8A800', text: '#5C3A00' },
   danger:    { bg: '#FF7675', shadow: '#C44B4B', text: '#fff' },
   ghost:     { bg: 'rgba(200,180,224,0.25)', shadow: 'transparent', text: '#9B7EC8', border: '2px solid #C8B4E0' },
