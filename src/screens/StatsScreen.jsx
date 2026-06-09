@@ -186,7 +186,7 @@ export default function StatsScreen() {
 
       {/* Per-slot bead breakdown */}
       {totalBeads > 0 && (
-        <PixelPanel color="cream" title="BEADS BY SLOT" style={{ marginBottom: 14 }}>
+        <PixelPanel color="cream" title="BEADS BY COLOR" style={{ marginBottom: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {settings.beadSlots.map(bs => (
               <div key={bs.slot} style={{

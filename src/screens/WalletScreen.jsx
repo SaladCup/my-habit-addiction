@@ -36,7 +36,8 @@ export default function WalletScreen() {
   const groups = {}
   wallet.forEach(b => {
     const key = b.isGold ? 'gold' : `slot${b.slot}`
-    if (!groups[key]) groups[key] = { label: b.isGold ? '✨ Gold' : `Slot ${b.slot} — ${slotNames[b.slot] || ''}`, beads: [], color: getBeadColor(b.slot, b.isGold), isGold: b.isGold, slot: b.slot }
+    // Color name alone is enough — no "Slot N" prefix (gold stays special).
+    if (!groups[key]) groups[key] = { label: b.isGold ? '✨ Gold' : (slotNames[b.slot] || `Slot ${b.slot}`), beads: [], color: getBeadColor(b.slot, b.isGold), isGold: b.isGold, slot: b.slot }
     groups[key].beads.push(b)
   })
 
