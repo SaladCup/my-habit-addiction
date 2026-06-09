@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import useStore from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { KawaiiButton, TierBadge, PixelPanel } from '../components/ui'
+// 3D physics coin shower — lazy so Three.js/rapier only load on a win
+const CoinCascade3D = lazy(() => import('../components/CoinCascade3D'))
 
 const KAWAII_COLORS = ['#FFB7C5', '#C8B4E0', '#B4E0C8', '#FFE9A0', '#B4D4FF', '#FF85A1', '#9B7EC8', '#FFD700', '#FFF176']
 
@@ -79,6 +81,9 @@ export default function RewardScreen() {
 
   const cfg = RESULT_CFG[spinResult] || RESULT_CFG.t1
   const coins = coinsEarned || TIER_COINS[spinResult] || 0
+  // 1:1 — exactly your winnings fall (capped at 400 for physics perf; every
+  // normal tier win is under that, so the count is literally what you won)
+  const cascadeCount = coins > 0 ? Math.min(coins, 400) : 0
   const coinName = 'coins'
   const moneyVal = settings?.moneyPerCoin ? (coins * settings.moneyPerCoin).toFixed(2) : null
   const timeVal = settings?.secondsPerCoin ? formatTime(coins * settings.secondsPerCoin) : null
@@ -106,7 +111,13 @@ export default function RewardScreen() {
       minHeight: '100%',
       padding: '32px 20px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+      position: 'relative',
     }}>
+      {/* Falling-coin 3D physics shower — coins shoot out one at a time + pile up */}
+      {cascadeCount > 0 && (
+        <Suspense fallback={null}><CoinCascade3D count={cascadeCount} /></Suspense>
+      )}
+
       {/* Result badge */}
       <div style={{
         textAlign: 'center',

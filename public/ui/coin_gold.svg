@@ -1,0 +1,42 @@
+<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" width="220" height="220">
+  <defs>
+    <radialGradient id="cgFace" cx="38%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#FFFBEA"/>
+      <stop offset="26%" stop-color="#FFE889"/>
+      <stop offset="60%" stop-color="#F4B62C"/>
+      <stop offset="100%" stop-color="#C2820D"/>
+    </radialGradient>
+    <linearGradient id="cgRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF1B0"/>
+      <stop offset="48%" stop-color="#E7A91E"/>
+      <stop offset="100%" stop-color="#8A5F08"/>
+    </linearGradient>
+    <radialGradient id="cgEmboss" cx="40%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#FFF8D8"/>
+      <stop offset="55%" stop-color="#FBD45F"/>
+      <stop offset="100%" stop-color="#D1900D"/>
+    </radialGradient>
+    <radialGradient id="cgGlint" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- outer rim -->
+  <circle cx="110" cy="110" r="105" fill="url(#cgRim)"/>
+  <!-- milled edge -->
+  <circle cx="110" cy="110" r="100" fill="none" stroke="#9A6B0A" stroke-width="7" stroke-dasharray="2.5 4.2" opacity=".55"/>
+  <!-- inner bevel -->
+  <circle cx="110" cy="110" r="93" fill="#A8730B"/>
+  <!-- face -->
+  <circle cx="110" cy="110" r="89" fill="url(#cgFace)"/>
+  <!-- groove ring -->
+  <circle cx="110" cy="110" r="79" fill="none" stroke="#D49C1C" stroke-width="2.5" opacity=".55"/>
+  <!-- embossed sparkle -->
+  <path d="M112,66 L122.6,101.4 L158,112 L122.6,122.6 L112,158 L101.4,122.6 L66,112 L101.4,101.4 Z" fill="#9A6B0A" opacity=".45"/>
+  <path d="M110,64 L120.6,99.4 L156,110 L120.6,120.6 L110,156 L99.4,120.6 L64,110 L99.4,99.4 Z" fill="url(#cgEmboss)" stroke="#B07E10" stroke-width="1.2"/>
+  <circle cx="101" cy="101" r="6" fill="#FFF7D6" opacity=".85"/>
+  <!-- specular highlight -->
+  <ellipse cx="80" cy="74" rx="33" ry="18" fill="url(#cgGlint)" transform="rotate(-28 80 74)"/>
+  <!-- rim sheen -->
+  <path d="M46,74 A78 78 0 0 1 172,60" fill="none" stroke="#FFF6D0" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+</svg>
