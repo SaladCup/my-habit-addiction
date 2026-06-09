@@ -122,7 +122,8 @@ export default function CoinCascade3D({ count = 60, onDone }) {
     <div ref={ref} style={{ position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none' }}>
       {box && (
         <Canvas orthographic camera={{ position: [0, 0, 40], near: 0.1, far: 200 }}
-          gl={{ alpha: true, antialias: true }} style={{ background: 'transparent' }}>
+          gl={{ alpha: true, antialias: true }} style={{ background: 'transparent', pointerEvents: 'none' }}
+          onCreated={({ gl }) => { gl.domElement.style.pointerEvents = 'none' }}>
           <Suspense fallback={null}>
             <OrthoFit bh={box.bh} />
             <Scene count={count} bw={box.bw} bh={box.bh} />
