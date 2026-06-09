@@ -111,7 +111,12 @@ export default function RewardScreen() {
       minHeight: '100%',
       padding: '32px 20px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
-      position: 'relative',
+      // Intentionally NOT position:relative. The coin cascade is an
+      // absolute/inset:0 overlay; with no positioned root it anchors to .screen
+      // (the next positioned ancestor) and fills the FULL card — including
+      // .screen's bottom padding reserved for the hidden nav. If this div were
+      // relative, the cascade floor would stop ~108px above the true bottom and
+      // coins would pile up on an invisible ledge. (See CoinCascade3D.)
     }}>
       {/* Falling-coin 3D physics shower — coins shoot out one at a time + pile up */}
       {cascadeCount > 0 && (

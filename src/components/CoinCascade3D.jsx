@@ -119,6 +119,10 @@ export default function CoinCascade3D({ count = 60, onDone }) {
     if (onDone) { const t = setTimeout(onDone, 8000); return () => clearTimeout(t) }
   }, [])
   return (
+    // absolute/inset:0 — anchors to the nearest positioned ancestor. The host
+    // screen must NOT wrap this in a position:relative box, or the floor (canvas
+    // bottom) won't reach the real bottom of the visible area. On RewardScreen
+    // it anchors to .screen so coins settle at the true card bottom.
     <div ref={ref} style={{ position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none' }}>
       {box && (
         <Canvas orthographic camera={{ position: [0, 0, 40], near: 0.1, far: 200 }}
