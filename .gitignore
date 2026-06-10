@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 *.blend1
+
+# Blender: keep heavy scene files + iteration renders out (commit scripts + HERO renders only)
+blender/jar_glass.blend
+blender/renders/
