@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { isCashable } from '../engine/gameLogic'
 import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw } from '../engine/sounds'
+// 3D physics jar (lazy: three.js/rapier only load once Home renders it)
+const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
 
 // ── utils ──
 function darken(hex, amt = 20) {
@@ -43,83 +45,63 @@ function seeded(n) {
   return x - Math.floor(x)
 }
 
-// ── Jar (kawaii glass jar art + bead fill) ──
+// ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
 function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
+  // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone lines
   const jarX = 30, jarW = 140
-  const jarY = 86, jarH = 168
+  const jarY = 58, jarH = 196
 
   const maxMilestone = milestones.length
     ? Math.max(...milestones.map(m => m.beadCount))
     : 150
   const capacity = Math.max(maxMilestone, jarBeads.length, 1)
-  const visibleBeads = jarBeads.slice(-77)
 
-  function beadPos(i) {
-    const totalCols = 7
-    const col = i % totalCols
-    const row = Math.floor(i / totalCols)
-    const xOff = seeded(i * 7) * 8 - 4
-    const yOff = seeded(i * 11) * 4 - 2
-    return {
-      x: jarX + 14 + col * ((jarW - 28) / (totalCols - 1)) + xOff,
-      y: jarY + jarH - 10 - row * 14 + yOff,
-    }
-  }
+  // {id, color, isGold} for the 3D jar — oldest→newest so new beads drop last
+  const beads3d = useMemo(
+    () => jarBeads.map(b => ({ id: b.id, color: getBeadColor(b.slot, b.isGold), isGold: b.isGold })),
+    [jarBeads, getBeadColor]
+  )
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 2px' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width={122} height={122 * (H / W)} style={{ overflow: 'visible' }}>
-        <defs>
-          <clipPath id="jar-clip">
-            <path d={`M${jarX} ${jarY} H${jarX + jarW} V${jarY + jarH - 18} Q${jarX + jarW} ${jarY + jarH} ${jarX + jarW - 18} ${jarY + jarH} H${jarX + 18} Q${jarX} ${jarY + jarH} ${jarX} ${jarY + jarH - 18} Z`} />
-          </clipPath>
-        </defs>
+      <div style={{ position: 'relative', width: 150, height: 150 * (H / W) }}>
+        {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
+        <Suspense fallback={
+          <img src="/ui/jar.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        }>
+          <BeadJar3D beads={beads3d} width={150} height={150 * (H / W)} />
+        </Suspense>
 
-        {/* beads sit behind the glass art so the glossy highlight reads on top */}
-        <g clipPath="url(#jar-clip)">
-          {visibleBeads.map((bead, i) => {
-            const pos = beadPos(i)
-            if (pos.y < jarY) return null
-            const r = 8
-            const imgSrc = bead.isGold ? '/beads/bead-gold.png' : `/beads/bead-${bead.slot}.png`
+        {/* milestone lines + count overlay the canvas (it ignores pointer events) */}
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+          {milestones.map(m => {
+            const lineY = jarY + jarH - (m.beadCount / capacity) * jarH
+            if (lineY < jarY || lineY > jarY + jarH) return null
+            const isReached = jarBeads.length >= m.beadCount
             return (
-              <image key={bead.id} href={imgSrc} x={pos.x - r} y={pos.y - r} width={r * 2} height={r * 2} opacity={0.97} />
+              <g key={m.id}>
+                <line x1={jarX} y1={lineY} x2={jarX + jarW} y2={lineY}
+                  stroke={isReached ? '#5CBFA0' : '#9B7EC8'}
+                  strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
+                <rect x={jarX + jarW - 4} y={lineY - 8} width={52} height={16} rx={4}
+                  fill={isReached ? '#B4E0C8' : '#E8D8F5'}
+                  stroke={isReached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1} />
+                <text x={jarX + jarW + 22} y={lineY + 1}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontSize={15} fontFamily="'Fredoka', cursive"
+                  fill={isReached ? '#1A5C3A' : '#3D2B4F'}>
+                  {m.name.length > 7 ? m.name.slice(0, 7) + '…' : m.name}
+                </text>
+              </g>
             )
           })}
-        </g>
-
-        {/* the jar art itself */}
-        <image href="/ui/jar.png" x={0} y={0} width={W} height={H} pointerEvents="none" />
-
-        {/* milestone lines across the glass */}
-        {milestones.map(m => {
-          const lineY = jarY + jarH - (m.beadCount / capacity) * jarH
-          if (lineY < jarY || lineY > jarY + jarH) return null
-          const isReached = jarBeads.length >= m.beadCount
-          return (
-            <g key={m.id}>
-              <line x1={jarX} y1={lineY} x2={jarX + jarW} y2={lineY}
-                stroke={isReached ? '#5CBFA0' : '#9B7EC8'}
-                strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
-              <rect x={jarX + jarW - 4} y={lineY - 8} width={52} height={16} rx={4}
-                fill={isReached ? '#B4E0C8' : '#E8D8F5'}
-                stroke={isReached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1} />
-              <text x={jarX + jarW + 22} y={lineY + 1}
-                textAnchor="middle" dominantBaseline="central"
-                fontSize={15} fontFamily="'Fredoka', cursive"
-                fill={isReached ? '#1A5C3A' : '#3D2B4F'}>
-                {m.name.length > 7 ? m.name.slice(0, 7) + '…' : m.name}
-              </text>
-            </g>
-          )
-        })}
-
-        <text x={W / 2} y={H - 1} textAnchor="middle"
-          fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8">
-          {jarBeads.length} beads
-        </text>
-      </svg>
+          <text x={W / 2} y={H - 1} textAnchor="middle"
+            fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8">
+            {jarBeads.length} beads
+          </text>
+        </svg>
+      </div>
     </div>
   )
 }
