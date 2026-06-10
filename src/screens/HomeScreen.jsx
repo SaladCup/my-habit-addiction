@@ -40,11 +40,6 @@ function hashSlot(key) {
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
   return (h % 6) + 1
 }
-function seeded(n) {
-  const x = Math.sin(n + 1) * 10000
-  return x - Math.floor(x)
-}
-
 // ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
 function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291

@@ -17,7 +17,6 @@ const PROFILE = [
   [0.85, 0.95], [0.84, 1.28], [0.78, 1.50], [0.62, 1.66], [0.50, 1.74],
   [0.48, 1.82], [0.50, 1.90], [0.47, 1.93],
 ]
-const RIM_Y = 1.93
 const BEAD_R = 0.095
 const MAX_BEADS = 220          // physics bodies cap (oldest beads beyond this are dropped)
 const GOLD_HEX = '#F5C04A'
@@ -78,7 +77,8 @@ function Jar() {
     return {
       glassGeo,
       collVerts: collGeo.attributes.position.array,
-      collIndices: collGeo.index.array,
+      // rapier wants Uint32 indices; three uses Uint16 for small geometries
+      collIndices: new Uint32Array(collGeo.index.array),
     }
   }, [])
   return (
@@ -117,20 +117,31 @@ function Bow() {
     c.traverse(o => { if (o.isMesh) { o.material = satinMat; o.castShadow = false } })
     return c
   }, [scene])
-  // GLB is ~0.53 wide, facing +Z. Nestle it on the neck front, tails up a touch.
-  return <primitive object={bow} position={[0, 1.72, 0.46]} scale={1.15} rotation={[0.30, 0, 0]} />
+  // GLB is ~0.53 wide, facing +Z. Sits PROUD of the neck glass (front surface
+  // ~z=0.52 at this height) like the approved Blender placement — z=0.46 buried
+  // its back half inside the jar wall.
+  return <primitive object={bow} position={[0, 1.72, 0.60]} scale={1.15} rotation={[0.30, 0, 0]} />
 }
 
-function Bead({ bead, idx, register }) {
+// deterministic hash of the bead's id → stable spawn pose no matter where the
+// bead sits in the array (index-based seeds teleported settled beads whenever
+// the render window slid past MAX_BEADS)
+function idHash(str, salt) {
+  let h = 2166136261 ^ salt
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return ((h >>> 0) % 10000) / 10000          // 0..1
+}
+
+function Bead({ bead, register }) {
   const s = useMemo(() => {
-    // deterministic-ish per-bead jitter so re-mounts look stable
-    const h = (Math.sin(idx * 12.9898) * 43758.5453) % 1
-    const h2 = (Math.sin(idx * 78.233) * 12543.123) % 1
+    const h = idHash(bead.id, 0), h2 = idHash(bead.id, 7), h3 = idHash(bead.id, 13)
     return {
-      pos: [h * 0.3 - 0.15, 2.3 + (idx % 3) * 0.05, h2 * 0.3 - 0.15],
-      rot: [h * 6.28, h2 * 6.28, (h + h2) * 3.14],
+      // ±0.22 keeps every drop radially inside the neck opening (~0.33 usable);
+      // wider jitter bounced beads off the rim and OUT of the jar
+      pos: [(h - 0.5) * 0.44, 2.3 + h3 * 0.12, (h2 - 0.5) * 0.44],
+      rot: [h * 6.28, h2 * 6.28, h3 * 6.28],
     }
-  }, [idx])
+  }, [bead.id])
   return (
     <RigidBody colliders={false} position={s.pos} rotation={s.rot} ccd
       ref={api => register(bead.id, api)}
@@ -150,38 +161,40 @@ function SettleWatch({ bodies, busy, onSettled }) {
     if ((tick.current = (tick.current + 1) % 30) !== 0) return
     let all = true
     bodies.current.forEach(api => { if (api && !api.isSleeping()) all = false })
-    if (all && bodies.current.size > 0) onSettled()
+    if (all) onSettled()        // empty jar settles too — else it renders forever
   })
   return null
 }
 
 function Scene({ beads, onWake, onSettled }) {
-  // Spawn beads one at a time: fast refill on mount, distinct plunk for new ones.
-  const [n, setN] = useState(0)
-  const spawned = useRef(0)
+  // `released` counts beads ever dropped into the scene (this mount). The spawn
+  // window is the last MAX_BEADS of those — so cash-ins keep plunking past the
+  // cap (a capped-length prop deadlocked: length stopped changing at the cap).
+  const [released, setReleased] = useState(0)
+  const releasedRef = useRef(0)
   const bodies = useRef(new Map())
   const register = useMemo(() => (id, api) => {
     if (api) bodies.current.set(id, api)
     else bodies.current.delete(id)
   }, [])
   useEffect(() => {
-    if (beads.length < spawned.current) {           // jar emptied (cash-in/reset)
-      spawned.current = 0; setN(0); bodies.current.clear()
+    if (beads.length < releasedRef.current) {       // jar emptied (reset)
+      releasedRef.current = 0; setReleased(0); bodies.current.clear()
     }
-    if (beads.length === spawned.current) return
-    const initialFill = spawned.current === 0 && beads.length > 1
+    if (beads.length === releasedRef.current) return
+    const initialFill = releasedRef.current === 0 && beads.length > 1
     const interval = initialFill ? 34 : 240
     onWake()
     const id = setInterval(() => {
-      spawned.current = Math.min(beads.length, spawned.current + 1)
-      setN(spawned.current)
+      releasedRef.current = Math.min(beads.length, releasedRef.current + 1)
+      setReleased(releasedRef.current)
       onWake()
-      if (spawned.current >= beads.length) clearInterval(id)
+      if (releasedRef.current >= beads.length) clearInterval(id)
     }, interval)
     return () => clearInterval(id)
   }, [beads.length, onWake])
 
-  const visible = beads.slice(0, n)
+  const visible = beads.slice(Math.max(0, released - MAX_BEADS), released)
   return (
     <>
       <StudioEnv />
@@ -191,15 +204,15 @@ function Scene({ beads, onWake, onSettled }) {
       <Jar />
       <Pearls />
       <Suspense fallback={null}><Bow /></Suspense>
-      {visible.map((b, i) => <Bead key={b.id} bead={b} idx={i} register={register} />)}
-      <SettleWatch bodies={bodies} busy={n < beads.length} onSettled={onSettled} />
+      {visible.map(b => <Bead key={b.id} bead={b} register={register} />)}
+      <SettleWatch bodies={bodies} busy={released < beads.length} onSettled={onSettled} />
     </>
   )
 }
 
-// beads: [{ id, color, isGold }] oldest→newest (capped to MAX_BEADS by caller or here)
+// beads: full jar contents [{ id, color, isGold }] oldest→newest (uncapped —
+// Scene windows the physics bodies to the newest MAX_BEADS itself)
 export default function BeadJar3D({ beads, width = 150, height = 218 }) {
-  const shown = useMemo(() => beads.slice(-MAX_BEADS), [beads])
   const [active, setActive] = useState(true)
   const onWake = useMemo(() => () => setActive(true), [])
   const onSettled = useMemo(() => () => setActive(false), [])
@@ -217,7 +230,7 @@ export default function BeadJar3D({ beads, width = 150, height = 218 }) {
         }}>
         <Suspense fallback={null}>
           <Physics gravity={[0, -14, 0]} paused={!active} numSolverIterations={8} numAdditionalFrictionIterations={4}>
-            <Scene beads={shown} onWake={onWake} onSettled={onSettled} />
+            <Scene beads={beads} onWake={onWake} onSettled={onSettled} />
           </Physics>
         </Suspense>
       </Canvas>
