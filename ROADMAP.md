@@ -1,8 +1,49 @@
 # My Habit Addiction — Roadmap & Status
 
-_Kawaii casino-psychology habit tracker. React 19 + Vite, Zustand (persist), plain inline CSS. Fonts currently Bunny Snaps + Nunito. Local dev on port 5173 (launcher) / 5175 (preview)._
+_Kawaii casino-psychology habit tracker. React 19 + Vite, Zustand (persist), plain inline CSS. Fonts: Fredoka (display) + Mulish (body). Local dev on port 5173 (launcher) / 5175 (preview)._
 
-Last updated: 2026-06-08
+Last updated: 2026-06-10
+
+---
+
+## ⏸️ PAUSED HERE (2026-06-10) — state + how to resume
+
+Work paused to free RAM for another project. Everything is committed (`master`,
+clean tree, latest `763c19e`). Safe to quit: **Blender** (scene saved to
+`blender/jar_glass.blend`), both **dev servers** (5173/5175), and the preview.
+
+**What just shipped (the 3D era):**
+1. **Coin cascade** (Phase 3 item) — DONE. Reward screen rains your exact win
+   count as real 3D physics coins (`src/components/CoinCascade3D.jsx`).
+2. **Blender hero jar** — `blender/jar_glass.py` + `jar_glass.blend` (gitignored,
+   20MB): two pink-glass jars (rounded + tall apothecary), pearls, satin bow,
+   1,100+ shimmer marble fill. Hero renders in `blender/renders/HERO_*.png`.
+3. **Home jar is now real 3D physics** (Phase 3 "bead-fall" item) — DONE.
+   `src/components/BeadJar3D.jsx` replaced the PNG TeapotJar: beads physically
+   plunk through the opening and pile up. Beads enter the jar at CASH-IN
+   (wallet→jar), so plunks happen when you return from a spin. Idles at ~zero
+   cost (physics+render pause when every bead is asleep). Bug-check pass done
+   (5 fixed: cap deadlock, stray spawns, idle burn, Uint16 indices, buried bow).
+
+**⚠️ ONE PENDING VERIFICATION:** the falling/piling physics could NOT be watched
+in the Claude preview (hidden tab = no animation frames; R3F won't even init
+there on fresh loads). **First thing on resume: open the app live and watch the
+Home jar fill + plunk.** Likely tweaks are taste-level: camera framing, bead
+size, glass opacity, milestone-line overlay band (`jarY=58/jarH=196` in
+HomeScreen's TeapotJar maps beadCount→pixels and was eyeballed).
+
+**To resume the Blender pipeline:** open Blender → N-panel → BlenderMCP tab →
+"Connect to Claude" (port 9876). Addon lives in
+`~/Library/Application Support/Blender/5.1/scripts/addons/blender_mcp_addon.py`;
+Sketchfab key is saved in the panel (re-read on connect).
+
+**Attribution required if the bow ships:** "Pink Ribbon Bow" by **BAHDDIE.TS4**
+(Sketchfab, CC-Attribution) — used in hero renders + `public/models/bow_low.glb`.
+
+**Parked (nice-to-haves, not started):** apothecary jar unused in-app · per-bead
+plunk + per-coin ting sounds (every spawn is already a discrete event — see
+SOUNDS.md) · bead sparkle texture in-app (skipped for perf; clearcoat reads as
+shimmer) · Settings "empty jar" action if ever wanted (resets handled).
 
 ---
 
@@ -18,6 +59,10 @@ Last updated: 2026-06-08
 - **Version control** — git repo initialized in `app/` with recovery checkpoints.
 - **Phase 0 complete (2026-06-05):** asset dimension spec locked (`ASSETS.md`); nav icons normalized to 216×216; fonts swapped — **Fredoka** (display) + **Mulish** (body, free Genshin-like sans) replacing Bunny Snaps + Nunito.
 - **Recovered** the Home PNG integrations after parallel sessions reverted them; fixed the cash-prompt so keeping a bead still lets you play (Tier 1).
+- **3D gold coin (2026-06-09)** — Blender-built coin (concentric rings + puffy heart via normal map on a low-poly disk, `blender/coin_gold.py` + `gen_coin_normal.py`).
+- **Coin cascade (2026-06-09)** — Phase 3 item DONE. three.js + rapier: coins shoot one-at-a-time from a sweeping off-screen cannon, tumble, stack, pile up; 1:1 with coins won (cap 400). Pointer-events + true-bottom-settle fixed.
+- **Blender pipeline (2026-06-09/10)** — BlenderMCP live-link working (addon + Sketchfab/PolyHaven); hero bead-jar scene built + rendered (`blender/jar_glass.py`).
+- **3D Home jar (2026-06-10)** — Phase 3 "bead-fall physics" DONE. PNG jar replaced by real-time R3F/rapier jar (`BeadJar3D.jsx`): pink lathe glass, pearls, satin bow GLB, beads in real slot colors plunk in at cash-in and pile with real physics; sleeps when settled. UI tweaks same stretch: pastel-gold CTA buttons (was green), bigger un-clipped Home title, "BEADS BY COLOR", color-name-only wallet labels.
 
 ---
 
@@ -45,9 +90,9 @@ Each phase ends with a committed, working git checkpoint. Sizes: S = small, M = 
 - ✅ _Checkpoint: final art everywhere._
 
 ### Phase 3 — The juice _(biggest reward payoff)_
-- 💻 **Audio SFX mapping** — map your downloaded sounds to every event (M)
-- 💻 **Coin cascade** — screen-filling coins w/ physics, count = amount won, + clink sound (L)
-- 💻 **Bead-fall physics** — beads fall through the opening + stack at the bottom (L)
+- 💻 **Audio SFX mapping** — map your downloaded sounds to every event (M) ← _the remaining Phase 3 item_
+- ✅ **Coin cascade** — DONE 2026-06-09 (`CoinCascade3D.jsx`; clink sound still pending audio pass)
+- ✅ **Bead-fall physics** — DONE 2026-06-10 (`BeadJar3D.jsx`; plunk sound still pending audio pass)
 - ✅ _Checkpoint: maximal audio-visual reward._
 
 ### Phase 4 — Bank feature
@@ -150,15 +195,27 @@ Murch & Clark 2016 (The Neuroscientist — the 4-mechanic toolkit + public-healt
 
 ---
 
-## ✨ Physics & animation (the "juice")
-- [ ] **Beads fall into the jar with real physics** — bead drops, falls *through the jar opening*, and settles/stacks at the bottom in a believable pile (collision + gravity), clipped to the jar interior. Current version is a simple CSS drop + static fill.
-- [ ] **Coin cascade on wins** — a screen-filling shower of coins with good physics where the *number of coins* matches the amount won, paired with a clinking sound. This is the core reward moment.
-  - **Tech options (decide at build time):**
-    1. _2D coin that spins + cascades (recommended)_ — flat coin face PNG (optionally a few rotation frames), spun via CSS 3D flip, light 2D physics (matter.js or hand-rolled gravity). On-aesthetic, fast, safest for the iOS/WKWebView port.
-    2. _Flat face on a 3D cylinder_ — map a flat face onto a procedural Three.js cylinder for true spin + physics; no 3D modeling needed. Heavier.
-    3. _Full 3D model + physics_ — GLB coin + Rapier/cannon. Most realistic, heaviest, perf risk on phones, needs a modeled/AI-generated GLB.
-  - **Perf rule (any approach):** cap the *visible* coins (~60–100) and let the on-screen counter tick to the real amount — never spawn hundreds of bodies on mobile.
-  - _Status: asset format parked until we build this (Phase 3); user undecided on 2D vs 3D._
+## ✨ Physics & animation (the "juice") — ✅ BOTH SHIPPED
+- ✅ **Beads fall into the jar with real physics** (2026-06-10) — `BeadJar3D.jsx`
+  replaced the PNG TeapotJar on Home. R3F + @react-three/rapier: lathe pink-glass
+  jar (same profile as the Blender hero jar), pearl ring, decimated satin bow GLB
+  (`public/models/bow_low.glb`, 315k→15.8k tris), beads as ball colliders in each
+  bead's REAL slot color. Jar interior = trimesh collider (+ primitive safety
+  floor, ccd on beads). Mount = fast refill (34ms/bead); jarBeads growth at
+  cash-in = single 240ms plunks. Physics+canvas pause only when every body
+  `isSleeping()` (never a wall-clock timer — that froze beads mid-air in
+  throttled tabs). Caps physics bodies at the newest 220 via an internal
+  released-counter window (per-bead id-hash spawn seeds, so the pile never
+  teleports); milestone lines + count = SVG overlay; PNG jar = lazy fallback.
+- ✅ **Coin cascade on wins** (2026-06-09) — went with option 3 (true 3D) and it
+  performs fine: `CoinCascade3D.jsx`, three.js + rapier, normal-mapped low-poly
+  coin disks (rings + heart relief baked in Blender → `public/ui/coin_normal.png`),
+  one shared light + env so every coin matches, triangle-wave sweeping cannon
+  spawns one coin at a time (adaptive interval ~24–110ms), coins tumble/stack,
+  count = exactly coins won (cap 400). Anti-jitter solver tuning; canvas is
+  pointer-transparent; floor sits at the true screen bottom.
+- [ ] Remaining juice: per-coin clink + per-bead plunk SOUNDS (audio pass, below) —
+  every spawn is already a discrete event to hook onto.
 
 ---
 
