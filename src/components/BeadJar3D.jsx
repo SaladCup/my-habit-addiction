@@ -17,8 +17,10 @@ const PROFILE = [
   [0.85, 0.95], [0.84, 1.28], [0.78, 1.50], [0.62, 1.66], [0.50, 1.74],
   [0.48, 1.82], [0.50, 1.90], [0.47, 1.93],
 ]
-const BEAD_R = 0.095
-const MAX_BEADS = 220          // physics bodies cap (oldest beads beyond this are dropped)
+// Sized so ~1 month of 6-8 habits/day (~210 beads) fills ~1/3 of the jar, and
+// the cap (~620) is roughly a FULL jar — the pile visibly grows for months.
+const BEAD_R = 0.072
+const MAX_BEADS = 620          // physics bodies cap (oldest beads beyond this are dropped)
 const GOLD_HEX = '#F5C04A'
 
 function profR(y) {
@@ -44,14 +46,14 @@ function StudioEnv() {
 // ---- shared geometries/materials (module-level: one of each, ever) ----
 const beadGeo = new THREE.SphereGeometry(1, 20, 14)
 const pearlGeo = new THREE.SphereGeometry(1, 16, 12)
-// The app's slot colors are soft pastels — under the bright studio env +
-// clearcoat they wash out against the white sunburst. Deepen: boost saturation,
-// pull lightness down. Works for any custom slot color picked in Settings.
+// The app's slot colors are soft pastels — under the bright studio env they
+// wash out, but over-deepening reads as opaque "playpen balls". Middle ground:
+// modest saturation/darkness boost + a translucent marble body below.
 function deepen(hex) {
   const c = new THREE.Color(hex)
   const hsl = {}
   c.getHSL(hsl)
-  c.setHSL(hsl.h, Math.min(1, hsl.s * 1.55 + 0.06), Math.max(0.18, hsl.l * 0.72))
+  c.setHSL(hsl.h, Math.min(1, hsl.s * 1.25 + 0.04), Math.max(0.3, hsl.l * 0.85))
   return c
 }
 const beadMatCache = new Map()
@@ -60,7 +62,16 @@ function beadMat(hex, isGold) {
   if (!beadMatCache.has(key)) {
     beadMatCache.set(key, new THREE.MeshPhysicalMaterial(isGold
       ? { color: GOLD_HEX, metalness: 0.8, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }
-      : { color: deepen(hex), metalness: 0, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.7 }))
+      // glossy crystal marble: light passes through (transmission), an
+      // opalescent film shifts color at glancing angles (iridescence), and a
+      // hard clearcoat gives the glassy highlight. Cost only while the pile is
+      // awake — physics + render pause when settled.
+      : {
+          color: deepen(hex), metalness: 0, roughness: 0.05,
+          transmission: 0.55, thickness: 0.09, ior: 1.45,
+          iridescence: 0.45, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 400],
+          clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.8,
+        }))
   }
   return beadMatCache.get(key)
 }
@@ -194,7 +205,8 @@ function Scene({ beads, onWake, onSettled }) {
     }
     if (beads.length === releasedRef.current) return
     const initialFill = releasedRef.current === 0 && beads.length > 1
-    const interval = initialFill ? 34 : 240
+    // adaptive pour on mount: a 600-bead jar refills in ~5s, a small one drips
+    const interval = initialFill ? Math.max(8, Math.min(34, Math.round(2600 / beads.length))) : 240
     onWake()
     const id = setInterval(() => {
       releasedRef.current = Math.min(beads.length, releasedRef.current + 1)
