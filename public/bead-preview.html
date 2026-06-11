@@ -46,8 +46,8 @@ function rainbowTexture() {
   const g = c.getContext('2d')
   // near-vertical: sphere UV shows the full v range face-on (u wraps behind)
   const grad = g.createLinearGradient(14, 0, 50, 64)
-  const stops = ['#FF8FB5', '#FFC183', '#FFF27E', '#86E8A8', '#7FC4FF', '#BC9BFF', '#FF8FD6']
-  stops.forEach((s, i) => grad.addColorStop(i / (stops.length - 1), s))
+  const stops = ['#FF5C9E', '#FF9D4D', '#FFE34D', '#4DD97E', '#3FAFFF', '#8F6BFF', '#F060D0']
+  stops.forEach((s, i) => grad.addColorStop(0.15 + 0.7 * (i / (stops.length - 1)), s))
   g.fillStyle = grad
   g.fillRect(0, 0, 64, 64)
   const tex = new THREE.CanvasTexture(c)
@@ -61,8 +61,8 @@ const MARBLE = {
   clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.8,
 }
 const SLOTS = [
-  ['#FBB3CF', 'rose'], ['#E4A8EB', 'orchid'], ['#A9D2F5', 'sky'],
-  ['#B2EAD8', 'mint'], ['#FCB8A3', 'coral'],
+  ['#FBB3CF', 'rose'], ['#BC93F2', 'orchid'], ['#7FBCF2', 'sky'],
+  ['#87E0BA', 'mint'], ['#FCB8A3', 'coral'],
 ]
 // ————————————————————————————————————————
 
@@ -97,7 +97,7 @@ scene.add(floor)
 const geo = new THREE.SphereGeometry(0.5, 48, 32)
 const mats = [
   ...SLOTS.map(([hex]) => new THREE.MeshPhysicalMaterial({ ...MARBLE, color: deepen(hex) })),
-  new THREE.MeshPhysicalMaterial({ ...MARBLE, color: '#FFFFFF', map: rainbowTexture(), iridescence: 0.65 }),
+  new THREE.MeshPhysicalMaterial({ ...MARBLE, color: '#FFFFFF', map: rainbowTexture(), iridescence: 0.65, transmission: 0.3 }),
   new THREE.MeshPhysicalMaterial({ color: GOLD_HEX, metalness: 0.8, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }),
 ]
 mats.forEach((m, i) => {

@@ -63,11 +63,12 @@ function rainbowTexture() {
   const c = document.createElement('canvas')
   c.width = c.height = 64
   const g = c.getContext('2d')
-  // near-vertical sweep: sphere UV shows the full v range face-on; saturated
-  // stops (pale ones read as plain white through the marble glass)
+  // near-vertical sweep with the FULL spectrum compressed into the visible
+  // band (v 0.15–0.85) — face-on you see every hue, not just the pale middle.
+  // True-rainbow stops: pastels washed to white through the marble glass.
   const grad = g.createLinearGradient(14, 0, 50, 64)
-  const stops = ['#FF8FB5', '#FFC183', '#FFF27E', '#86E8A8', '#7FC4FF', '#BC9BFF', '#FF8FD6']
-  stops.forEach((s, i) => grad.addColorStop(i / (stops.length - 1), s))
+  const stops = ['#FF5C9E', '#FF9D4D', '#FFE34D', '#4DD97E', '#3FAFFF', '#8F6BFF', '#F060D0']
+  stops.forEach((s, i) => grad.addColorStop(0.15 + 0.7 * (i / (stops.length - 1)), s))
   g.fillStyle = grad
   g.fillRect(0, 0, 64, 64)
   _rainbowTex = new THREE.CanvasTexture(c)
@@ -92,8 +93,9 @@ function beadMat(hex, isGold, isRainbow) {
     beadMatCache.set(key, new THREE.MeshPhysicalMaterial(isGold
       ? { color: GOLD_HEX, metalness: 0.8, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }
       : isRainbow
-        // wild card: pastel hue sweep + extra opalescence
-        ? { ...MARBLE, color: '#FFFFFF', map: rainbowTexture(), iridescence: 0.65 }
+        // wild card: hue sweep + extra opalescence; less transmission so the
+        // spectrum doesn't white out through the glass body
+        ? { ...MARBLE, color: '#FFFFFF', map: rainbowTexture(), iridescence: 0.65, transmission: 0.3 }
         : { ...MARBLE, color: deepen(hex) }))
   }
   return beadMatCache.get(key)

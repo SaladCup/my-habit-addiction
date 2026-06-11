@@ -80,9 +80,9 @@ export const KAWAII_COLORS = [
 // sampled from the marble art so the glow halo, medallion & label all agree.
 const DEFAULT_BEAD_SLOTS = [
   { slot: 1, color: '#FBB3CF', name: 'Rose Quartz' },
-  { slot: 2, color: '#E4A8EB', name: 'Orchid' },
-  { slot: 3, color: '#A9D2F5', name: 'Sky' },
-  { slot: 4, color: '#B2EAD8', name: 'Mint' },
+  { slot: 2, color: '#BC93F2', name: 'Orchid' },   // bluer purple — was pink-adjacent
+  { slot: 3, color: '#7FBCF2', name: 'Sky' },      // a touch deeper/saturated
+  { slot: 4, color: '#87E0BA', name: 'Mint' },     // a touch deeper/saturated
   { slot: 5, color: '#FCB8A3', name: 'Coral' },
   // Rainbow = WILD CARD: matches with any slot when cashing in (see gameLogic
   // determineTier/isCashable). color is a representative swatch for UI chips;
@@ -403,7 +403,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 11,
+      version: 12,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -464,6 +464,13 @@ const useStore = create(
         if (version < 10) {
           // Adaptive engagement engine — seed the learned per-user profile.
           persisted.engagement = { ...DEFAULT_ENGAGEMENT, ...(persisted.engagement || {}) }
+        }
+        if (version < 12 && persisted.settings?.beadSlots) {
+          // color tuning: Orchid bluer (was pink-adjacent), Sky/Mint deeper
+          const TUNE = { 2: '#BC93F2', 3: '#7FBCF2', 4: '#87E0BA' }
+          persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
+            TUNE[s.slot] ? { ...s, color: TUNE[s.slot] } : s
+          )
         }
         if (version < 11) {
           // Cherry (red) → RAINBOW wild card. Slot 6 becomes the rainbow slot,
