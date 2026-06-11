@@ -40,19 +40,35 @@ function hashSlot(key) {
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
   return (h % 6) + 1
 }
+// Measured pile height vs bead count (world units, jar glass spans y 0→1.93).
+// From scripts/jar-capacity-test.mjs — REAL rapier sim at BEAD_R 0.086; the
+// jar holds ~600 beads. Lines drawn from this curve sit exactly where the pile
+// top physically is at that count, so "beads touch the line" === "count hit".
+const PILE_CURVE = [
+  [0, 0.09], [25, 0.221], [50, 0.357], [75, 0.434], [100, 0.489], [125, 0.529],
+  [150, 0.622], [175, 0.700], [200, 0.710], [225, 0.756], [250, 0.848],
+  [275, 0.877], [300, 0.986], [325, 1.004], [350, 1.031], [375, 1.125],
+  [400, 1.161], [425, 1.261], [450, 1.299], [475, 1.316], [500, 1.391],
+  [525, 1.477], [550, 1.505], [575, 1.542], [600, 1.612],
+]
+function pileHeightAt(count) {
+  const c = Math.max(0, Math.min(600, count))
+  for (let i = 0; i < PILE_CURVE.length - 1; i++) {
+    const [c0, y0] = PILE_CURVE[i], [c1, y1] = PILE_CURVE[i + 1]
+    if (c >= c0 && c <= c1) return y0 + (y1 - y0) * ((c - c0) / (c1 - c0))
+  }
+  return PILE_CURVE[PILE_CURVE.length - 1][1]
+}
+
 // ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
 function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
-  const JAR_PX = 195   // canvas width on screen (was 150 — too small)
+  const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
-  // lines — recalibrated for the tighter camera (z=5.2): glass spans ~14%–83%
+  // lines — calibrated to the camera (z=5.2): glass top (y=1.93) ≈ px 40,
+  // glass bottom (y=0) ≈ px 240
   const jarX = 30, jarW = 140
   const jarY = 40, jarH = 200
-
-  const maxMilestone = milestones.length
-    ? Math.max(...milestones.map(m => m.beadCount))
-    : 150
-  const capacity = Math.max(maxMilestone, jarBeads.length, 1)
 
   // {id, color, isGold, isRainbow} for the 3D jar — oldest→newest so new beads drop last
   const beads3d = useMemo(
@@ -61,7 +77,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   )
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '-10px 0 0' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '-28px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
         <Suspense fallback={
@@ -73,7 +89,8 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
         {/* milestone lines + count overlay the canvas (it ignores pointer events) */}
         <svg viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
           {milestones.map(m => {
-            const lineY = jarY + jarH - (m.beadCount / capacity) * jarH
+            // line sits where the pile PHYSICALLY reaches at that bead count
+            const lineY = jarY + jarH * (1 - pileHeightAt(m.beadCount) / 1.93)
             if (lineY < jarY || lineY > jarY + jarH) return null
             const isReached = jarBeads.length >= m.beadCount
             return (
@@ -81,14 +98,14 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
                 <line x1={jarX} y1={lineY} x2={jarX + jarW} y2={lineY}
                   stroke={isReached ? '#5CBFA0' : '#9B7EC8'}
                   strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
-                <rect x={jarX + jarW - 4} y={lineY - 8} width={52} height={16} rx={4}
-                  fill={isReached ? '#B4E0C8' : '#E8D8F5'}
+                <rect x={jarX + jarW - 2} y={lineY - 9} width={80} height={18} rx={5}
+                  fill={isReached ? '#B4E0C8' : '#F3EAFB'}
                   stroke={isReached ? '#5CBFA0' : '#9B7EC8'} strokeWidth={1} />
-                <text x={jarX + jarW + 22} y={lineY + 1}
+                <text x={jarX + jarW + 38} y={lineY + 1}
                   textAnchor="middle" dominantBaseline="central"
-                  fontSize={15} fontFamily="'Fredoka', cursive"
+                  fontSize={12.5} fontFamily="'Fredoka', cursive"
                   fill={isReached ? '#1A5C3A' : '#3D2B4F'}>
-                  {m.name.length > 7 ? m.name.slice(0, 7) + '…' : m.name}
+                  {m.name.length > 12 ? m.name.slice(0, 12) + '…' : m.name}
                 </text>
               </g>
             )
@@ -467,7 +484,7 @@ export default function HomeScreen() {
       <FloatingDecor />
 
       {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
-      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '30px 16px 2px' }}>
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '14px 16px 2px' }}>
         <img
           src="/ui/logo.png"
           alt="My Habit Addiction — get addicted for good this time"
@@ -478,7 +495,7 @@ export default function HomeScreen() {
         <img
           src="/ui/tap_banner.png?v=2"
           alt="Tap a habit to earn a bead, silly!"
-          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '-26px auto 0' }}
+          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '-38px auto 0' }}
         />
       </div>
 

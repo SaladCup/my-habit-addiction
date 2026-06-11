@@ -17,10 +17,11 @@ const PROFILE = [
   [0.85, 0.95], [0.84, 1.28], [0.78, 1.50], [0.62, 1.66], [0.50, 1.74],
   [0.48, 1.82], [0.50, 1.90], [0.47, 1.93],
 ]
-// Sized so ~1 month of 6-8 habits/day (~210 beads) fills ~1/3 of the jar, and
-// the cap (~620) is roughly a FULL jar — the pile visibly grows for months.
-const BEAD_R = 0.072
-const MAX_BEADS = 620          // physics bodies cap (oldest beads beyond this are dropped)
+// EMPIRICALLY sized (scripts/jar-capacity-test.mjs, real rapier sim): at
+// R=0.086 the jar holds 600 beads to the shoulder — so ~1 month of 6-8
+// habits/day (~210) is ~1/3 of capacity, and the pile visibly grows for months.
+const BEAD_R = 0.086
+const MAX_BEADS = 600          // measured capacity; oldest beyond this are dropped (jar stays full)
 const GOLD_HEX = '#F5C04A'
 
 function profR(y) {
