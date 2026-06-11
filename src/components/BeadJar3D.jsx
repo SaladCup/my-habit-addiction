@@ -44,13 +44,23 @@ function StudioEnv() {
 // ---- shared geometries/materials (module-level: one of each, ever) ----
 const beadGeo = new THREE.SphereGeometry(1, 20, 14)
 const pearlGeo = new THREE.SphereGeometry(1, 16, 12)
+// The app's slot colors are soft pastels — under the bright studio env +
+// clearcoat they wash out against the white sunburst. Deepen: boost saturation,
+// pull lightness down. Works for any custom slot color picked in Settings.
+function deepen(hex) {
+  const c = new THREE.Color(hex)
+  const hsl = {}
+  c.getHSL(hsl)
+  c.setHSL(hsl.h, Math.min(1, hsl.s * 1.55 + 0.06), Math.max(0.18, hsl.l * 0.72))
+  return c
+}
 const beadMatCache = new Map()
 function beadMat(hex, isGold) {
   const key = (isGold ? 'g' : 'c') + hex
   if (!beadMatCache.has(key)) {
     beadMatCache.set(key, new THREE.MeshPhysicalMaterial(isGold
       ? { color: GOLD_HEX, metalness: 0.8, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }
-      : { color: hex, metalness: 0, roughness: 0.07, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.9 }))
+      : { color: deepen(hex), metalness: 0, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.7 }))
   }
   return beadMatCache.get(key)
 }
@@ -58,7 +68,8 @@ const pearlMat = new THREE.MeshPhysicalMaterial({
   color: '#F4F0EE', roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.8,
 })
 const glassMat = new THREE.MeshPhysicalMaterial({
-  color: '#FFC4D8', transparent: true, opacity: 0.34, roughness: 0.05,
+  // thinner film than v1 (0.34 washed the beads behind it toward white)
+  color: '#FFB9D0', transparent: true, opacity: 0.22, roughness: 0.05,
   clearcoat: 1, clearcoatRoughness: 0.03, side: THREE.DoubleSide,
   depthWrite: false, envMapIntensity: 1.4,
 })
@@ -198,9 +209,9 @@ function Scene({ beads, onWake, onSettled }) {
   return (
     <>
       <StudioEnv />
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[2.5, 6, 4]} intensity={2.0} />
-      <directionalLight position={[-3, 2, 2]} intensity={0.6} />
+      <ambientLight intensity={0.45} />
+      <directionalLight position={[2.5, 6, 4]} intensity={1.7} />
+      <directionalLight position={[-3, 2, 2]} intensity={0.5} />
       <Jar />
       <Pearls />
       <Suspense fallback={null}><Bow /></Suspense>
@@ -221,7 +232,7 @@ export default function BeadJar3D({ beads, width = 150, height = 218 }) {
     <div style={{ width, height, pointerEvents: 'none' }}>
       <Canvas
         frameloop={active ? 'always' : 'demand'}
-        camera={{ position: [0, 1.5, 6.4], fov: 30 }}
+        camera={{ position: [0, 1.42, 5.2], fov: 30 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent', pointerEvents: 'none' }}
         onCreated={({ gl, camera }) => {

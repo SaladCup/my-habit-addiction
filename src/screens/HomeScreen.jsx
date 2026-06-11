@@ -43,9 +43,11 @@ function hashSlot(key) {
 // ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
 function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
-  // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone lines
+  const JAR_PX = 195   // canvas width on screen (was 150 — too small)
+  // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
+  // lines — recalibrated for the tighter camera (z=5.2): glass spans ~14%–83%
   const jarX = 30, jarW = 140
-  const jarY = 58, jarH = 196
+  const jarY = 40, jarH = 200
 
   const maxMilestone = milestones.length
     ? Math.max(...milestones.map(m => m.beadCount))
@@ -60,12 +62,12 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 2px' }}>
-      <div style={{ position: 'relative', width: 150, height: 150 * (H / W) }}>
+      <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
         <Suspense fallback={
           <img src="/ui/jar.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
         }>
-          <BeadJar3D beads={beads3d} width={150} height={150 * (H / W)} />
+          <BeadJar3D beads={beads3d} width={JAR_PX} height={JAR_PX * (H / W)} />
         </Suspense>
 
         {/* milestone lines + count overlay the canvas (it ignores pointer events) */}
