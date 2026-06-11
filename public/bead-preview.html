@@ -44,8 +44,8 @@ function rainbowTexture() {
   const c = document.createElement('canvas')
   c.width = c.height = 64
   const g = c.getContext('2d')
-  // near-vertical: sphere UV shows the full v range face-on (u wraps behind)
-  const grad = g.createLinearGradient(14, 0, 50, 64)
+  // purely vertical: color depends only on latitude -> no UV-wrap seam
+  const grad = g.createLinearGradient(0, 0, 0, 64)
   const stops = ['#FF5C9E', '#FF9D4D', '#FFE34D', '#4DD97E', '#3FAFFF', '#8F6BFF', '#F060D0']
   stops.forEach((s, i) => grad.addColorStop(0.15 + 0.7 * (i / (stops.length - 1)), s))
   g.fillStyle = grad

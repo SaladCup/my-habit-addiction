@@ -63,10 +63,12 @@ function rainbowTexture() {
   const c = document.createElement('canvas')
   c.width = c.height = 64
   const g = c.getContext('2d')
-  // near-vertical sweep with the FULL spectrum compressed into the visible
+  // PURELY vertical sweep with the FULL spectrum compressed into the visible
   // band (v 0.15–0.85) — face-on you see every hue, not just the pale middle.
+  // Vertical = color depends only on latitude, so the sphere's UV wrap edges
+  // match exactly (any horizontal drift shows as a hard seam line).
   // True-rainbow stops: pastels washed to white through the marble glass.
-  const grad = g.createLinearGradient(14, 0, 50, 64)
+  const grad = g.createLinearGradient(0, 0, 0, 64)
   const stops = ['#FF5C9E', '#FF9D4D', '#FFE34D', '#4DD97E', '#3FAFFF', '#8F6BFF', '#F060D0']
   stops.forEach((s, i) => grad.addColorStop(0.15 + 0.7 * (i / (stops.length - 1)), s))
   g.fillStyle = grad
