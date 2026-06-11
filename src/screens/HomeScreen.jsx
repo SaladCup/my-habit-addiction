@@ -65,11 +65,11 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
   const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
-  // lines — calibrated to the camera (z=5.2, lookAt y=0.72): glass top ≈ px 6,
-  // glass bottom ≈ px 206. The count label renders at jarY+jarH+16, safely
-  // below the glass/pile.
+  // lines — MEASURED from a live screenshot (camera z=5.2, lookAt y=0.72):
+  // glass top ≈ px 11, glass bottom ≈ px 243. (The analytic estimate was off
+  // by ~15% — perspective; trust the measurement.)
   const jarX = 30, jarW = 140
-  const jarY = 6, jarH = 200
+  const jarY = 11, jarH = 232
 
   // {id, color, isGold, isRainbow} for the 3D jar — oldest→newest so new beads drop last
   const beads3d = useMemo(
@@ -111,8 +111,12 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
               </g>
             )
           })}
-          <text x={W / 2} y={jarY + jarH + 16} textAnchor="middle"
-            fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8">
+          {/* count floats in the EMPTY upper glass (below the bow, above the
+              pile for months) — outside-the-glass spots all collide with the
+              pile, the banner overlap, or camera-calibration drift */}
+          <text x={W / 2} y={96} textAnchor="middle"
+            fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8"
+            style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3 }}>
             {jarBeads.length} beads
           </text>
         </svg>
