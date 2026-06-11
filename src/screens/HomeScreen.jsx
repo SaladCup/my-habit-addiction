@@ -65,11 +65,11 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
   const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
-  // lines — calibrated to the camera (z=5.2, lookAt y=0.84): glass top ≈ px 26,
-  // glass bottom ≈ px 226. The count label renders at jarY+jarH+16, safely
+  // lines — calibrated to the camera (z=5.2, lookAt y=0.72): glass top ≈ px 6,
+  // glass bottom ≈ px 206. The count label renders at jarY+jarH+16, safely
   // below the glass/pile.
   const jarX = 30, jarW = 140
-  const jarY = 26, jarH = 200
+  const jarY = 6, jarH = 200
 
   // {id, color, isGold, isRainbow} for the 3D jar — oldest→newest so new beads drop last
   const beads3d = useMemo(
@@ -78,7 +78,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   )
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '-28px 0 0' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '-36px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
         <Suspense fallback={
@@ -490,6 +490,9 @@ export default function HomeScreen() {
           src="/ui/logo.png"
           alt="My Habit Addiction — get addicted for good this time"
           style={{ width: '100%', maxWidth: 420, height: 'auto', margin: '0 auto', display: 'block',
+            // layered ABOVE the jar canvas: beads spawning at the canvas top
+            // fall out from behind the title art instead of appearing mid-air
+            position: 'relative', zIndex: 12,
             filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
         />
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />

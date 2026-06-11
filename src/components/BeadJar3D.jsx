@@ -277,9 +277,10 @@ export default function BeadJar3D({ beads, width = 150, height = 218 }) {
         style={{ background: 'transparent', pointerEvents: 'none' }}
         onCreated={({ gl, camera }) => {
           gl.domElement.style.pointerEvents = 'none'
-          // frame the glass slightly HIGH in the canvas so the bead-count label
-          // (drawn under the calibrated glass bottom) never overlaps the pile
-          camera.lookAt(0, 0.84, 0)
+          // frame the glass HIGH in the canvas: the bead-count label needs clear
+          // air under the glass bottom, and beads spawning above the frame top
+          // appear to fall in from behind the title art that overlaps the canvas
+          camera.lookAt(0, 0.72, 0)
         }}>
         <Suspense fallback={null}>
           <Physics gravity={[0, -14, 0]} paused={!active} numSolverIterations={8} numAdditionalFrictionIterations={4}>
