@@ -65,10 +65,11 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   const W = 200, H = 291
   const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
-  // lines — calibrated to the camera (z=5.2): glass top (y=1.93) ≈ px 40,
-  // glass bottom (y=0) ≈ px 240
+  // lines — calibrated to the camera (z=5.2, lookAt y=0.84): glass top ≈ px 26,
+  // glass bottom ≈ px 226. The count label renders at jarY+jarH+16, safely
+  // below the glass/pile.
   const jarX = 30, jarW = 140
-  const jarY = 40, jarH = 200
+  const jarY = 26, jarH = 200
 
   // {id, color, isGold, isRainbow} for the 3D jar — oldest→newest so new beads drop last
   const beads3d = useMemo(

@@ -272,12 +272,14 @@ export default function BeadJar3D({ beads, width = 150, height = 218 }) {
     <div style={{ width, height, pointerEvents: 'none' }}>
       <Canvas
         frameloop={active ? 'always' : 'demand'}
-        camera={{ position: [0, 1.42, 5.2], fov: 30 }}
+        camera={{ position: [0, 1.34, 5.2], fov: 30 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent', pointerEvents: 'none' }}
         onCreated={({ gl, camera }) => {
           gl.domElement.style.pointerEvents = 'none'
-          camera.lookAt(0, 0.92, 0)
+          // frame the glass slightly HIGH in the canvas so the bead-count label
+          // (drawn under the calibrated glass bottom) never overlaps the pile
+          camera.lookAt(0, 0.84, 0)
         }}>
         <Suspense fallback={null}>
           <Physics gravity={[0, -14, 0]} paused={!active} numSolverIterations={8} numAdditionalFrictionIterations={4}>
