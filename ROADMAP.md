@@ -25,6 +25,13 @@ clean tree, latest `763c19e`). Safe to quit: **Blender** (scene saved to
    cost (physics+render pause when every bead is asleep). Bug-check pass done
    (5 fixed: cap deadlock, stray spawns, idle burn, Uint16 indices, buried bow).
 
+**Post-pause additions (same day, quick passes):** marble-glass beads (transmission
++ iridescence), month-scale capacity (~620 beads ≈ full jar), tighter Home spacing,
+and the **🌈 RAINBOW WILD-CARD bead** replacing Cherry/red (slot 6): matches with
+any beads at cash-in (2 pink + 🌈 = Tier 3), persist v11, new bead-6.png, rainbow
+3D material; `jar_glass.py` has Gem_Rainbow but the hero renders are STALE until
+the next Blender session.
+
 **⚠️ ONE PENDING VERIFICATION:** the falling/piling physics could NOT be watched
 in the Claude preview (hidden tab = no animation frames; R3F won't even init
 there on fresh loads). **First thing on resume: open the app live and watch the
