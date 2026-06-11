@@ -78,7 +78,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   )
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '-36px 0 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '-36px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
         <Suspense fallback={
@@ -111,15 +111,16 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
               </g>
             )
           })}
-          {/* count floats in the EMPTY upper glass (below the bow, above the
-              pile for months) — outside-the-glass spots all collide with the
-              pile, the banner overlap, or camera-calibration drift */}
-          <text x={W / 2} y={96} textAnchor="middle"
-            fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8"
-            style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3 }}>
-            {jarBeads.length} beads
-          </text>
         </svg>
+      </div>
+      {/* count BELOW the jar, pulled up into the canvas's empty bottom strip
+          (glass bottom ≈ 83.5% of the box, measured) — plain HTML in flow, so
+          it can never collide with the glass, the pile, or the banner */}
+      <div style={{
+        marginTop: -50, position: 'relative', zIndex: 11, textAlign: 'center',
+        fontFamily: "'Fredoka', cursive", fontSize: 21, color: '#9B7EC8',
+      }}>
+        {jarBeads.length} beads
       </div>
     </div>
   )
@@ -503,7 +504,7 @@ export default function HomeScreen() {
         <img
           src="/ui/tap_banner.png?v=2"
           alt="Tap a habit to earn a bead, silly!"
-          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '-38px auto 0' }}
+          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '2px auto 0' }}
         />
       </div>
 
