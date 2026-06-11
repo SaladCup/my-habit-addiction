@@ -523,21 +523,9 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* Quick cash-in shortcut when a tier-2+ match exists */}
-        {wallet.length > 0 && isCashable(wallet).options.some(o => o.tier >= 2) && (
-          <div style={{ maxWidth: 440, margin: '12px auto 0' }}>
-            <KawaiiButton
-              variant="mint" size="md" fullWidth
-              onClick={() => {
-                const c = isCashable(wallet)
-                cashInBeads(c.bestOption.beads)
-                navigate('/spin')
-              }}
-            >
-              💎 CASH IN &amp; SPIN ({isCashable(wallet).bestOption.label})
-            </KawaiiButton>
-          </div>
-        )}
+        {/* NO standing cash-in shortcut: spins are EARNED. Completing a habit
+            grants ONE spin opportunity (the BEAD EARNED prompt) — holding
+            matching beads only upgrades the tier of your NEXT earned spin. */}
       </div>
 
       {dropping && (

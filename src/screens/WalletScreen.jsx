@@ -1,31 +1,16 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { isCashable } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton, PixelPanel } from '../components/ui'
 
+// NOTE: the wallet never STARTS a spin — spins are earned one per completed
+// habit (the BEAD EARNED prompt is the only cash-in moment). This screen only
+// shows what's in hand and what the next earned spin could unlock.
 export default function WalletScreen() {
   const navigate = useNavigate()
-  const { wallet, cashInBeads, getBeadColor, settings } = useStore()
-  const [selected, setSelected] = useState(new Set())
+  const { wallet, getBeadColor, settings } = useStore()
 
   const cashable = isCashable(wallet)
-
-  function toggleBead(id) {
-    setSelected(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  function handleCashIn() {
-    const bestOption = cashable.bestOption
-    if (!bestOption) return
-    cashInBeads(bestOption.beads)
-    navigate('/spin')
-  }
 
   const slotNames = settings.beadSlots.reduce((acc, s) => {
     acc[s.slot] = s.name
@@ -66,23 +51,26 @@ export default function WalletScreen() {
         </PixelPanel>
       ) : (
         <>
-          {/* Cash-in options */}
+          {/* INFORMATIONAL only — spins are earned by completing a habit; the
+              cash-in choice appears on the BEAD EARNED prompt. This panel just
+              previews what your matching beads will unlock on that next spin. */}
           {cashable.canCash && (
             <PixelPanel color="mint" style={{ marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#1A5C3A', marginBottom: 10 }}>
-                ✦ CASH IN OPTIONS
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#1A5C3A', marginBottom: 4 }}>
+                ✦ YOUR NEXT SPIN
+              </div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#3D6B52', marginBottom: 10 }}>
+                Complete a habit to earn a spin — these beads are ready to cash in:
               </div>
               {cashable.options.map((opt, i) => (
-                <button
+                <div
                   key={i}
-                  onClick={() => { cashInBeads(opt.beads); navigate('/spin') }}
                   style={{
                     width: '100%',
                     background: i === 0 ? 'rgba(92,191,160,0.2)' : 'transparent',
                     border: `2px solid ${i === 0 ? '#5CBFA0' : '#C8B4E0'}`,
                     borderRadius: 12,
                     padding: '10px 14px',
-                    cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: 8,
                     fontFamily: 'Mulish, sans-serif',
@@ -98,7 +86,7 @@ export default function WalletScreen() {
                       padding: '3px 8px', borderRadius: 999,
                     }}>BEST</span>
                   )}
-                </button>
+                </div>
               ))}
             </PixelPanel>
           )}
