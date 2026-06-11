@@ -63,8 +63,10 @@ function rainbowTexture() {
   const c = document.createElement('canvas')
   c.width = c.height = 64
   const g = c.getContext('2d')
-  const grad = g.createLinearGradient(0, 0, 64, 64)
-  const stops = ['#FFB3C8', '#FFD9A8', '#FDF6B0', '#B8F0C8', '#AFD9FF', '#D5BCFF', '#FFB3E0']
+  // near-vertical sweep: sphere UV shows the full v range face-on; saturated
+  // stops (pale ones read as plain white through the marble glass)
+  const grad = g.createLinearGradient(14, 0, 50, 64)
+  const stops = ['#FF8FB5', '#FFC183', '#FFF27E', '#86E8A8', '#7FC4FF', '#BC9BFF', '#FF8FD6']
   stops.forEach((s, i) => grad.addColorStop(i / (stops.length - 1), s))
   g.fillStyle = grad
   g.fillRect(0, 0, 64, 64)
