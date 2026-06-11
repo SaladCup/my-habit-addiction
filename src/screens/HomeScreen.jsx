@@ -61,7 +61,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   )
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 2px' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '-10px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
         <Suspense fallback={
@@ -93,7 +93,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
               </g>
             )
           })}
-          <text x={W / 2} y={H - 1} textAnchor="middle"
+          <text x={W / 2} y={jarY + jarH + 16} textAnchor="middle"
             fontSize={22} fontFamily="'Fredoka', cursive" fill="#9B7EC8">
             {jarBeads.length} beads
           </text>
@@ -476,9 +476,9 @@ export default function HomeScreen() {
         />
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />
         <img
-          src="/ui/tap_banner.png"
+          src="/ui/tap_banner.png?v=2"
           alt="Tap a habit to earn a bead, silly!"
-          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '2px auto 0' }}
+          style={{ display: 'block', width: '94%', maxWidth: 410, height: 'auto', margin: '-26px auto 0' }}
         />
       </div>
 
