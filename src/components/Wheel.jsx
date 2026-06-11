@@ -145,7 +145,10 @@ const Wheel = forwardRef(function Wheel(
     } else {
       // Phase 1: long, suspenseful deceleration — a quick whip up front, then a
       // long, increasingly slow crawl that nearly stops dead (overshoots by a hair).
-      const overshoot = stopAngle + 4
+      // Overshoot must stay INSIDE the winning wedge: wedges are 9° wide and the
+      // stop point is 0.30–0.70 in (≥2.7° from an edge) — a 4° overshoot used to
+      // cross into the neighbouring wedge and tick, then silently settle back.
+      const overshoot = stopAngle + 1.5
       const a1 = el.animate(
         [{ transform: `rotate(${start}deg)` }, { transform: `rotate(${overshoot}deg)` }],
         { duration: 10000, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
@@ -153,10 +156,11 @@ const Wheel = forwardRef(function Wheel(
       await a1.finished
       trackingRef.current = false // stop ticking before spring settle
 
-      // Phase 2: gentle settle back to the exact target (soft stop, no hard snap)
+      // Phase 2: gentle settle back to the exact target (soft stop, no hard snap;
+      // monotonic easing — a bouncy bezier could re-cross the wedge line)
       const a2 = el.animate(
         [{ transform: `rotate(${overshoot}deg)` }, { transform: `rotate(${stopAngle}deg)` }],
-        { duration: 650, easing: 'cubic-bezier(0.33, 1.1, 0.66, 1)', fill: 'forwards' }
+        { duration: 650, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
       )
       await a2.finished
     }

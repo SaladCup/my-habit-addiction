@@ -351,7 +351,11 @@ export function getWheelStopAngle(awardedResult, rawResult, isNearMiss, segments
 
   // The segment sits at angle θ on the wheel. To bring it under the fixed pointer
   // at the top, the wheel must rotate by (360 − θ) degrees clockwise.
-  const segAngle = targetSeg.startAngle + randomBetween(0.15, 0.55) * (targetSeg.endAngle - targetSeg.startAngle)
+  // Stop within the CENTRAL band of the wedge (0.30–0.70): wedges are only 9°
+  // wide, and the end-of-spin overshoot+settle travels ~1.5° — landing nearer
+  // an edge made the pointer visibly tick into the neighbouring wedge and then
+  // slide back (read as "it left BONUS but still paid BONUS" — misleading).
+  const segAngle = targetSeg.startAngle + randomBetween(0.30, 0.70) * (targetSeg.endAngle - targetSeg.startAngle)
   const stopAngle = (360 - segAngle + 360) % 360
 
   let nearMissAngle = null
