@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
 import {
   resolveWheelSpin, resolveSlotSession, isGoodResult, TIER_COINS, COIN_SCALE,
-  computeQuitRisk,
+  computeQuitRisk, determineTier,
 } from '../engine/gameLogic'
 
 // ── Progressive jackpot tuning (scaled to COIN_SCALE) ──
@@ -84,7 +84,10 @@ const DEFAULT_BEAD_SLOTS = [
   { slot: 3, color: '#A9D2F5', name: 'Sky' },
   { slot: 4, color: '#B2EAD8', name: 'Mint' },
   { slot: 5, color: '#FCB8A3', name: 'Coral' },
-  { slot: 6, color: '#F87586', name: 'Cherry' },
+  // Rainbow = WILD CARD: matches with any slot when cashing in (see gameLogic
+  // determineTier/isCashable). color is a representative swatch for UI chips;
+  // real rendering is the rainbow PNG / rainbow 3D material.
+  { slot: 6, color: '#E5C0F5', name: 'Rainbow', rainbow: true },
 ]
 
 const DEFAULT_SESSION = {
@@ -171,7 +174,10 @@ const useStore = create(
         const roll = Math.random()
         const isGold = roll < (1 / 7)
         const slot = isGold ? null : (Math.floor(Math.random() * 6) + 1)
-        const bead = { id: uuid(), slot, isGold, habitId, earnedAt: Date.now() }
+        // beads drawn from a rainbow slot are wild cards (stamped on the bead
+        // so wallet/jar history keeps the flag even if slots are re-themed)
+        const isRainbow = !isGold && !!get().settings.beadSlots.find(s => s.slot === slot)?.rainbow
+        const bead = { id: uuid(), slot, isGold, isRainbow, habitId, earnedAt: Date.now() }
         set(s => ({
           wallet: [...s.wallet, bead],
           session: { ...s.session, drawnBead: bead, phase: 'habitDone' },
@@ -180,18 +186,8 @@ const useStore = create(
       },
 
       cashInBeads: (beads) => {
-        // Determine active tier
-        let activeTier = 1
-        const hasGold = beads.some(b => b.isGold)
-        if (hasGold) {
-          activeTier = 3
-        } else {
-          const slotCounts = {}
-          beads.forEach(b => { slotCounts[b.slot] = (slotCounts[b.slot] || 0) + 1 })
-          const max = Math.max(...Object.values(slotCounts))
-          if (max >= 3) activeTier = 3
-          else if (max >= 2) activeTier = 2
-        }
+        // single source of truth (handles gold shortcut + rainbow wild cards)
+        const { activeTier } = determineTier(beads)
 
         // Move beads from wallet to jar
         const beadIds = beads.map(b => b.id)
@@ -407,7 +403,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 10,
+      version: 11,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -468,6 +464,18 @@ const useStore = create(
         if (version < 10) {
           // Adaptive engagement engine — seed the learned per-user profile.
           persisted.engagement = { ...DEFAULT_ENGAGEMENT, ...(persisted.engagement || {}) }
+        }
+        if (version < 11) {
+          // Cherry (red) → RAINBOW wild card. Slot 6 becomes the rainbow slot,
+          // and every existing slot-6 bead in the wallet/jar becomes wild.
+          if (persisted.settings?.beadSlots) {
+            persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
+              s.slot === 6 ? { ...s, color: '#E5C0F5', name: 'Rainbow', rainbow: true } : s
+            )
+          }
+          const stamp = b => (b.slot === 6 && !b.isGold) ? { ...b, isRainbow: true } : b
+          if (Array.isArray(persisted.wallet)) persisted.wallet = persisted.wallet.map(stamp)
+          if (Array.isArray(persisted.jarBeads)) persisted.jarBeads = persisted.jarBeads.map(stamp)
         }
         return persisted
       },

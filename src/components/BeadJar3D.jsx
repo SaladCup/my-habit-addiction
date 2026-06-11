@@ -56,22 +56,43 @@ function deepen(hex) {
   c.setHSL(hsl.h, Math.min(1, hsl.s * 1.25 + 0.04), Math.max(0.3, hsl.l * 0.85))
   return c
 }
+// soft pastel hue sweep for the RAINBOW wild-card bead (one tiny texture, ever)
+let _rainbowTex = null
+function rainbowTexture() {
+  if (_rainbowTex) return _rainbowTex
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')
+  const grad = g.createLinearGradient(0, 0, 64, 64)
+  const stops = ['#FFB3C8', '#FFD9A8', '#FDF6B0', '#B8F0C8', '#AFD9FF', '#D5BCFF', '#FFB3E0']
+  stops.forEach((s, i) => grad.addColorStop(i / (stops.length - 1), s))
+  g.fillStyle = grad
+  g.fillRect(0, 0, 64, 64)
+  _rainbowTex = new THREE.CanvasTexture(c)
+  _rainbowTex.colorSpace = THREE.SRGBColorSpace
+  return _rainbowTex
+}
+
+// glossy crystal marble base: light passes through (transmission), an
+// opalescent film shifts color at glancing angles (iridescence), and a hard
+// clearcoat gives the glassy highlight. Cost only while the pile is awake —
+// physics + render pause when settled.
+const MARBLE = {
+  metalness: 0, roughness: 0.05,
+  transmission: 0.55, thickness: 0.09, ior: 1.45,
+  iridescence: 0.45, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 400],
+  clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.8,
+}
 const beadMatCache = new Map()
-function beadMat(hex, isGold) {
-  const key = (isGold ? 'g' : 'c') + hex
+function beadMat(hex, isGold, isRainbow) {
+  const key = isGold ? 'g' : isRainbow ? 'r' : 'c' + hex
   if (!beadMatCache.has(key)) {
     beadMatCache.set(key, new THREE.MeshPhysicalMaterial(isGold
       ? { color: GOLD_HEX, metalness: 0.8, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }
-      // glossy crystal marble: light passes through (transmission), an
-      // opalescent film shifts color at glancing angles (iridescence), and a
-      // hard clearcoat gives the glassy highlight. Cost only while the pile is
-      // awake — physics + render pause when settled.
-      : {
-          color: deepen(hex), metalness: 0, roughness: 0.05,
-          transmission: 0.55, thickness: 0.09, ior: 1.45,
-          iridescence: 0.45, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 400],
-          clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.8,
-        }))
+      : isRainbow
+        // wild card: pastel hue sweep + extra opalescence
+        ? { ...MARBLE, color: '#FFFFFF', map: rainbowTexture(), iridescence: 0.65 }
+        : { ...MARBLE, color: deepen(hex) }))
   }
   return beadMatCache.get(key)
 }
@@ -169,7 +190,7 @@ function Bead({ bead, register }) {
       ref={api => register(bead.id, api)}
       restitution={0.3} friction={0.55} linearDamping={0.35} angularDamping={0.8}>
       <BallCollider args={[BEAD_R]} />
-      <mesh geometry={beadGeo} material={beadMat(bead.color, bead.isGold)} scale={BEAD_R} />
+      <mesh geometry={beadGeo} material={beadMat(bead.color, bead.isGold, bead.isRainbow)} scale={BEAD_R} />
     </RigidBody>
   )
 }

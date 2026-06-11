@@ -36,9 +36,10 @@ PROFILE_APOTHECARY = [(0.00,0.00),(0.62,0.00),(0.74,0.06),(0.76,0.18),(0.75,0.40
 ROUNDED_X, APOTH_X = -1.35, 1.5            # side-by-side placement
 
 # 7 bead colors: app DEFAULT_BEAD_SLOTS, saturated for 3D, + a gold that matches
-# coin_gold.py. (App slots: Rose Quartz, Orchid, Sky, Mint, Coral, Cherry.)
+# coin_gold.py. (App slots: Rose Quartz, Orchid, Sky, Mint, Coral, Rainbow —
+# the rainbow is the WILD CARD bead and gets its own gradient gem material.)
 BEAD_COLORS = [("RoseQuartz","#FF8FB8"),("Orchid","#C77BE6"),("Sky","#6FB4F2"),
-    ("Mint","#5FD3A8"),("Coral","#FF9472"),("Cherry","#F0506E")]
+    ("Mint","#5FD3A8"),("Coral","#FF9472")]
 GOLD_LINEAR = (1.0, 0.79, 0.32)            # lightened warm gold ~ the coin
 
 
@@ -126,6 +127,41 @@ def make_gem(name, hexcol=None, gold=False):
     nt.links.new(b.outputs[0], a1.inputs[0]); nt.links.new(eG.outputs[0], a1.inputs[1])
     nt.links.new(a1.outputs[0], a2.inputs[0]); nt.links.new(eS.outputs[0], a2.inputs[1])
     nt.links.new(a2.outputs[0], out.inputs[0])
+    return mat
+
+
+def make_gem_rainbow():
+    """RAINBOW wild-card gem: a soft pastel hue sweep across the bead (object-
+    space gradient -> hue) through the same glossy translucent gem body."""
+    mat = bpy.data.materials.get("Gem_Rainbow") or bpy.data.materials.new("Gem_Rainbow")
+    mat.use_nodes = True; nt = mat.node_tree
+    for n in list(nt.nodes): nt.nodes.remove(n)
+    out = nt.nodes.new("ShaderNodeOutputMaterial"); out.location = (900, 0)
+    b = nt.nodes.new("ShaderNodeBsdfPrincipled"); b.location = (520, 100)
+    _set(b, "Roughness", 0.05); _set(b, "IOR", 1.48)
+    _set(b, "Transmission Weight", 0.38)
+    _set(b, "Coat Weight", 1.0); _set(b, "Coat Roughness", 0.015)
+    # object-space diagonal gradient -> pastel hue wheel
+    tc = nt.nodes.new("ShaderNodeTexCoord"); tc.location = (-900, 0)
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ"); sep.location = (-700, 0)
+    nt.links.new(tc.outputs["Object"], sep.inputs["Vector"])
+    add = nt.nodes.new("ShaderNodeMath"); add.operation = 'ADD'; add.location = (-520, 0)
+    nt.links.new(sep.outputs["X"], add.inputs[0]); nt.links.new(sep.outputs["Z"], add.inputs[1])
+    rng = nt.nodes.new("ShaderNodeMapRange"); rng.location = (-340, 0)
+    rng.inputs["From Min"].default_value = -1.4; rng.inputs["From Max"].default_value = 1.4
+    nt.links.new(add.outputs[0], rng.inputs["Value"])
+    hsv = nt.nodes.new("ShaderNodeCombineColor"); hsv.mode = 'HSV'; hsv.location = (-150, 0)
+    nt.links.new(rng.outputs["Result"], hsv.inputs[0])     # hue sweeps 0..1
+    hsv.inputs[1].default_value = 0.42                      # pastel saturation
+    hsv.inputs[2].default_value = 1.0
+    nt.links.new(hsv.outputs["Color"], b.inputs["Base Color"])
+    # gentle inner glow follows the gradient too
+    eG = nt.nodes.new("ShaderNodeEmission"); eG.location = (520, -160)
+    nt.links.new(hsv.outputs["Color"], eG.inputs["Color"])
+    eG.inputs["Strength"].default_value = 0.35
+    mix = nt.nodes.new("ShaderNodeAddShader"); mix.location = (730, 0)
+    nt.links.new(b.outputs[0], mix.inputs[0]); nt.links.new(eG.outputs[0], mix.inputs[1])
+    nt.links.new(mix.outputs[0], out.inputs[0])
     return mat
 
 
@@ -295,7 +331,8 @@ def setup_backdrop():
 def main():
     """Rebuild the procedural scene. Bow + HDRI come from jar_glass.blend / BlenderMCP."""
     glass = make_glass(); pearl_mat = make_pearl()
-    gem_mats = [make_gem(n, h) for (n, h) in BEAD_COLORS] + [make_gem("Gold", gold=True)]
+    gem_mats = ([make_gem(n, h) for (n, h) in BEAD_COLORS]
+                + [make_gem_rainbow(), make_gem("Gold", gold=True)])
 
     build_jar("Jar_Rounded", PROFILE_ROUNDED, (ROUNDED_X, 0, 0.02), glass)
     build_jar("Jar_Apothecary", PROFILE_APOTHECARY, (APOTH_X, 0, 0.02), glass)

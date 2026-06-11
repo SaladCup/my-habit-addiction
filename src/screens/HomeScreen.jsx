@@ -54,9 +54,9 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
     : 150
   const capacity = Math.max(maxMilestone, jarBeads.length, 1)
 
-  // {id, color, isGold} for the 3D jar — oldest→newest so new beads drop last
+  // {id, color, isGold, isRainbow} for the 3D jar — oldest→newest so new beads drop last
   const beads3d = useMemo(
-    () => jarBeads.map(b => ({ id: b.id, color: getBeadColor(b.slot, b.isGold), isGold: b.isGold })),
+    () => jarBeads.map(b => ({ id: b.id, color: getBeadColor(b.slot, b.isGold), isGold: b.isGold, isRainbow: b.isRainbow })),
     [jarBeads, getBeadColor]
   )
 

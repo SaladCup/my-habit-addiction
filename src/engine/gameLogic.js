@@ -86,12 +86,16 @@ export function determineTier(cashedBeads) {
   const hasGold = cashedBeads.some(b => b.isGold)
   if (hasGold) return { activeTier: 3, isGoldShortcut: true }
 
-  // Count by slot number (NOT color — color is just display)
+  // Rainbow beads are WILD: each one extends the largest matching group by 1
+  // (rainbows alone also match each other — 3 rainbows = 3 matching).
+  const rainbows = cashedBeads.filter(b => b.isRainbow).length
+
+  // Count non-wild beads by slot number (NOT color — color is just display)
   const slotCounts = {}
   cashedBeads.forEach(b => {
-    if (b.slot != null) slotCounts[b.slot] = (slotCounts[b.slot] || 0) + 1
+    if (b.slot != null && !b.isRainbow) slotCounts[b.slot] = (slotCounts[b.slot] || 0) + 1
   })
-  const max = Math.max(0, ...Object.values(slotCounts))
+  const max = Math.max(0, ...Object.values(slotCounts)) + rainbows
 
   if (max >= 3) return { activeTier: 3, isGoldShortcut: false }
   if (max >= 2) return { activeTier: 2, isGoldShortcut: false }
@@ -115,24 +119,43 @@ export function isCashable(wallet) {
     options.push({ beads: [goldBeads[0]], tier: 3, label: '1 Gold Bead → Tier 3 ⚡' })
   }
 
-  // Group non-gold by slot
+  // Rainbow beads are WILD — they can complete any slot's group
+  const rainbows = wallet.filter(b => !b.isGold && b.isRainbow)
+
+  // Group non-gold, non-wild by slot
   const bySlot = {}
-  wallet.filter(b => !b.isGold).forEach(b => {
+  wallet.filter(b => !b.isGold && !b.isRainbow).forEach(b => {
     if (!bySlot[b.slot]) bySlot[b.slot] = []
     bySlot[b.slot].push(b)
   })
 
-  Object.entries(bySlot).forEach(([slot, beads]) => {
-    if (beads.length >= 3) {
-      options.push({ beads: beads.slice(0, 3), tier: 3, label: `3 matching → Tier 3` })
-    }
-    if (beads.length >= 2) {
-      options.push({ beads: beads.slice(0, 2), tier: 2, label: `2 matching → Tier 2` })
-    }
-  })
+  // group = real matching beads; pad with rainbows only as needed
+  const groupOption = (beads, tier, need) => {
+    const real = beads.slice(0, Math.min(need, beads.length))
+    const wilds = rainbows.slice(0, need - real.length)
+    if (real.length + wilds.length < need) return null
+    const label = wilds.length === 0
+      ? `${need} matching → Tier ${tier}`
+      : real.length === 0
+        ? `${wilds.length}× 🌈 → Tier ${tier}`
+        : `${real.length} + ${wilds.length}× 🌈 → Tier ${tier}`
+    return { beads: [...real, ...wilds], tier, label, wildsUsed: wilds.length }
+  }
 
-  // Sort by tier descending
-  options.sort((a, b) => b.tier - a.tier)
+  Object.values(bySlot).forEach(beads => {
+    const t3 = groupOption(beads, 3, 3)
+    if (t3) options.push(t3)
+    const t2 = groupOption(beads, 2, 2)
+    if (t2) options.push(t2)
+  })
+  // rainbows also match each other (a pure-wild group)
+  const r3 = groupOption([], 3, 3)
+  if (r3) options.push(r3)
+  const r2 = groupOption([], 2, 2)
+  if (r2) options.push(r2)
+
+  // Sort: highest tier first; among equals, spend the fewest wild cards
+  options.sort((a, b) => (b.tier - a.tier) || ((a.wildsUsed || 0) - (b.wildsUsed || 0)))
 
   // Always allow spinning — any single bead = Tier 1 fallback
   if (options.length === 0) {
