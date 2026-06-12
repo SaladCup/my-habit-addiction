@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useLayoutEffect } from 'react'
+import { useRef, useState, useLayoutEffect } from 'react'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
 import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
 
@@ -95,11 +95,12 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     if (!el) return
     if (!spinning) { el.style.transform = `translateY(${finalY}px)`; return }  // idle/result: show targets
     el.style.transform = `translateY(${startY}px)`  // park at spin-start before paint (no flash)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- blur on/off brackets the WAAPI scroll started below
     setBlur(true)
     const preY = finalY - CELL_H * 0.5              // a hair before the stop; the bounce finishes it
     // Near-miss = the last reel, first two matched but this one breaking it.
     const nearMiss = isLast && brewing && !tease?.willWin
-    const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch {} }
+    const cancel = () => { try { const a = animRef.current; if (a && a.playState === 'running') a.cancel() } catch { /* already finished/GC'd */ } }
     const stopHere = () => {
       el.style.transform = `translateY(${finalY}px)`   // pin landed position so a later cancel() can't revert it
       setBlur(false); playReelStop(); if (nearMiss) playNearMiss(); onStopped()
@@ -131,6 +132,7 @@ function Reel({ target, reelIndex, colW, spinning, onStopped, tease, isLast }) {
     animRef.current = scroll
     scroll.onfinish = () => { setBlur(false); settle(preY, SNAP_MS + 60) }
     return cancel
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the reel animation fires once per spin; geometry/callbacks are stable for its lifetime
   }, [spinning])
 
   return (

@@ -19,7 +19,7 @@ function getSettings() {
       const s = JSON.parse(raw)?.state?.settings
       return { muted: s?.muted ?? false, volume: s?.volume ?? 0.6 }
     }
-  } catch {}
+  } catch { /* unreadable storage — fall through to defaults */ }
   return { muted: false, volume: 0.6 }
 }
 
@@ -43,7 +43,7 @@ function play(fn) {
   if (muted) return
   const c = getCtx()
   if (!c) return
-  try { fn(c) } catch {}
+  try { fn(c) } catch { /* audio is decoration — never let it crash gameplay */ }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

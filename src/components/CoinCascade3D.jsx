@@ -117,6 +117,7 @@ export default function CoinCascade3D({ count = 60, onDone }) {
     const bh = 9
     setBox({ bw: bh * aspect, bh })
     if (onDone) { const t = setTimeout(onDone, 8000); return () => clearTimeout(t) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only measure + one-shot done timer
   }, [])
   return (
     // absolute/inset:0 — anchors to the nearest positioned ancestor. The host

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import useStore from '../store/useStore'
-import { spinBonusWheel, TIER_COINS, SPINS_PER_TIER } from '../engine/gameLogic'
+import { spinBonusWheel, SPINS_PER_TIER } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TierBadge } from '../components/ui'
 import Wheel from '../components/Wheel'
 import SlotMachine from '../components/SlotMachine'
@@ -33,13 +33,19 @@ function fireConfetti(result, coins = 0) {
   }
 }
 
-const TIER_LABEL = { t1: 'Tier 1', t2: 'Tier 2', t3: 'Tier 3', jackpot: 'JACKPOT', bonus: 'BONUS' }
-
 export default function SpinScreen() {
   const navigate = useNavigate()
-  const { session, setSession, awardCoins, addBonusBead, spinWheel, spinSlots, claimDailyBonus, markSlotSessionComplete } = useStore()
+  const { session, setSession, resetSession, spinWheel, spinSlots, claimDailyBonus, markSlotSessionComplete } = useStore()
   const jackpotPool = useStore(s => s.jackpotPool)
   const activeTier = session.activeTier || 1
+
+  // CORE RULE GUARD: spins are earned one per completed habit — the only ways
+  // in are the BEAD EARNED prompt's two choices: cash matching beads (phase
+  // 'cashIn') or keep them and spin Tier 1 (phase 'habitDone'). Browser-back
+  // from /reward (or a typed URL) re-mounts this screen with a stale session;
+  // without this check that re-mount offered a free, un-earned re-spin.
+  // (Lazy state = a one-time mount snapshot; later phase changes don't re-judge it.)
+  const [validEntry] = useState(() => session.phase === 'cashIn' || session.phase === 'habitDone')
 
   const [mode, setMode] = useState(null)          // 'wheel' | 'slots'
   const [wheelOutcome, setWheelOutcome] = useState(null)
@@ -53,11 +59,17 @@ export default function SpinScreen() {
 
   const wheelRef = useRef(null)
 
-  // Daily login bonus — escalating reward, once per calendar day
   useEffect(() => {
+    if (!validEntry) {
+      resetSession()                        // clear the stale session on the way out
+      navigate('/', { replace: true })
+      return
+    }
+    // Daily login bonus — escalating reward, once per calendar day
     const claimed = claimDailyBonus()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount claim; the store call must happen exactly once per visit
     if (claimed) setDailyBonus(claimed)
-  }, [])
+  }, [validEntry, navigate, resetSession, claimDailyBonus])
 
   function pickMode(m) {
     slotGuard.current = false
@@ -81,10 +93,10 @@ export default function SpinScreen() {
 
   function handleWheelDone() {
     setWheelDone(true)
+    // Coins were already banked by spinWheel at spin start (abandon-safe) — this
+    // handler is pure presentation. coinsEarned is set to THIS spin's coins only
+    // (the store folds in any daily-login bonus too; don't inflate the reward total).
     const { awardedResult, coinsAwarded } = wheelOutcome
-    awardCoins(coinsAwarded, awardedResult, session.selectedHabit?.id)
-    // Set coinsEarned to THIS spin's coins only (awardCoins also folds in any
-    // daily-login bonus claimed on mount — don't let that inflate the reward total).
     setSession({ spinResult: awardedResult, isNearMiss: wheelOutcome.isNearMiss, coinsEarned: coinsAwarded, phase: 'reward' })
     fireConfetti(awardedResult, coinsAwarded)
     if (awardedResult === 'bonus') {
@@ -96,7 +108,8 @@ export default function SpinScreen() {
     }
   }
 
-  // All slot spins revealed — award the accumulated coins, set result, route onward
+  // All slot spins revealed — coins were banked by spinSlots up front
+  // (abandon-safe); this just sets the result display and routes onward.
   function handleSlotsComplete() {
     if (slotGuard.current || !slotSession) return
     slotGuard.current = true
@@ -105,7 +118,6 @@ export default function SpinScreen() {
     const result = slotSession.isJackpot ? 'jackpot'
       : slotSession.isBonus ? 'bonus'
       : `t${activeTier}`   // show the tier you played (not a generic t1)
-    awardCoins(slotSession.totalCoins, result, session.selectedHabit?.id)
     setSession({ spinResult: result, coinsEarned: slotSession.totalCoins, phase: 'reward' })
     fireConfetti(slotSession.isJackpot ? 'jackpot' : result, slotSession.totalCoins)
     if (slotSession.isBonus) {
@@ -116,6 +128,8 @@ export default function SpinScreen() {
       setPendingNav('/reward')
     }
   }
+
+  if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
 
   const tierColors = { 1: '#FFB7C5', 2: '#C8B4E0', 3: '#B4E0C8' }
   const tierColor = tierColors[activeTier] || '#FFB7C5'

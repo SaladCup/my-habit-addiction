@@ -37,11 +37,11 @@ function fireRewardConfetti(result) {
 
 function CoinCounter({ to, duration = 1400 }) {
   const [value, setValue] = useState(0)
-  const [landed, setLanded] = useState(false)
+  const [landed, setLanded] = useState(!to)   // nothing to count up → land immediately
   const rafRef = useRef(null)
 
   useEffect(() => {
-    if (!to) { setValue(0); setLanded(true); return }
+    if (!to) return
     const start = performance.now()
     function tick(now) {
       const t = Math.min(1, (now - start) / duration)
@@ -76,8 +76,14 @@ const RESULT_CFG = {
 
 export default function RewardScreen() {
   const navigate = useNavigate()
-  const { session, resetSession, checkMilestones, settings, getCoinsAvailable } = useStore()
+  const { session, resetSession, checkMilestones, settings } = useStore()
   const { spinResult, coinsEarned, isNearMiss, pullHistory } = session
+
+  // Only a finished spin lands here (SpinScreen/BonusScreen set phase 'reward'
+  // before navigating). A typed URL or stale forward-nav has no win to show —
+  // bounce home instead of rendering a zero-coin "reward".
+  // (Lazy state = a one-time mount snapshot; later phase changes don't re-judge it.)
+  const [validEntry] = useState(() => session.phase === 'reward')
 
   const cfg = RESULT_CFG[spinResult] || RESULT_CFG.t1
   const coins = coinsEarned || TIER_COINS[spinResult] || 0
@@ -93,18 +99,26 @@ export default function RewardScreen() {
   const [canLeave, setCanLeave] = useState(false)
 
   useEffect(() => {
+    if (!validEntry) {
+      navigate('/', { replace: true })
+      return
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount ritual: the milestone check mutates the store exactly once per reward view
     setNewMilestones(checkMilestones())
     fireRewardConfetti(spinResult)
     // Prevent click-bleed from the SpinScreen's "TAP TO SEE REWARDS" button
     // firing immediately on the "BACK TO HABITS" button at the same position
     const t = setTimeout(() => setCanLeave(true), 600)
     return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: confetti + milestone check must not re-fire on store updates
   }, [])
 
   function handleDone() {
     resetSession()
     navigate('/')
   }
+
+  if (!validEntry) return null   // redirecting home (guard effect above)
 
   return (
     <div style={{

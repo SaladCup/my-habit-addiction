@@ -10,6 +10,7 @@ import {
 const JACKPOT_SEED      = 80 * COIN_SCALE   // 2,000 — pool starts here & resets here after a jackpot
 const JACKPOT_PER_SPIN  = 2 * COIN_SCALE    // 50/spin — slow progressive build the more you play
 const SESSION_GAP_MS    = 30 * 60 * 1000  // >30min idle starts a fresh "session" (warm-up)
+const COIN_LOG_MAX      = 500             // log is a recent-history view; totals live in coinTotals
 
 const DEFAULT_SPIN_STATS = {
   totalSpins: 0,
@@ -90,6 +91,18 @@ const DEFAULT_BEAD_SLOTS = [
   { slot: 6, color: '#E5C0F5', name: 'Rainbow', rainbow: true },
 ]
 
+// Every bead — habit-drawn OR bonus-won — is built here, so per-slot flags like
+// `rainbow` (wild card) can never drift between the two paths again.
+function rollBead(beadSlots, habitId) {
+  // Uniform 1/7 chance: slots 1-6 + gold
+  const isGold = Math.random() < (1 / 7)
+  const slot = isGold ? null : (Math.floor(Math.random() * 6) + 1)
+  // beads drawn from a rainbow slot are wild cards (stamped on the bead
+  // so wallet/jar history keeps the flag even if slots are re-themed)
+  const isRainbow = !isGold && !!beadSlots.find(s => s.slot === slot)?.rainbow
+  return { id: uuid(), slot, isGold, isRainbow, habitId, earnedAt: Date.now() }
+}
+
 const DEFAULT_SESSION = {
   phase: 'idle',           // idle | habitDone | cashIn | spinning | bonus | reward
   selectedHabit: null,
@@ -115,7 +128,8 @@ const useStore = create(
       categories: [],     // { id, name, color }
       wallet:     [],     // { id, slot, isGold, habitId, earnedAt }
       jarBeads:   [],     // { id, slot, isGold, cashedAt, x, y }
-      coinLog:    [],     // { id, type, amount, source, habitId, note, timestamp }
+      coinLog:    [],     // recent history (capped at COIN_LOG_MAX) — { id, type, amount, source, habitId, note, timestamp }
+      coinTotals: { earned: 0, spent: 0 },   // running balance — O(1) reads, never trimmed
       milestones: [],
 
       // ── Engagement systems (persisted) ──
@@ -136,12 +150,9 @@ const useStore = create(
       session: { ...DEFAULT_SESSION },
 
       // ── Computed getters ──
-      getTotalCoinsEarned: () =>
-        get().coinLog.filter(e => e.type === 'earned').reduce((s, e) => s + e.amount, 0),
-      getTotalCoinsSpent: () =>
-        get().coinLog.filter(e => e.type === 'spent').reduce((s, e) => s + e.amount, 0),
-      getCoinsAvailable: () =>
-        get().coinLog.reduce((s, e) => e.type === 'earned' ? s + e.amount : s - e.amount, 0),
+      getTotalCoinsEarned: () => get().coinTotals.earned,
+      getTotalCoinsSpent:  () => get().coinTotals.spent,
+      getCoinsAvailable:   () => get().coinTotals.earned - get().coinTotals.spent,
       getJarCount: () => get().jarBeads.length,
       getBeadColor: (slot, isGold) => {
         if (isGold) return '#FFD700'
@@ -170,14 +181,7 @@ const useStore = create(
 
       // ── Bead actions ──
       drawBead: (habitId) => {
-        // Uniform 1/7 chance: slots 1-6 + gold
-        const roll = Math.random()
-        const isGold = roll < (1 / 7)
-        const slot = isGold ? null : (Math.floor(Math.random() * 6) + 1)
-        // beads drawn from a rainbow slot are wild cards (stamped on the bead
-        // so wallet/jar history keeps the flag even if slots are re-themed)
-        const isRainbow = !isGold && !!get().settings.beadSlots.find(s => s.slot === slot)?.rainbow
-        const bead = { id: uuid(), slot, isGold, isRainbow, habitId, earnedAt: Date.now() }
+        const bead = rollBead(get().settings.beadSlots, habitId)
         set(s => ({
           wallet: [...s.wallet, bead],
           session: { ...s.session, drawnBead: bead, phase: 'habitDone' },
@@ -207,12 +211,7 @@ const useStore = create(
       },
 
       addBonusBead: () => {
-        const { session, habits } = get()
-        const habitId = session.selectedHabit?.id || null
-        const roll = Math.random()
-        const isGold = roll < (1 / 7)
-        const slot = isGold ? null : (Math.floor(Math.random() * 6) + 1)
-        const bead = { id: uuid(), slot, isGold, habitId, earnedAt: Date.now() }
+        const bead = rollBead(get().settings.beadSlots, get().session.selectedHabit?.id || null)
         set(s => ({ wallet: [...s.wallet, bead] }))
         return bead
       },
@@ -221,13 +220,17 @@ const useStore = create(
       awardCoins: (amount, source, habitId = null) => {
         const event = { id: uuid(), type: 'earned', amount, source, habitId, note: '', timestamp: Date.now() }
         set(s => ({
-          coinLog: [...s.coinLog, event],
+          coinLog: [...s.coinLog, event].slice(-COIN_LOG_MAX),
+          coinTotals: { ...s.coinTotals, earned: s.coinTotals.earned + amount },
           session: { ...s.session, coinsEarned: s.session.coinsEarned + amount },
         }))
       },
       spendCoins: (amount, note = '') => {
         const event = { id: uuid(), type: 'spent', amount, source: 'manual', habitId: null, note, timestamp: Date.now() }
-        set(s => ({ coinLog: [...s.coinLog, event] }))
+        set(s => ({
+          coinLog: [...s.coinLog, event].slice(-COIN_LOG_MAX),
+          coinTotals: { ...s.coinTotals, spent: s.coinTotals.spent + amount },
+        }))
       },
 
       // ── Engagement engine: spins, luck, progressive jackpot ──
@@ -317,10 +320,15 @@ const useStore = create(
         engagement: { ...s.engagement, completedSessions: s.engagement.completedSessions + 1 },
       })),
 
-      // Wheel = SAFE: one certain spin for the full tier value (+ bonus/jackpot upside).
+      // Wheel: one spin that lands on a prize wedge by AREA at this tier (higher
+      // tiers put bigger wedges on the wheel), plus bonus/jackpot upside.
       spinWheel: (activeTier) => {
         const luck = get()._luckSnapshot()
-        return get()._finalizeSpin(resolveWheelSpin(activeTier, luck))
+        const fin = get()._finalizeSpin(resolveWheelSpin(activeTier, luck))
+        // Coins BANK the moment the outcome is final, not at animation end —
+        // closing the app mid-spin can't eat a win whose pool/stats already committed.
+        get().awardCoins(fin.coinsAwarded, fin.awardedResult, get().session.selectedHabit?.id)
+        return fin
       },
 
       // Slots = GAMBLE: a session of N spins (tier sets the count), coins accumulate.
@@ -339,6 +347,9 @@ const useStore = create(
         })
         // jackpot pays the pool ON TOP of the accumulated spins
         const totalCoins = session.baseCoins + (session.isJackpot ? fin.jackpotAward : 0)
+        const source = session.isJackpot ? 'jackpot' : session.isBonus ? 'bonus' : `t${activeTier}`
+        // Bank at resolve time (see spinWheel) — abandoning mid-reveal keeps the coins.
+        get().awardCoins(totalCoins, source, get().session.selectedHabit?.id)
         return { ...session, totalCoins, jackpotAward: fin.jackpotAward }
       },
 
@@ -393,6 +404,7 @@ const useStore = create(
         wallet:     [],
         jarBeads:   [],
         coinLog:    [],
+        coinTotals: { earned: 0, spent: 0 },
         milestones: [],
         jackpotPool: JACKPOT_SEED,
         spinStats:  { ...DEFAULT_SPIN_STATS },
@@ -403,7 +415,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 12,
+      version: 13,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -465,13 +477,6 @@ const useStore = create(
           // Adaptive engagement engine — seed the learned per-user profile.
           persisted.engagement = { ...DEFAULT_ENGAGEMENT, ...(persisted.engagement || {}) }
         }
-        if (version < 12 && persisted.settings?.beadSlots) {
-          // color tuning: Orchid bluer (was pink-adjacent), Sky/Mint deeper
-          const TUNE = { 2: '#BC93F2', 3: '#7FBCF2', 4: '#87E0BA' }
-          persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
-            TUNE[s.slot] ? { ...s, color: TUNE[s.slot] } : s
-          )
-        }
         if (version < 11) {
           // Cherry (red) → RAINBOW wild card. Slot 6 becomes the rainbow slot,
           // and every existing slot-6 bead in the wallet/jar becomes wild.
@@ -484,6 +489,23 @@ const useStore = create(
           if (Array.isArray(persisted.wallet)) persisted.wallet = persisted.wallet.map(stamp)
           if (Array.isArray(persisted.jarBeads)) persisted.jarBeads = persisted.jarBeads.map(stamp)
         }
+        if (version < 12 && persisted.settings?.beadSlots) {
+          // color tuning: Orchid bluer (was pink-adjacent), Sky/Mint deeper
+          const TUNE = { 2: '#BC93F2', 3: '#7FBCF2', 4: '#87E0BA' }
+          persisted.settings.beadSlots = persisted.settings.beadSlots.map(s =>
+            TUNE[s.slot] ? { ...s, color: TUNE[s.slot] } : s
+          )
+        }
+        if (version < 13) {
+          // O(1) coin balance: fold the full log into running totals once, then
+          // keep only recent history in the log (it was growing unbounded).
+          const log = Array.isArray(persisted.coinLog) ? persisted.coinLog : []
+          persisted.coinTotals = {
+            earned: log.filter(e => e.type === 'earned').reduce((s, e) => s + (e.amount || 0), 0),
+            spent:  log.filter(e => e.type === 'spent').reduce((s, e) => s + (e.amount || 0), 0),
+          }
+          persisted.coinLog = log.slice(-COIN_LOG_MAX)
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -493,6 +515,7 @@ const useStore = create(
         wallet:     state.wallet,
         jarBeads:   state.jarBeads,
         coinLog:    state.coinLog,
+        coinTotals: state.coinTotals,
         milestones: state.milestones,
         settings:   state.settings,
         jackpotPool: state.jackpotPool,

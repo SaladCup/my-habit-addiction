@@ -68,6 +68,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
 
   useEffect(() => {
     if (stopAngle == null || spun) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot latch so the WAAPI spin below can never double-fire
     setSpun(true)
     const el = wrapRef.current
     if (!el) return
@@ -85,6 +86,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
       if (pointerRef.current) pointerRef.current.style.animation = 'none'
       onDone?.()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per stopAngle; spun/onDone/trackTicks must not retrigger the spin
   }, [stopAngle])
 
   return (

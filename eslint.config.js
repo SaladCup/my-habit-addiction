@@ -17,5 +17,19 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // `const { id, ...rest } = obj` is the idiomatic way to strip a key
+      'no-unused-vars': ['error', { ignoreRestSiblings: true }],
+    },
+  },
+  {
+    // three.js / R3F components: the GL scene graph is imperative by design —
+    // mutating textures/scene properties and randomizing spawn parameters in
+    // memos is the standard idiom there, not a React purity bug.
+    files: ['**/components/*3D.jsx'],
+    rules: {
+      'react-hooks/immutability': 'off',
+      'react-hooks/purity': 'off',
+    },
   },
 ])

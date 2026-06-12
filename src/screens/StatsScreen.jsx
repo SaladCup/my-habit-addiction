@@ -4,7 +4,7 @@ import { BeadDisplay, PixelPanel } from '../components/ui'
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  ResponsiveContainer,
 } from 'recharts'
 
 const TABS = ['Day', 'Week', 'Month', 'Year', 'All']
@@ -42,7 +42,7 @@ function useStats(tab) {
     const beadBuckets = {}
     const slotCounts = { gold: 0 }
     filteredBeads.forEach(b => {
-      const key = getBucketKey(b.earnedAt || b.cashedAt || Date.now(), tab)
+      const key = getBucketKey(b.earnedAt || b.cashedAt || 0, tab)
       beadBuckets[key] = (beadBuckets[key] || 0) + 1
       if (b.isGold) slotCounts.gold += 1
       else slotCounts[b.slot] = (slotCounts[b.slot] || 0) + 1
@@ -111,7 +111,7 @@ const tooltipStyle = {
 export default function StatsScreen() {
   const [tab, setTab] = useState('Week')
   const { chartData, totalBeads, totalCoins, streak, best, habitCounts, slotCounts, habits } = useStats(tab)
-  const { settings, getTotalCoinsEarned, getCoinsAvailable } = useStore()
+  const { settings } = useStore()
   const coinName = 'coins'
 
   const moneyValue = settings.moneyPerCoin > 0
@@ -261,7 +261,6 @@ export default function StatsScreen() {
         <PixelPanel color="mint" title="PER HABIT">
           {habits.map(h => {
             const count = habitCounts[h.id] || 0
-            const bs = settings.beadSlots.find(s => s.slot === h.beadSlot)
             return (
               <div key={h.id} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',

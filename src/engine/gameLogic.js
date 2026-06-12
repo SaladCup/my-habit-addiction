@@ -32,9 +32,6 @@ export const TIER_COINS = {
 const GOOD_RESULTS = ['t3', 'bonus', 'jackpot']
 export const isGoodResult = (r) => GOOD_RESULTS.includes(r)
 
-// Hard pity: after this many dry spins, force a guaranteed big win.
-export const PITY_LIMIT = 9
-
 /**
  * Dynamically re-weight outcomes based on the player's recent history.
  * This is the core "win/lose progression" engine:
@@ -66,10 +63,6 @@ export function getAdjustedWeights(luck = {}) {
 
   return Object.entries(w).map(([value, weight]) => ({ value, weight }))
 }
-
-// Priority order for comparing results (higher index = better)
-const RESULT_PRIORITY = ['nothing', 't1', 't2', 'bonus', 't3', 'jackpot']
-const resultScore = (r) => RESULT_PRIORITY.indexOf(r)
 
 // ─────────────────────────────────────────────
 // TIER DETERMINATION
@@ -168,65 +161,6 @@ export function isCashable(wallet) {
     bestOption: options[0] || null,
     hasGold,
     options,
-  }
-}
-
-// ─────────────────────────────────────────────
-// MAIN SPIN (shared probability engine)
-// ─────────────────────────────────────────────
-
-/**
- * Determine the raw outcome of a spin using shared probability table.
- * Applies near-miss logic: if raw outcome > activeTier, award activeTier instead.
- *
- * @param {1|2|3} activeTier
- * @returns {{
- *   rawResult: string,
- *   awardedResult: string,
- *   isNearMiss: boolean,
- *   coinsAwarded: number
- * }}
- */
-export function resolveSpinOutcome(activeTier, luck = {}) {
-  // Hard pity timer — force a guaranteed big win after a long drought
-  let raw
-  if ((luck.spinsSinceGood || 0) >= PITY_LIMIT) {
-    raw = weightedRandom([
-      { value: 't3', weight: 6 }, { value: 'bonus', weight: 3 }, { value: 'jackpot', weight: 1 },
-    ])
-  } else {
-    raw = weightedRandom(getAdjustedWeights(luck))
-  }
-
-  // Jackpot and bonus always award regardless of tier
-  if (raw === 'jackpot' || raw === 'bonus') {
-    return {
-      rawResult: raw,
-      awardedResult: raw,
-      isNearMiss: false,
-      coinsAwarded: TIER_COINS[raw],
-    }
-  }
-
-  // Convert tier string to number for comparison
-  const tierNum = { t1: 1, t2: 2, t3: 3 }
-  const rawTierNum = tierNum[raw] || 1
-  let isNearMiss = rawTierNum > activeTier
-  let awardedResult = isNearMiss ? `t${activeTier}` : raw
-
-  // Near-miss injection — during a cold streak, dramatize a clean low win as a
-  // "drift past the better prize" near miss (visual only; payout unchanged).
-  if (!isNearMiss && (luck.lossStreak || 0) >= 2 &&
-      (awardedResult === 't1' || awardedResult === 't2') && Math.random() < 0.5) {
-    const higher = awardedResult === 't1' ? 't2' : 't3'
-    return { rawResult: higher, awardedResult, isNearMiss: true, coinsAwarded: TIER_COINS[awardedResult] }
-  }
-
-  return {
-    rawResult: raw,
-    awardedResult,
-    isNearMiss,
-    coinsAwarded: TIER_COINS[awardedResult] || 0,
   }
 }
 
@@ -416,71 +350,6 @@ const SYMBOLS_BY_TIER = {
   t3:      SLOT_SYMBOLS.filter(s => s.tier === 't3'),
   bonus:   SLOT_SYMBOLS.filter(s => s.tier === 'bonus'),
   jackpot: SLOT_SYMBOLS.filter(s => s.tier === 'jackpot'),
-}
-
-function pickSymbolForTier(tier) {
-  const candidates = SYMBOLS_BY_TIER[tier] || SYMBOLS_BY_TIER.t1
-  return weightedRandom(candidates.map(s => ({ value: s, weight: s.weight })))
-}
-
-function randomNonMatchingSymbol(exclude) {
-  const others = SLOT_SYMBOLS.filter(s => s.id !== exclude.id && s.tier !== exclude.tier)
-  return others[randomInt(0, others.length - 1)]
-}
-
-/**
- * Resolve a single slot machine pull.
- * Uses the shared probability engine, then assigns reel symbols.
- *
- * @param {1|2|3} activeTier
- * @returns {{
- *   reelSymbols: [{emoji, id, tier}, {emoji, id, tier}, {emoji, id, tier}],
- *   awardedResult: string,
- *   rawResult: string,
- *   isNearMiss: boolean,
- *   coinsAwarded: number
- * }}
- */
-export function resolveSlotPull(activeTier, luck = {}) {
-  const outcome = resolveSpinOutcome(activeTier, luck)
-  const { awardedResult, rawResult, isNearMiss } = outcome
-
-  let reelSymbols
-
-  if (awardedResult === 'jackpot') {
-    const sym = SYMBOLS_BY_TIER.jackpot[0]
-    reelSymbols = [sym, sym, sym]
-  } else if (awardedResult === 'bonus') {
-    const sym = SYMBOLS_BY_TIER.bonus[0]
-    reelSymbols = [sym, sym, sym]
-  } else if (isNearMiss) {
-    // Show 2 of the higher (raw) tier, with 3rd reel being different
-    const higherSym = pickSymbolForTier(rawResult)
-    const wrongSym = randomNonMatchingSymbol(higherSym)
-    // Shuffle so the miss isn't always on reel 3
-    const missPos = randomInt(0, 2)
-    reelSymbols = [higherSym, higherSym, higherSym]
-    reelSymbols[missPos] = wrongSym
-  } else {
-    // Clean match on awarded tier
-    const sym = pickSymbolForTier(awardedResult)
-    reelSymbols = [sym, sym, sym]
-  }
-
-  return { ...outcome, reelSymbols }
-}
-
-/**
- * Get the best result across multiple slot pulls.
- * @param {Array<{awardedResult: string}>} pulls
- * @returns {string} best result
- */
-export function getBestSlotResult(pulls) {
-  return pulls.reduce((best, pull) => {
-    return resultScore(pull.awardedResult) > resultScore(best)
-      ? pull.awardedResult
-      : best
-  }, 'nothing')
 }
 
 // ─────────────────────────────────────────────
@@ -790,10 +659,10 @@ function applyNearMisses(spins, density) {
 /**
  * Resolve a full slots SESSION = a sequence of spins (count set by tier).
  * One bonus/jackpot is rolled for the whole session (so a bonus is exactly as
- * likely per cash-in as on the wheel), revealed on the final spin. The adaptive
- * engine then reshapes the ORDER/FEEL of the spins for this user (warm-up, peak
- * placement, honest near-misses) — a pure permutation, so `baseCoins` is
- * unchanged in expectation and the long-run economy stays anchored.
+ * likely per cash-in as on the wheel), revealed as an EXTRA final spin. The
+ * adaptive engine reshapes the ORDER/FEEL of the paying spins for this user
+ * (warm-up, peak placement, honest near-misses) — a pure permutation, so
+ * `baseCoins` is unchanged in expectation and the long-run economy stays anchored.
  * @param {1|2|3} activeTier
  * @param {object} luck     pity/warm-up/jackpot-due inputs (bonus & jackpot rates)
  * @param {object} profile  learned engagement profile (phase, quitRisk, …)
@@ -822,23 +691,17 @@ export function resolveSlotSession(activeTier = 1, luck = {}, profile = {}) {
   if (isJackpot) special = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0], 'jackpot'), coins: 0, isJackpot: true }
   else if (isBonus) special = { ...specialLine(SYMBOLS_BY_TIER.bonus[0], 'bonus'), coins: 0, isBonus: true }
 
-  if (special) {
-    // The special occupies the final (peak-end) slot and pays 0 itself. To keep
-    // the economy IDENTICAL to the unshaped model — which dropped the LAST i.i.d.
-    // spin — we drop a UNIFORMLY-RANDOM spin instead (same expected value), then
-    // reshape the remainder and reveal the special last.
-    spins.splice(randomInt(0, spins.length - 1), 1)
-    spins = reshapeSessionOrder(spins, params)
-    applyNearMisses(spins, params.nearMissDensity)
-    spins.push(special)
-  } else {
-    spins = reshapeSessionOrder(spins, params)
-    applyNearMisses(spins, params.nearMissDensity)
-  }
+  spins = reshapeSessionOrder(spins, params)
+  applyNearMisses(spins, params.nearMissDensity)
+  // The special is an EXTRA final reveal (it pays 0 itself; bonus = bead,
+  // jackpot = the pool on top). The N paying spins are untouched, so a special
+  // session never costs coins — per-tier averages stay on the ~125/250/375 spec
+  // and slots match the wheel's bonus (full tier value + the bead).
+  if (special) spins.push(special)
 
   const baseCoins = spins.reduce((s, sp) => s + sp.coins, 0)
   const awardedResult = isJackpot ? 'jackpot' : isBonus ? 'bonus' : (baseCoins > 0 ? 't1' : 'nothing')
-  return { spinCount, spins, baseCoins, isJackpot, isBonus, awardedResult, engineParams: params }
+  return { spinCount: spins.length, spins, baseCoins, isJackpot, isBonus, awardedResult, engineParams: params }
 }
 
 /**
@@ -950,13 +813,4 @@ export function formatBonusChallenge(bonusResult, habit) {
   const activity = habit?.rewards?.bonusActivity || habit?.description || 'your habit'
   const pct = parseInt(bonusResult)
   return `Do ${pct}% of: "${activity}" within 10 minutes`
-}
-
-/**
- * Get coins awarded for a given result + tier combo.
- */
-export function getCoinsForResult(result, activeTier) {
-  if (result === 'jackpot') return TIER_COINS.jackpot
-  if (result === 'bonus')   return TIER_COINS[`t${activeTier}`] // auto-collect highest tier
-  return TIER_COINS[result] || 0
 }

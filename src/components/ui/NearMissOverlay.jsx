@@ -7,6 +7,7 @@ export default function NearMissOverlay({ show, higherTier, onDone }) {
 
   useEffect(() => {
     if (show) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- show/hide choreography: the timer below is the other half of this transition
       setVisible(true)
       const t = setTimeout(() => {
         setVisible(false)
@@ -14,6 +15,7 @@ export default function NearMissOverlay({ show, higherTier, onDone }) {
       }, 1800)
       return () => clearTimeout(t)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-fire only when `show` flips; an inline onDone must not restart the timer
   }, [show])
 
   if (!visible) return null

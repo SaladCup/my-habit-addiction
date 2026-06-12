@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { spinBonusWheel, getBonusStopAngle, formatBonusChallenge } from '../engine/gameLogic'
+import { getBonusStopAngle, formatBonusChallenge } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TimerDisplay } from '../components/ui'
 import BonusWheel from '../components/BonusWheel'
 
 export default function BonusScreen() {
   const navigate = useNavigate()
   const { session, setSession, addBonusBead, resetSession } = useStore()
-  const { bonusResult, activeTier, selectedHabit, bonusTimerEnd } = session
+  const { bonusResult, selectedHabit, bonusTimerEnd } = session
 
-  const [spinData] = useState(() => {
-    if (bonusResult) {
-      return { stopAngle: getBonusStopAngle(bonusResult), result: bonusResult }
-    }
-    return spinBonusWheel()
-  })
+  // Bonus rounds are EARNED: the triggering spin pre-rolls bonusResult before
+  // navigating here. A typed /bonus URL has none — without this guard it spun a
+  // fresh wheel and could hand out unlimited free beads.
+  // (Lazy state = a one-time mount snapshot; later session changes don't re-judge it.)
+  const [validEntry] = useState(() => !!bonusResult)
+
+  const [spinData] = useState(() =>
+    bonusResult ? { stopAngle: getBonusStopAngle(bonusResult), result: bonusResult } : {})
 
   const [wheelDone, setWheelDone]       = useState(false)
   const [currentResult]                   = useState(spinData.result)
@@ -25,12 +27,9 @@ export default function BonusScreen() {
   const [beadEarned, setBeadEarned]       = useState(false)
   const [pendingNav, setPendingNav]       = useState(null)
 
-  // Free bead: collect it immediately when wheel lands on FREE
   useEffect(() => {
-    if (!wheelDone || currentResult !== 'free') return
-    const bead = addBonusBead()
-    setCollectedBead(bead)
-  }, [wheelDone, currentResult])
+    if (!validEntry) navigate('/', { replace: true })
+  }, [validEntry, navigate])
 
   // Bug fix #3: timer expiry auto-navigates to /reward after 2s
   // (user keeps original spin's coins but earns no bonus bead)
@@ -41,13 +40,15 @@ export default function BonusScreen() {
       navigate('/reward')
     }, 2000)
     return () => clearTimeout(t)
-  }, [timedOut, pendingNav])
+  }, [timedOut, pendingNav, navigate, setSession])
 
   function handleWheelDone() {
     // Coins were already collected by the spin that triggered the bonus.
     // This round is purely for the bonus bead.
     setWheelDone(true)
     setSession({ bonusResult: currentResult })
+    // Free bead: collect it the moment the wheel lands on FREE
+    if (currentResult === 'free') setCollectedBead(addBonusBead())
   }
 
   // Completing the bonus challenge earns a bead and returns home, where it drops
@@ -63,6 +64,8 @@ export default function BonusScreen() {
     setSession({ phase: 'reward' })
     setPendingNav('/reward')
   }
+
+  if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
 
   const challengeText = formatBonusChallenge(currentResult, selectedHabit)
 

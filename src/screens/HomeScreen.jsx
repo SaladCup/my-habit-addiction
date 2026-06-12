@@ -425,9 +425,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (location.state?.freeBead && !dropping && !prompt) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff: consume the nav-state bead, then scrub history so refresh can't re-drop it
       setDropping(location.state.freeBead)
       window.history.replaceState({}, document.title)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: nav-state is consumed exactly once
   }, [])
 
   // Each habit's card color = its CATEGORY color (falls back to its bead-slot color)
