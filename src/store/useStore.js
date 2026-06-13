@@ -130,6 +130,7 @@ const useStore = create(
       jarBeads:   [],     // { id, slot, isGold, cashedAt, x, y }
       coinLog:    [],     // recent history (capped at COIN_LOG_MAX) — { id, type, amount, source, habitId, note, timestamp }
       coinTotals: { earned: 0, spent: 0 },   // running balance — O(1) reads, never trimmed
+      coinLogComplete: true,                 // true while coinLog holds FULL history (so totals can be rebuilt from it)
       milestones: [],
 
       // ── Engagement systems (persisted) ──
@@ -217,20 +218,35 @@ const useStore = create(
       },
 
       // ── Coin actions ──
+      // coinTotals is the authoritative balance (O(1) reads); the log is a recent-
+      // history view. We update both, and the moment the log overflows the cap and
+      // drops an entry we flip coinLogComplete off (the log can no longer rebuild
+      // totals). Totals are read with ?? so a missing/half-migrated coinTotals can
+      // never crash a spin (that was the v13 regression's blast radius).
       awardCoins: (amount, source, habitId = null) => {
         const event = { id: uuid(), type: 'earned', amount, source, habitId, note: '', timestamp: Date.now() }
-        set(s => ({
-          coinLog: [...s.coinLog, event].slice(-COIN_LOG_MAX),
-          coinTotals: { ...s.coinTotals, earned: s.coinTotals.earned + amount },
-          session: { ...s.session, coinsEarned: s.session.coinsEarned + amount },
-        }))
+        set(s => {
+          const log = [...s.coinLog, event]
+          const overflow = log.length > COIN_LOG_MAX
+          return {
+            coinLog: overflow ? log.slice(-COIN_LOG_MAX) : log,
+            coinLogComplete: s.coinLogComplete && !overflow,
+            coinTotals: { earned: (s.coinTotals?.earned ?? 0) + amount, spent: s.coinTotals?.spent ?? 0 },
+            session: { ...s.session, coinsEarned: s.session.coinsEarned + amount },
+          }
+        })
       },
       spendCoins: (amount, note = '') => {
         const event = { id: uuid(), type: 'spent', amount, source: 'manual', habitId: null, note, timestamp: Date.now() }
-        set(s => ({
-          coinLog: [...s.coinLog, event].slice(-COIN_LOG_MAX),
-          coinTotals: { ...s.coinTotals, spent: s.coinTotals.spent + amount },
-        }))
+        set(s => {
+          const log = [...s.coinLog, event]
+          const overflow = log.length > COIN_LOG_MAX
+          return {
+            coinLog: overflow ? log.slice(-COIN_LOG_MAX) : log,
+            coinLogComplete: s.coinLogComplete && !overflow,
+            coinTotals: { earned: s.coinTotals?.earned ?? 0, spent: (s.coinTotals?.spent ?? 0) + amount },
+          }
+        })
       },
 
       // ── Engagement engine: spins, luck, progressive jackpot ──
@@ -405,6 +421,7 @@ const useStore = create(
         jarBeads:   [],
         coinLog:    [],
         coinTotals: { earned: 0, spent: 0 },
+        coinLogComplete: true,
         milestones: [],
         jackpotPool: JACKPOT_SEED,
         spinStats:  { ...DEFAULT_SPIN_STATS },
@@ -415,7 +432,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 13,
+      version: 14,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -506,6 +523,20 @@ const useStore = create(
           }
           persisted.coinLog = log.slice(-COIN_LOG_MAX)
         }
+        if (version < 14) {
+          // RECOVERY: v13 could leave coinTotals at {0,0} while the log still held
+          // the real history — Spend showed 0 coins though thousands were earned.
+          // (A dev hot-reload landed between adding the field and its seed step, so
+          // the persisted version reached 13 without the seed ever running.)
+          // Rebuild totals from the log and record whether the log is still the
+          // complete history, so onRehydrateStorage can keep self-healing.
+          const log = Array.isArray(persisted.coinLog) ? persisted.coinLog : []
+          persisted.coinTotals = {
+            earned: log.filter(e => e.type === 'earned').reduce((s, e) => s + (e.amount || 0), 0),
+            spent:  log.filter(e => e.type === 'spent').reduce((s, e) => s + (e.amount || 0), 0),
+          }
+          persisted.coinLogComplete = log.length < COIN_LOG_MAX
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -516,6 +547,7 @@ const useStore = create(
         jarBeads:   state.jarBeads,
         coinLog:    state.coinLog,
         coinTotals: state.coinTotals,
+        coinLogComplete: state.coinLogComplete,
         milestones: state.milestones,
         settings:   state.settings,
         jackpotPool: state.jackpotPool,
@@ -523,6 +555,20 @@ const useStore = create(
         engagement: state.engagement,
         daily:      state.daily,
       }),
+      // Self-heal on every load: while the log is the complete history, it's the
+      // source of truth — rebuild coinTotals from it so the balance can NEVER
+      // silently drift from the log again (the regression where Stats showed
+      // 38,620 earned but Spend showed 0). Once the log overflows and starts
+      // dropping entries (coinLogComplete=false), we trust the incrementally
+      // maintained totals instead. Runs once per load — O(n) at startup, not per render.
+      onRehydrateStorage: () => (state) => {
+        if (!state || !state.coinLogComplete) return
+        const log = state.coinLog || []
+        state.coinTotals = {
+          earned: log.filter(e => e.type === 'earned').reduce((s, e) => s + (e.amount || 0), 0),
+          spent:  log.filter(e => e.type === 'spent').reduce((s, e) => s + (e.amount || 0), 0),
+        }
+      },
     }
   )
 )
