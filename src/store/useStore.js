@@ -128,6 +128,7 @@ const useStore = create(
       categories: [],     // { id, name, color }
       wallet:     [],     // { id, slot, isGold, habitId, earnedAt }
       jarBeads:   [],     // { id, slot, isGold, cashedAt, x, y }
+      jarSeenCount: 0,    // how many jarBeads have been shown settled in the 3D jar (the rest physics-drop on next view)
       coinLog:    [],     // recent history (capped at COIN_LOG_MAX) — { id, type, amount, source, habitId, note, timestamp }
       coinTotals: { earned: 0, spent: 0 },   // running balance — O(1) reads, never trimmed
       coinLogComplete: true,                 // true while coinLog holds FULL history (so totals can be rebuilt from it)
@@ -401,6 +402,10 @@ const useStore = create(
         return updated.filter(m => m.reached && !milestones.find(old => old.id === m.id)?.reached)
       },
 
+      // The 3D jar calls this once its new beads have dropped & settled, so they
+      // render as the static pile next time (only un-seen beads physics-drop).
+      markJarSeen: () => set(s => (s.jarSeenCount === s.jarBeads.length ? {} : { jarSeenCount: s.jarBeads.length })),
+
       // ── Settings actions ──
       updateSettings: (updates) => set(s => ({ settings: { ...s.settings, ...updates } })),
       updateBeadSlotColor: (slot, color, name) => set(s => ({
@@ -419,6 +424,7 @@ const useStore = create(
         categories: [],
         wallet:     [],
         jarBeads:   [],
+        jarSeenCount: 0,
         coinLog:    [],
         coinTotals: { earned: 0, spent: 0 },
         coinLogComplete: true,
@@ -432,7 +438,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 14,
+      version: 15,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -537,6 +543,12 @@ const useStore = create(
           }
           persisted.coinLogComplete = log.length < COIN_LOG_MAX
         }
+        if (version < 15) {
+          // 3D jar now places already-earned beads instantly (static pile) and only
+          // physics-drops NEW ones. Treat every existing jar bead as already seen so
+          // the whole jar doesn't re-pour on the first load after this update.
+          persisted.jarSeenCount = Array.isArray(persisted.jarBeads) ? persisted.jarBeads.length : 0
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -545,6 +557,7 @@ const useStore = create(
         categories: state.categories,
         wallet:     state.wallet,
         jarBeads:   state.jarBeads,
+        jarSeenCount: state.jarSeenCount,
         coinLog:    state.coinLog,
         coinTotals: state.coinTotals,
         coinLogComplete: state.coinLogComplete,

@@ -4,12 +4,14 @@ import { useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, BallCollider, TrimeshCollider, CuboidCollider } from '@react-three/rapier'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { PILE_POSITIONS, PILE_ROTATIONS } from './pilePositions.js'
 
 // Real-time version of the Blender hero jar (blender/jar_glass.py): the rounded
-// pink-glass jar with pearls + satin bow, where every bead you earn physically
-// drops in, plunks, and piles up. On mount the current jar refills quickly;
-// when a new bead is earned just that one falls. Idles at ~zero cost: once the
-// pile settles, physics pauses and the canvas stops re-rendering.
+// pink-glass jar with pearls + satin bow. Beads you've ALREADY seen are placed
+// instantly at a baked settled pile (scripts/bake-pile.mjs) — so the jar looks
+// identical every reload with no re-pour and no escapees. Only a NEWLY earned
+// bead physically drops in and plunks onto the pile. Idles at ~zero cost: once
+// the new bead settles, physics pauses and the canvas stops re-rendering.
 
 // (radius, height) silhouette — same profile as the Blender jar, Y-up here.
 const PROFILE = [
@@ -182,20 +184,46 @@ function idHash(str, salt) {
   return ((h >>> 0) % 10000) / 10000          // 0..1
 }
 
-function Bead({ bead, register }) {
+// Already-seen beads: rendered INSTANTLY at the baked settled pile (no physics,
+// no pour). One fixed body carries all their colliders so a freshly-dropped bead
+// still lands on top of the pile and plunks naturally.
+function StaticPile({ beads }) {
+  if (beads.length === 0) return null
+  return (
+    <>
+      <RigidBody type="fixed" colliders={false}>
+        {beads.map((b, i) => {
+          const p = PILE_POSITIONS[i]
+          return p ? <BallCollider key={b.id} args={[BEAD_R]} position={p} /> : null
+        })}
+      </RigidBody>
+      {beads.map((b, i) => {
+        const p = PILE_POSITIONS[i]
+        if (!p) return null
+        return (
+          <mesh key={b.id} geometry={beadGeo} material={beadMat(b.color, b.isGold, b.isRainbow)}
+            position={p} quaternion={PILE_ROTATIONS[i] || [0, 0, 0, 1]} scale={BEAD_R} />
+        )
+      })}
+    </>
+  )
+}
+
+// A NEWLY earned bead: spawned just above the neck and dropped with real physics
+// onto the static pile. Tight spawn + low bounce so it can't miss the jar.
+function DropBead({ bead, register }) {
   const s = useMemo(() => {
     const h = idHash(bead.id, 0), h2 = idHash(bead.id, 7), h3 = idHash(bead.id, 13)
     return {
-      // ±0.22 keeps every drop radially inside the neck opening (~0.33 usable);
-      // wider jitter bounced beads off the rim and OUT of the jar
-      pos: [(h - 0.5) * 0.44, 2.3 + h3 * 0.12, (h2 - 0.5) * 0.44],
+      // ±0.15 around centre, low over the neck → drops straight in (no rim bounce)
+      pos: [(h - 0.5) * 0.30, 2.12 + h3 * 0.10, (h2 - 0.5) * 0.30],
       rot: [h * 6.28, h2 * 6.28, h3 * 6.28],
     }
   }, [bead.id])
   return (
     <RigidBody colliders={false} position={s.pos} rotation={s.rot} ccd
       ref={api => register(bead.id, api)}
-      restitution={0.3} friction={0.55} linearDamping={0.35} angularDamping={0.8}>
+      restitution={0.18} friction={0.6} linearDamping={0.4} angularDamping={0.85}>
       <BallCollider args={[BEAD_R]} />
       <mesh geometry={beadGeo} material={beadMat(bead.color, bead.isGold, bead.isRainbow)} scale={BEAD_R} />
     </RigidBody>
@@ -216,10 +244,9 @@ function SettleWatch({ bodies, busy, onSettled }) {
   return null
 }
 
-function Scene({ beads, onWake, onSettled }) {
-  // `released` counts beads ever dropped into the scene (this mount). The spawn
-  // window is the last MAX_BEADS of those — so cash-ins keep plunking past the
-  // cap (a capped-length prop deadlocked: length stopped changing at the cap).
+function Scene({ staticBeads, newBeads, onWake, onSettled }) {
+  // staticBeads: already-seen → instant baked pile. newBeads: earned since last
+  // view → drop in one at a time (so several cash-ins plunk in sequence).
   const [released, setReleased] = useState(0)
   const releasedRef = useRef(0)
   const bodies = useRef(new Map())
@@ -228,24 +255,18 @@ function Scene({ beads, onWake, onSettled }) {
     else bodies.current.delete(id)
   }, [])
   useEffect(() => {
-    if (beads.length < releasedRef.current) {       // jar emptied (reset)
-      releasedRef.current = 0; setReleased(0); bodies.current.clear()
-    }
-    if (beads.length === releasedRef.current) return
-    const initialFill = releasedRef.current === 0 && beads.length > 1
-    // adaptive pour on mount: a 600-bead jar refills in ~5s, a small one drips
-    const interval = initialFill ? Math.max(8, Math.min(34, Math.round(2600 / beads.length))) : 240
+    if (newBeads.length === releasedRef.current) return
     onWake()
     const id = setInterval(() => {
-      releasedRef.current = Math.min(beads.length, releasedRef.current + 1)
+      releasedRef.current = Math.min(newBeads.length, releasedRef.current + 1)
       setReleased(releasedRef.current)
       onWake()
-      if (releasedRef.current >= beads.length) clearInterval(id)
-    }, interval)
+      if (releasedRef.current >= newBeads.length) clearInterval(id)
+    }, 260)
     return () => clearInterval(id)
-  }, [beads.length, onWake])
+  }, [newBeads.length, onWake])
 
-  const visible = beads.slice(Math.max(0, released - MAX_BEADS), released)
+  const droppers = newBeads.slice(0, released)
   return (
     <>
       <StudioEnv />
@@ -255,18 +276,29 @@ function Scene({ beads, onWake, onSettled }) {
       <Jar />
       <Pearls />
       <Suspense fallback={null}><Bow /></Suspense>
-      {visible.map(b => <Bead key={b.id} bead={b} register={register} />)}
-      <SettleWatch bodies={bodies} busy={released < beads.length} onSettled={onSettled} />
+      <StaticPile beads={staticBeads} />
+      {droppers.map(b => <DropBead key={b.id} bead={b} register={register} />)}
+      <SettleWatch bodies={bodies} busy={released < newBeads.length} onSettled={onSettled} />
     </>
   )
 }
 
-// beads: full jar contents [{ id, color, isGold }] oldest→newest (uncapped —
-// Scene windows the physics bodies to the newest MAX_BEADS itself)
-export default function BeadJar3D({ beads, width = 150, height = 218 }) {
+// beads: full jar contents [{ id, color, isGold, isRainbow }] oldest→newest.
+// seenCount: how many of those have already been shown settled (persisted) — the
+// rest drop in. onSeen: called once the new beads finish settling (persist seen).
+export default function BeadJar3D({ beads, seenCount = 0, onSeen, width = 150, height = 218 }) {
   const [active, setActive] = useState(true)
   const onWake = useMemo(() => () => setActive(true), [])
-  const onSettled = useMemo(() => () => setActive(false), [])
+  const handleSettled = useMemo(() => () => { setActive(false); onSeen?.() }, [onSeen])
+
+  // window the display to the newest MAX_BEADS (jar holds 600; older roll under)
+  const win = beads.length > MAX_BEADS ? beads.slice(beads.length - MAX_BEADS) : beads
+  const offset = beads.length - win.length
+  // How many windowed beads were already seen — CAPTURED ONCE at mount, so
+  // earning a bead mid-session only drops the NEW one (the pile never reshuffles).
+  const [seenAtMount] = useState(() => Math.max(0, Math.min(win.length, seenCount - offset)))
+  const staticBeads = win.slice(0, seenAtMount)
+  const newBeads = win.slice(seenAtMount)
 
   return (
     <div style={{ width, height, pointerEvents: 'none' }}>
@@ -284,7 +316,7 @@ export default function BeadJar3D({ beads, width = 150, height = 218 }) {
         }}>
         <Suspense fallback={null}>
           <Physics gravity={[0, -14, 0]} paused={!active} numSolverIterations={8} numAdditionalFrictionIterations={4}>
-            <Scene beads={beads} onWake={onWake} onSettled={onSettled} />
+            <Scene staticBeads={staticBeads} newBeads={newBeads} onWake={onWake} onSettled={handleSettled} />
           </Physics>
         </Suspense>
       </Canvas>

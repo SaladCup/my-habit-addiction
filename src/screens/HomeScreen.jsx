@@ -44,12 +44,14 @@ function hashSlot(key) {
 // From scripts/jar-capacity-test.mjs — REAL rapier sim at BEAD_R 0.086; the
 // jar holds ~600 beads. Lines drawn from this curve sit exactly where the pile
 // top physically is at that count, so "beads touch the line" === "count hit".
+// In sync with scripts/bake-pile.mjs (the SAME baked pile BeadJar3D places), so
+// a milestone line sits exactly where the static pile top is at that count.
 const PILE_CURVE = [
-  [0, 0.09], [25, 0.221], [50, 0.357], [75, 0.434], [100, 0.489], [125, 0.529],
-  [150, 0.622], [175, 0.700], [200, 0.710], [225, 0.756], [250, 0.848],
-  [275, 0.877], [300, 0.986], [325, 1.004], [350, 1.031], [375, 1.125],
-  [400, 1.161], [425, 1.261], [450, 1.299], [475, 1.316], [500, 1.391],
-  [525, 1.477], [550, 1.505], [575, 1.542], [600, 1.612],
+  [0, 0.09], [25, 0.221], [50, 0.330], [75, 0.438], [100, 0.448], [125, 0.494],
+  [150, 0.567], [175, 0.636], [200, 0.704], [225, 0.714], [250, 0.746],
+  [275, 0.842], [300, 0.893], [325, 0.989], [350, 1.015], [375, 1.085],
+  [400, 1.125], [425, 1.179], [450, 1.216], [475, 1.279], [500, 1.310],
+  [525, 1.423], [550, 1.444], [575, 1.528], [600, 1.613],
 ]
 function pileHeightAt(count) {
   const c = Math.max(0, Math.min(600, count))
@@ -61,7 +63,7 @@ function pileHeightAt(count) {
 }
 
 // ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
-function TeapotJar({ jarBeads, milestones, getBeadColor }) {
+function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen }) {
   const W = 200, H = 291
   const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
@@ -80,11 +82,16 @@ function TeapotJar({ jarBeads, milestones, getBeadColor }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '-36px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
-        {/* the PNG jar holds the spot while three.js/rapier lazy-load */}
-        <Suspense fallback={
-          <img src="/ui/jar.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
-        }>
-          <BeadJar3D beads={beads3d} width={JAR_PX} height={JAR_PX * (H / W)} />
+        {/* transparent placeholder while three.js/rapier lazy-load — NOT the old
+            painted jar.png (it flashed a different jar, then the beads re-poured) */}
+        <Suspense fallback={null}>
+          <BeadJar3D
+            beads={beads3d}
+            seenCount={seenCount}
+            onSeen={onSeen}
+            width={JAR_PX}
+            height={JAR_PX * (H / W)}
+          />
         </Suspense>
 
         {/* milestone lines + count overlay the canvas (it ignores pointer events) */}
@@ -416,7 +423,7 @@ export default function HomeScreen() {
   const {
     habits, categories, wallet, jarBeads, milestones, settings,
     drawBead, cashInBeads, getBeadColor, setSession,
-    addCategory, addHabit,
+    addCategory, addHabit, jarSeenCount, markJarSeen,
   } = useStore()
 
   const [dropping, setDropping] = useState(null)
@@ -502,7 +509,8 @@ export default function HomeScreen() {
             position: 'relative', zIndex: 12,
             filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
         />
-        <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor} />
+        <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor}
+          seenCount={jarSeenCount} onSeen={markJarSeen} />
         <img
           src="/ui/tap_banner.png?v=2"
           alt="Tap a habit to earn a bead, silly!"
