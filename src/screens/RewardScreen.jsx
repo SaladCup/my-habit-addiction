@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import useStore from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { KawaiiButton, TierBadge, PixelPanel } from '../components/ui'
+import { playReward } from '../engine/sounds'
 // 3D physics coin shower — lazy so Three.js/rapier only load on a win
 const CoinCascade3D = lazy(() => import('../components/CoinCascade3D'))
 
@@ -105,6 +106,7 @@ export default function RewardScreen() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount ritual: the milestone check mutates the store exactly once per reward view
     setNewMilestones(checkMilestones())
+    playReward()
     fireRewardConfetti(spinResult)
     // Prevent click-bleed from the SpinScreen's "TAP TO SEE REWARDS" button
     // firing immediately on the "BACK TO HABITS" button at the same position

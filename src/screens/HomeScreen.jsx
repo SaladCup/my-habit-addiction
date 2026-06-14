@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { isCashable } from '../engine/gameLogic'
 import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
-import { playBeadDraw } from '../engine/sounds'
+import { playBeadDraw, playCreateHabit } from '../engine/sounds'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
 
@@ -500,6 +500,7 @@ export default function HomeScreen() {
   function handleOnboardingComplete(catData, habitData) {
     const newCat = addCategory(catData)
     addHabit({ ...habitData, categoryId: newCat.id })
+    playCreateHabit()
   }
 
   return (

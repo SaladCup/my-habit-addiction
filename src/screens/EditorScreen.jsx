@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { KawaiiButton, PixelPanel } from '../components/ui'
+import { playCreateHabit } from '../engine/sounds'
 
 const BLANK_HABIT = {
   name: '', description: '', categoryId: null,
@@ -204,6 +205,7 @@ export default function EditorScreen() {
   function handleSave(form) {
     if (editing === 'new') {
       addHabit(form)
+      playCreateHabit()
     } else {
       updateHabit(editing, form)
     }

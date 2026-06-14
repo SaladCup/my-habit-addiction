@@ -1,5 +1,8 @@
-// Web Audio API synthesized sounds — no external files needed.
-// Reads muted/volume directly from localStorage to avoid React coupling.
+// Sound layer. Real audio files (engine/audio.js, public/sounds/) play when a
+// file is mapped for an event; the synthesized tones below are the fallback
+// (used only in the brief window before a file decodes, or for events with no
+// chosen file yet). Reads muted/volume directly from localStorage.
+import { playSfx, playThrottled, startLoop, stopLoop, preloadAll } from './audio'
 
 let ctx = null
 
@@ -43,6 +46,7 @@ function play(fn) {
   if (muted) return
   const c = getCtx()
   if (!c) return
+  preloadAll()   // first sound (a user gesture) warms the real audio files too
   try { fn(c) } catch { /* audio is decoration — never let it crash gameplay */ }
 }
 
@@ -83,7 +87,9 @@ export function playSpinStart() {
   })
 }
 
+const WIN_FILE = { t1: 'winSmall', t2: 'winMedium', t3: 'winLarge', jackpot: 'jackpot', bonus: 'bonus' }
 export function playWin(result) {
+  if (playSfx(WIN_FILE[result] || 'winSmall')) return
   play(c => {
     const t = c.currentTime
     const seqs = {
@@ -123,6 +129,7 @@ export function playReelStop() {
 }
 
 export function playBonus() {
+  if (playSfx('bonus')) return
   play(c => {
     const t = c.currentTime
     ;[[784,0],[880,.06],[1047,.13],[880,.2],[1047,.28],[1319,.38]].forEach(
@@ -132,6 +139,9 @@ export function playBonus() {
 }
 
 export function playWheelTick() {
+  // one click; the wheel calls this per segment crossing, so the ticks slow down
+  // on their own as it decelerates
+  if (playSfx('wheelTick', 0.9)) return
   play(c => {
     const t = c.currentTime
     note(c, 1100, t,        0.018, 'square', 0.07)
@@ -156,8 +166,9 @@ export function playLineWin(step = 0) {
   })
 }
 
-// A quick coin "tick" used while tallying up the total.
+// A quick coin "tick" used while tallying up the slot total.
 export function playCoinTick(step = 0) {
+  if (playSfx('coin', 0.7)) return
   play(c => {
     const t = c.currentTime
     note(c, 880 + step * 30, t, 0.05, 'square', 0.08)
@@ -171,3 +182,11 @@ export function playSlotWin() {
     ;[523, 659, 784, 1047].forEach((f, i) => note(c, f, t + i * 0.08, 0.22, 'triangle', 0.2))
   })
 }
+
+// ── File-backed event sounds (real audio — see engine/audio.js) ──
+export function playReward()      { playSfx('rewardOpen') }       // reward screen opens
+export function playStreak()      { playSfx('streak') }           // daily login streak
+export function playCreateHabit() { playSfx('createHabit') }      // a new habit is created
+export function startCoinLoop()   { startLoop('coinsLoop', 0.85) } // "lots of coins" bed under the cascade
+export function stopCoinLoop()    { stopLoop('coinsLoop') }
+export function playCoinDrop()    { playThrottled('coin', 55, 0.55) } // per coin in the cascade (throttled)

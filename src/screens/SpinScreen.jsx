@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import useStore from '../store/useStore'
 import { spinBonusWheel, SPINS_PER_TIER } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TierBadge } from '../components/ui'
+import { playStreak, playWin } from '../engine/sounds'
 import Wheel from '../components/Wheel'
 import SlotMachine from '../components/SlotMachine'
 
@@ -68,7 +69,7 @@ export default function SpinScreen() {
     // Daily login bonus — escalating reward, once per calendar day
     const claimed = claimDailyBonus()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount claim; the store call must happen exactly once per visit
-    if (claimed) setDailyBonus(claimed)
+    if (claimed) { setDailyBonus(claimed); playStreak() }
   }, [validEntry, navigate, resetSession, claimDailyBonus])
 
   function pickMode(m) {
@@ -119,6 +120,7 @@ export default function SpinScreen() {
       : slotSession.isBonus ? 'bonus'
       : `t${activeTier}`   // show the tier you played (not a generic t1)
     setSession({ spinResult: result, coinsEarned: slotSession.totalCoins, phase: 'reward' })
+    playWin(result)   // slots win fanfare (the wheel plays its own in Wheel.jsx)
     fireConfetti(slotSession.isJackpot ? 'jackpot' : result, slotSession.totalCoins)
     if (slotSession.isBonus) {
       const bonus = spinBonusWheel()

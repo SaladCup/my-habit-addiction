@@ -4,6 +4,7 @@ import { useTexture } from '@react-three/drei'
 import { Physics, RigidBody, CylinderCollider, CuboidCollider } from '@react-three/rapier'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { startCoinLoop, stopCoinLoop, playCoinDrop } from '../engine/sounds'
 
 // Real 3D physics coin shower. Each coin is a flat low-poly cylinder (a disk)
 // whose face detail (rings + heart) comes from a NORMAL MAP — so the relief is
@@ -83,9 +84,18 @@ function Scene({ count, bw, bh }) {
   const interval = useMemo(() => Math.max(24, Math.min(110, Math.round(5200 / count))), [count])
   const [n, setN] = useState(0)
   useEffect(() => {
-    let i = 0
-    const id = setInterval(() => { i += 1; setN(Math.min(count, i)); if (i >= count) clearInterval(id) }, interval)
-    return () => clearInterval(id)
+    startCoinLoop()                      // "lots of coins" bed under the whole pour
+    let i = 0, stopTimer = null
+    const id = setInterval(() => {
+      i += 1
+      setN(Math.min(count, i))
+      playCoinDrop()                     // a clink as each coin comes out (throttled)
+      if (i >= count) {
+        clearInterval(id)
+        stopTimer = setTimeout(stopCoinLoop, 1200)   // let the last coins jingle, then fade the bed
+      }
+    }, interval)
+    return () => { clearInterval(id); if (stopTimer) clearTimeout(stopTimer); stopCoinLoop() }
   }, [count, interval])
 
   return (
