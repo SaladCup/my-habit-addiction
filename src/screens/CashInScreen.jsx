@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef, useLayoutEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { FloatingDecor, BeadDisplay } from '../components/ui'
+import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
 // Same 3D jar as Home — so the beads you drop here are the SAME beads waiting in
 // the jar when you come back from the game.
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
@@ -22,6 +22,7 @@ export default function CashInScreen() {
   const [release, setRelease] = useState(0)   // # of 3D marbles dropped so far
   const [popped, setPopped]   = useState(0)   // # of PNG beads that have popped
   const [stage, setStage]     = useState('lineup')   // 'lineup' (title up) → 'dropping'
+  const [done, setDone]       = useState(false)      // all in — linger; tap to go on
 
   const wrapRef = useRef(null)
   const [dims, setDims] = useState(null)
@@ -62,7 +63,7 @@ export default function CashInScreen() {
       await sleep(1400)                      // let the last marble land
       if (cancelled) return
       markJarSeen()                          // the cashed beads are now part of the pile
-      navigate('/spin')
+      setDone(true)                          // linger so you can admire the jar; "Select Game" goes on
     })()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,6 +126,31 @@ export default function CashInScreen() {
             </div>
           )
         })}
+      </div>
+
+      {/* Once everything's in the jar: linger so you can admire it, then tap to
+          go pick your game (no auto-advance). */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, bottom: '4%', zIndex: 14,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9,
+        padding: '0 24px',
+        opacity: done ? 1 : 0,
+        transform: done ? 'translateY(0)' : 'translateY(18px)',
+        transition: 'opacity 550ms ease, transform 550ms cubic-bezier(0.34,1.56,0.64,1)',
+        pointerEvents: done ? 'auto' : 'none',
+      }}>
+        <div style={{
+          fontFamily: 'Mulish, sans-serif', fontSize: 15, fontWeight: 800, color: '#9B3D6B',
+          background: 'rgba(255,245,251,0.82)', padding: '4px 14px', borderRadius: 999,
+          boxShadow: '0 2px 8px rgba(155,126,200,0.25)',
+        }}>
+          ✨ Beads added to your jar! ✨
+        </div>
+        <div style={{ width: '100%', maxWidth: 300 }}>
+          <KawaiiButton variant="primary" size="lg" fullWidth onClick={() => navigate('/spin')}>
+            ✦ Select Game →
+          </KawaiiButton>
+        </div>
       </div>
 
       <style>{`
