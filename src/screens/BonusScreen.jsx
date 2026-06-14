@@ -7,7 +7,7 @@ import BonusWheel from '../components/BonusWheel'
 
 export default function BonusScreen() {
   const navigate = useNavigate()
-  const { session, setSession, addBonusBead, resetSession } = useStore()
+  const { session, setSession, addBonusBead, resetSession, resetRewardChain } = useStore()
   const { bonusResult, selectedHabit, bonusTimerEnd } = session
 
   // Bonus rounds are EARNED: the triggering spin pre-rolls bonusResult before
@@ -31,16 +31,17 @@ export default function BonusScreen() {
     if (!validEntry) navigate('/', { replace: true })
   }, [validEntry, navigate])
 
-  // Bug fix #3: timer expiry auto-navigates to /reward after 2s
-  // (user keeps original spin's coins but earns no bonus bead)
+  // Timer expiry → head home after 2s (no bonus bead). The coin reward already
+  // showed before the bonus round, so there's nothing more to see — end the chain.
   useEffect(() => {
     if (!timedOut || pendingNav) return
     const t = setTimeout(() => {
-      setSession({ phase: 'reward' })
-      navigate('/reward')
+      resetRewardChain()
+      resetSession()
+      navigate('/')
     }, 2000)
     return () => clearTimeout(t)
-  }, [timedOut, pendingNav, navigate, setSession])
+  }, [timedOut, pendingNav, navigate, resetSession, resetRewardChain])
 
   function handleWheelDone() {
     // Coins were already collected by the spin that triggered the bonus.
@@ -59,10 +60,12 @@ export default function BonusScreen() {
     setPendingNav('/')
   }
 
-  // "I Missed It" / skip path: go straight to reward with original spin coins only
+  // Skip path: no bead. The coin reward already showed before the bonus round,
+  // so just head home and end the chain.
   function handleBonusDone() {
-    setSession({ phase: 'reward' })
-    setPendingNav('/reward')
+    resetRewardChain()
+    resetSession()
+    navigate('/')
   }
 
   if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
@@ -158,18 +161,15 @@ export default function BonusScreen() {
         </KawaiiButton>
       )}
 
-      {pendingNav && (
+      {pendingNav === '/' && (
         <KawaiiButton
-          variant={pendingNav === '/' ? 'mint' : 'primary'}
+          variant="mint"
           size="xl"
           fullWidth
-          onClick={() => {
-            if (pendingNav === '/') { resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }
-            else { setSession({ phase: 'reward' }); navigate('/reward') }
-          }}
+          onClick={() => { resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }}
           style={{ animation: 'bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1)', maxWidth: 380 }}
         >
-          {pendingNav === '/' ? '✨ COLLECT YOUR BEAD →' : '✨ SEE YOUR REWARDS →'}
+          ✨ COLLECT YOUR BEAD →
         </KawaiiButton>
       )}
     </div>

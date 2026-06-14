@@ -150,6 +150,9 @@ const useStore = create(
 
       // ── Ephemeral session (not persisted) ──
       session: { ...DEFAULT_SESSION },
+      // Running coin total across a bonus chain (each spin adds; the reward
+      // screen shows it crushing up). Transient — resets on a non-bonus reward.
+      rewardChain: { prev: 0, total: 0 },
 
       // ── Computed getters ──
       getTotalCoinsEarned: () => get().coinTotals.earned,
@@ -396,6 +399,10 @@ const useStore = create(
       setSession: (updates) => set(s => ({ session: { ...s.session, ...updates } })),
       resetSession: () => set({ session: { ...DEFAULT_SESSION } }),
 
+      // ── Reward chain (cumulative coins across a bonus chain) ──
+      pushReward: (coins) => set(s => ({ rewardChain: { prev: s.rewardChain.total, total: s.rewardChain.total + coins } })),
+      resetRewardChain: () => set({ rewardChain: { prev: 0, total: 0 } }),
+
       // ── Milestone actions ──
       addMilestone: (m) => set(s => ({ milestones: [...s.milestones, { id: uuid(), reached: false, reachedAt: null, ...m }] })),
       updateMilestone: (id, updates) => set(s => ({ milestones: s.milestones.map(m => m.id === id ? { ...m, ...updates } : m) })),
@@ -443,6 +450,7 @@ const useStore = create(
         engagement: { ...DEFAULT_ENGAGEMENT },
         daily:      { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
         session:    { ...DEFAULT_SESSION },
+        rewardChain: { prev: 0, total: 0 },
       }),
     }),
     {

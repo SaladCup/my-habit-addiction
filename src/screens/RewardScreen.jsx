@@ -36,8 +36,9 @@ function fireRewardConfetti(result) {
   }
 }
 
-function CoinCounter({ to, duration = 1400 }) {
-  const [value, setValue] = useState(0)
+// Counts from `from` up to `to` (so a chained reward visibly crushes the old total up).
+function CoinCounter({ from = 0, to, duration = 1400 }) {
+  const [value, setValue] = useState(from)
   const [landed, setLanded] = useState(!to)   // nothing to count up → land immediately
   const rafRef = useRef(null)
 
@@ -47,13 +48,13 @@ function CoinCounter({ to, duration = 1400 }) {
     function tick(now) {
       const t = Math.min(1, (now - start) / duration)
       const eased = 1 - Math.pow(1 - t, 3)
-      setValue(Math.round(to * eased))
+      setValue(Math.round(from + (to - from) * eased))
       if (t < 1) rafRef.current = requestAnimationFrame(tick)
       else setLanded(true)
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => rafRef.current && cancelAnimationFrame(rafRef.current)
-  }, [to, duration])
+  }, [from, to, duration])
 
   return (
     <span style={{
@@ -62,7 +63,7 @@ function CoinCounter({ to, duration = 1400 }) {
       transform: landed ? 'scale(1.15)' : 'scale(1)',
       textShadow: landed ? '0 0 12px rgba(255,215,0,0.7)' : 'none',
     }}>
-      +{value}
+      {value}
     </span>
   )
 }
@@ -77,7 +78,7 @@ const RESULT_CFG = {
 
 export default function RewardScreen() {
   const navigate = useNavigate()
-  const { session, resetSession, checkMilestones, settings } = useStore()
+  const { session, resetSession, checkMilestones, settings, rewardChain, resetRewardChain } = useStore()
   const { spinResult, coinsEarned, isNearMiss, pullHistory } = session
 
   // Only a finished spin lands here (SpinScreen/BonusScreen set phase 'reward'
@@ -87,13 +88,16 @@ export default function RewardScreen() {
   const [validEntry] = useState(() => session.phase === 'reward')
 
   const cfg = RESULT_CFG[spinResult] || RESULT_CFG.t1
-  const coins = coinsEarned || TIER_COINS[spinResult] || 0
-  // 1:1 — exactly your winnings fall (capped at 400 for physics perf; every
-  // normal tier win is under that, so the count is literally what you won)
-  const cascadeCount = coins > 0 ? Math.min(coins, 400) : 0
+  const thisSpin = coinsEarned || TIER_COINS[spinResult] || 0
+  // Cumulative across a bonus chain: `total` is the running sum, `prev` the
+  // total before this spin. First/normal spin → prev 0, total = thisSpin.
+  const total = rewardChain.total > 0 ? rewardChain.total : thisSpin
+  const prev = rewardChain.total > 0 ? rewardChain.prev : 0
+  // 1:1 — exactly THIS spin's winnings fall (capped at 400 for physics perf)
+  const cascadeCount = thisSpin > 0 ? Math.min(thisSpin, 400) : 0
   const coinName = 'coins'
-  const moneyVal = settings?.moneyPerCoin ? (coins * settings.moneyPerCoin).toFixed(2) : null
-  const timeVal = settings?.secondsPerCoin ? formatTime(coins * settings.secondsPerCoin) : null
+  const moneyVal = settings?.moneyPerCoin ? (total * settings.moneyPerCoin).toFixed(2) : null
+  const timeVal = settings?.secondsPerCoin ? formatTime(total * settings.secondsPerCoin) : null
   const timeActivity = settings?.timeActivity || 'free time'
 
   const [newMilestones, setNewMilestones] = useState([])
@@ -116,6 +120,7 @@ export default function RewardScreen() {
   }, [])
 
   function handleDone() {
+    resetRewardChain()   // a non-bonus exit ends the chain — next spin starts fresh
     resetSession()
     navigate('/')
   }
@@ -173,22 +178,30 @@ export default function RewardScreen() {
       <PixelPanel color="yellow" style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
         <div style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: 27, color: '#5C3A00', marginBottom: 8,
+          fontSize: 26, color: '#5C3A00', marginBottom: prev > 0 ? 2 : 8,
         }}>
-          COINS EARNED
+          {prev > 0 ? '✨ RUNNING TOTAL ✨' : 'COINS EARNED'}
         </div>
+        {prev > 0 && (
+          <div style={{
+            fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#1A5C3A', marginBottom: 4,
+            animation: 'bounce-in 0.5s 0.15s cubic-bezier(0.34,1.56,0.64,1) both',
+          }}>
+            + {thisSpin} this spin!
+          </div>
+        )}
         <div style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: 34, color: '#5C3A00', marginBottom: 4,
+          fontSize: 36, color: '#5C3A00', marginBottom: 4,
         }}>
-          <CoinCounter to={coins} duration={spinResult === 'jackpot' ? 2200 : 1400} /> {coinName}
+          <CoinCounter from={prev} to={total} duration={spinResult === 'jackpot' ? 2200 : 1400} /> {coinName}
         </div>
-        {coins > 0 && moneyVal && (
+        {total > 0 && moneyVal && (
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             = ${moneyVal} guilt-free spending
           </div>
         )}
-        {coins > 0 && timeVal && (
+        {total > 0 && timeVal && (
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
             = {timeVal} of {timeActivity}
           </div>
@@ -223,9 +236,15 @@ export default function RewardScreen() {
         </PixelPanel>
       )}
 
-      <KawaiiButton variant="primary" size="lg" onClick={handleDone} disabled={!canLeave} fullWidth style={{ maxWidth: 340 }}>
-        🏠 BACK TO HABITS
-      </KawaiiButton>
+      {spinResult === 'bonus' ? (
+        <KawaiiButton variant="gold" size="lg" onClick={() => navigate('/bonus')} disabled={!canLeave} fullWidth style={{ maxWidth: 340 }}>
+          ⭐ BONUS ROUND! TAP TO SPIN →
+        </KawaiiButton>
+      ) : (
+        <KawaiiButton variant="primary" size="lg" onClick={handleDone} disabled={!canLeave} fullWidth style={{ maxWidth: 340 }}>
+          🏠 BACK TO HABITS
+        </KawaiiButton>
+      )}
     </div>
   )
 }

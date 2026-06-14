@@ -36,7 +36,7 @@ function fireConfetti(result, coins = 0) {
 
 export default function SpinScreen() {
   const navigate = useNavigate()
-  const { session, setSession, resetSession, spinWheel, spinSlots, markSlotSessionComplete } = useStore()
+  const { session, setSession, resetSession, spinWheel, spinSlots, markSlotSessionComplete, pushReward } = useStore()
   const jackpotPool = useStore(s => s.jackpotPool)
   const activeTier = session.activeTier || 1
 
@@ -92,15 +92,16 @@ export default function SpinScreen() {
     // handler is pure presentation. coinsEarned is set to THIS spin's coins only
     // (the store folds in any daily-login bonus too; don't inflate the reward total).
     const { awardedResult, coinsAwarded } = wheelOutcome
+    pushReward(coinsAwarded)   // add to the running bonus-chain total
     setSession({ spinResult: awardedResult, isNearMiss: wheelOutcome.isNearMiss, coinsEarned: coinsAwarded, phase: 'reward' })
     fireConfetti(awardedResult, coinsAwarded)
     if (awardedResult === 'bonus') {
+      // pre-roll the bonus round — the reward screen shows the coins first, then
+      // a "Bonus Round" button continues to /bonus.
       const bonus = spinBonusWheel()
       setSession({ bonusResult: bonus.result, bonusTimerEnd: Date.now() + 10 * 60 * 1000 })
-      setPendingNav('/bonus')
-    } else {
-      setPendingNav('/reward')
     }
+    setPendingNav('/reward')   // always see the (cumulative) reward first
   }
 
   // All slot spins revealed — coins were banked by spinSlots up front
@@ -113,16 +114,15 @@ export default function SpinScreen() {
     const result = slotSession.isJackpot ? 'jackpot'
       : slotSession.isBonus ? 'bonus'
       : `t${activeTier}`   // show the tier you played (not a generic t1)
+    pushReward(slotSession.totalCoins)   // add to the running bonus-chain total
     setSession({ spinResult: result, coinsEarned: slotSession.totalCoins, phase: 'reward' })
     playWin(result)   // slots win fanfare (the wheel plays its own in Wheel.jsx)
     fireConfetti(slotSession.isJackpot ? 'jackpot' : result, slotSession.totalCoins)
     if (slotSession.isBonus) {
       const bonus = spinBonusWheel()
       setSession({ bonusResult: bonus.result, bonusTimerEnd: Date.now() + 10 * 60 * 1000 })
-      setPendingNav('/bonus')
-    } else {
-      setPendingNav('/reward')
     }
+    setPendingNav('/reward')   // always see the (cumulative) reward first
   }
 
   if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
