@@ -370,17 +370,26 @@ const useStore = create(
         return { ...session, totalCoins, jackpotAward: fin.jackpotAward }
       },
 
-      // Escalating daily login bonus (once per calendar day).
-      claimDailyBonus: () => {
+      // Daily streak check-in — once per calendar day, on app open (drives the
+      // streak popup). Miss a day → streak breaks to day 0 with NO bonus. Else
+      // bonus = 10 × day coins (display units), small & escalating.
+      // Returns { prevStreak, newStreak, broken, bonus } for the popup, or null
+      // if already checked in today.
+      checkInStreak: () => {
         const today = new Date().toDateString()
         const d = get().daily
-        if (d.bonusClaimedDate === today) return null
+        if (d.streakShownDate === today || d.lastPlayDate === today) return null   // once per day
         const yesterday = new Date(Date.now() - 86400000).toDateString()
-        const streak = d.lastPlayDate === yesterday ? (d.loginStreak || 0) + 1 : 1
-        const bonus = Math.min(10 + (streak - 1) * 5, 50) * COIN_SCALE
-        get().awardCoins(bonus, 'daily-bonus')
-        set({ daily: { lastPlayDate: today, loginStreak: streak, bonusClaimedDate: today } })
-        return { streak, bonus }
+        const prevStreak = d.loginStreak || 0
+        let newStreak, broken
+        if (!d.lastPlayDate)                   { newStreak = 1; broken = false }  // first ever
+        else if (d.lastPlayDate === yesterday) { newStreak = prevStreak + 1; broken = false }  // continued
+        else if (prevStreak >= 1)              { newStreak = 0; broken = true }   // HAD a streak, missed a day → break
+        else                                   { newStreak = 1; broken = false }  // no streak to break → fresh start
+        const bonus = newStreak > 0 ? Math.min(10 * newStreak, 200) : 0
+        if (bonus > 0) get().awardCoins(bonus, 'daily-streak')
+        set({ daily: { lastPlayDate: today, loginStreak: newStreak, bonusClaimedDate: today, streakShownDate: today } })
+        return { prevStreak, newStreak, broken, bonus }
       },
 
       // ── Session actions ──

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import './styles/global.css'
 import { WarningSplash } from './components/ui'
+import StreakPopup from './components/StreakPopup'
 import HomeScreen     from './screens/HomeScreen'
 import WalletScreen   from './screens/WalletScreen'
 import SpendScreen    from './screens/SpendScreen'
@@ -93,6 +94,9 @@ export default function App() {
   const [showWarning, setShowWarning] = useState(
     () => !localStorage.getItem('habitAddict_seenWarning')
   )
+  // Daily streak check-in popup, once per app open (self-dismisses if already
+  // done today). Held until the first-run warning is gone so they don't stack.
+  const [streakDone, setStreakDone] = useState(false)
 
   function dismissWarning() {
     localStorage.setItem('habitAddict_seenWarning', '1')
@@ -105,6 +109,7 @@ export default function App() {
       <BrowserRouter>
         <AppShell />
       </BrowserRouter>
+      {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
     </>
   )
 }

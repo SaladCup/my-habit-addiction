@@ -190,3 +190,24 @@ export function playCreateHabit() { playSfx('createHabit') }      // a new habit
 export function startCoinLoop()   { startLoop('coinsLoop', 0.85) } // "lots of coins" bed under the cascade
 export function stopCoinLoop()    { stopLoop('coinsLoop') }
 export function playCoinDrop()    { playThrottled('coin', 55, 0.55) } // per coin in the cascade (throttled)
+
+// Sad descending "womp womp" when a streak breaks (synth — drop a file at the
+// 'streakBreak' MANIFEST key in audio.js to replace it).
+export function playStreakBreak() {
+  if (playSfx('streakBreak')) return
+  play(c => {
+    const t = c.currentTime
+    const { volume } = getSettings()
+    ;[392, 349, 311, 247].forEach((f, i) => {     // G F Eb B — sad descending
+      const osc = c.createOscillator(), g = c.createGain()
+      osc.type = 'sawtooth'; osc.connect(g); g.connect(c.destination)
+      const st = t + i * 0.21
+      osc.frequency.setValueAtTime(f, st)
+      osc.frequency.linearRampToValueAtTime(f * 0.92, st + 0.19)   // droopy slide down
+      g.gain.setValueAtTime(0.0001, st)
+      g.gain.linearRampToValueAtTime(0.16 * volume, st + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.001, st + 0.2)
+      osc.start(st); osc.stop(st + 0.23)
+    })
+  })
+}

@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti'
 import useStore from '../store/useStore'
 import { spinBonusWheel, SPINS_PER_TIER } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TierBadge } from '../components/ui'
-import { playStreak, playWin } from '../engine/sounds'
+import { playWin } from '../engine/sounds'
 import Wheel from '../components/Wheel'
 import SlotMachine from '../components/SlotMachine'
 
@@ -36,7 +36,7 @@ function fireConfetti(result, coins = 0) {
 
 export default function SpinScreen() {
   const navigate = useNavigate()
-  const { session, setSession, resetSession, spinWheel, spinSlots, claimDailyBonus, markSlotSessionComplete } = useStore()
+  const { session, setSession, resetSession, spinWheel, spinSlots, markSlotSessionComplete } = useStore()
   const jackpotPool = useStore(s => s.jackpotPool)
   const activeTier = session.activeTier || 1
 
@@ -56,7 +56,6 @@ export default function SpinScreen() {
   const [slotSession, setSlotSession] = useState(null)   // resolved multi-spin slot session
   const slotGuard = useRef(false)      // prevent double-complete from the slot animation
   const [pendingNav, setPendingNav] = useState(null)  // route to navigate on continue tap
-  const [dailyBonus, setDailyBonus] = useState(null)  // { streak, bonus } if claimed today
 
   const wheelRef = useRef(null)
 
@@ -64,13 +63,8 @@ export default function SpinScreen() {
     if (!validEntry) {
       resetSession()                        // clear the stale session on the way out
       navigate('/', { replace: true })
-      return
     }
-    // Daily login bonus — escalating reward, once per calendar day
-    const claimed = claimDailyBonus()
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount claim; the store call must happen exactly once per visit
-    if (claimed) { setDailyBonus(claimed); playStreak() }
-  }, [validEntry, navigate, resetSession, claimDailyBonus])
+  }, [validEntry, navigate, resetSession])
 
   function pickMode(m) {
     slotGuard.current = false
@@ -179,16 +173,6 @@ export default function SpinScreen() {
       </div>
       )}
 
-      {/* Daily streak bonus */}
-      {dailyBonus && (
-        <div style={{
-          fontFamily: 'Mulish, sans-serif', fontSize: 20, fontWeight: 800, color: '#5CBFA0',
-          background: '#E8FBF2', border: '2px solid #B4E0C8', borderRadius: 999,
-          padding: '6px 16px', animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)',
-        }}>
-          🔥 Day {dailyBonus.streak} streak — +{dailyBonus.bonus} bonus coins!
-        </div>
-      )}
 
       {/* Mode picker */}
       {!mode && (
