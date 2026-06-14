@@ -199,7 +199,7 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
       {/* Decision panel — floats in above the bead once it lands. Auto-height
           (grows to fit its content) so the title can never clip the frame. */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, top: '7%',
+        position: 'absolute', left: 0, right: 0, top: '12%',
         display: 'flex', justifyContent: 'center', padding: '0 22px',
         opacity: landed ? 1 : 0,
         transform: landed ? 'translateY(0)' : 'translateY(-16px)',
@@ -256,7 +256,7 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
       </div>
 
       {/* The earned bead — slow-falls, settles, and stays glowing */}
-      <div style={{ position: 'absolute', left: '50%', top: '66%', transform: 'translate(-50%, -50%)' }}>
+      <div style={{ position: 'absolute', left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }}>
         <div style={{ animation: 'beadReveal 1.5s cubic-bezier(0.5,0.05,0.3,1) forwards' }}
           onAnimationEnd={() => setLanded(true)}>
           <div style={{ position: 'relative', width: 120, height: 120, display: 'grid', placeItems: 'center' }}>
