@@ -244,27 +244,35 @@ function SettleWatch({ bodies, busy, onSettled }) {
   return null
 }
 
-function Scene({ staticBeads, newBeads, onWake, onSettled }) {
+function Scene({ staticBeads, newBeads, release, onWake, onSettled }) {
   // staticBeads: already-seen → instant baked pile. newBeads: earned since last
-  // view → drop in one at a time (so several cash-ins plunk in sequence).
-  const [released, setReleased] = useState(0)
-  const releasedRef = useRef(0)
+  // view → drop in. UNCONTROLLED (home): auto-drip one at a time. CONTROLLED
+  // (`release` is a number, cash-in screen): drop exactly `release` of them, so
+  // each marble lands the instant its PNG pops.
+  const controlled = release != null
+  const [autoReleased, setAutoReleased] = useState(0)
+  const autoRef = useRef(0)
   const bodies = useRef(new Map())
   const register = useMemo(() => (id, api) => {
     if (api) bodies.current.set(id, api)
     else bodies.current.delete(id)
   }, [])
   useEffect(() => {
-    if (newBeads.length === releasedRef.current) return
+    if (controlled) return
+    if (newBeads.length === autoRef.current) return
     onWake()
     const id = setInterval(() => {
-      releasedRef.current = Math.min(newBeads.length, releasedRef.current + 1)
-      setReleased(releasedRef.current)
+      autoRef.current = Math.min(newBeads.length, autoRef.current + 1)
+      setAutoReleased(autoRef.current)
       onWake()
-      if (releasedRef.current >= newBeads.length) clearInterval(id)
+      if (autoRef.current >= newBeads.length) clearInterval(id)
     }, 260)
     return () => clearInterval(id)
-  }, [newBeads.length, onWake])
+  }, [newBeads.length, onWake, controlled])
+
+  const released = controlled ? Math.min(release, newBeads.length) : autoReleased
+  // wake physics whenever a controlled drop is released (so the new marble falls)
+  useEffect(() => { if (controlled && released > 0) onWake() }, [controlled, released, onWake])
 
   const droppers = newBeads.slice(0, released)
   return (
@@ -286,7 +294,9 @@ function Scene({ staticBeads, newBeads, onWake, onSettled }) {
 // beads: full jar contents [{ id, color, isGold, isRainbow }] oldest→newest.
 // seenCount: how many of those have already been shown settled (persisted) — the
 // rest drop in. onSeen: called once the new beads finish settling (persist seen).
-export default function BeadJar3D({ beads, seenCount = 0, onSeen, width = 150, height = 218 }) {
+// release: optional — when a number, drop exactly that many new beads (the
+// cash-in screen drives this so each marble lands as its PNG pops). Omit on Home.
+export default function BeadJar3D({ beads, seenCount = 0, onSeen, release, width = 150, height = 218 }) {
   const [active, setActive] = useState(true)
   const onWake = useMemo(() => () => setActive(true), [])
   const handleSettled = useMemo(() => () => { setActive(false); onSeen?.() }, [onSeen])
@@ -316,7 +326,7 @@ export default function BeadJar3D({ beads, seenCount = 0, onSeen, width = 150, h
         }}>
         <Suspense fallback={null}>
           <Physics gravity={[0, -14, 0]} paused={!active} numSolverIterations={8} numAdditionalFrictionIterations={4}>
-            <Scene staticBeads={staticBeads} newBeads={newBeads} onWake={onWake} onSettled={handleSettled} />
+            <Scene staticBeads={staticBeads} newBeads={newBeads} release={release} onWake={onWake} onSettled={handleSettled} />
           </Physics>
         </Suspense>
       </Canvas>

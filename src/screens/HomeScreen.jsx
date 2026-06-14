@@ -179,89 +179,114 @@ function HabitButton({ habit, color, onTap }) {
   )
 }
 
-// ── Bead drop animation: bead falls toward the jar ──
-function BeadDropAnim({ bead, getBeadColor, onDone }) {
+// ── Bead reveal: the earned bead slow-drops to rest and STAYS, glowing, while
+//    the decision prompt floats in ABOVE it — so you can admire the bead while
+//    choosing what to do with it. Gold beads show their own message (always a
+//    Tier 3 cash-in); regular beads offer cash-in (if matches) or keep+Tier 1. ──
+function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
   const color = getBeadColor(bead.slot, bead.isGold)
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 200,
-      display: 'flex', justifyContent: 'center',
-    }}>
-      <div
-        style={{
-          position: 'absolute', top: '20%',
-          animation: 'beadFall 0.9s cubic-bezier(0.55, 0.1, 0.75, 0.95) forwards',
-        }}
-        onAnimationEnd={onDone}
-      >
-        <BeadDisplay color={color} slot={bead.slot} isGold={bead.isGold} size="xl" animate={bead.isGold} />
-      </div>
-      <style>{`
-        @keyframes beadFall {
-          0%   { transform: translateY(-80px) scale(0.5) rotate(0deg);   opacity: 0; }
-          15%  { transform: translateY(-40px) scale(1.15) rotate(20deg); opacity: 1; }
-          60%  { transform: translateY(120px) scale(1) rotate(-15deg);   opacity: 1; }
-          85%  { transform: translateY(220px) scale(1.05) rotate(8deg);  opacity: 1; }
-          100% { transform: translateY(260px) scale(0.6) rotate(0deg);   opacity: 0; }
-        }
-      `}</style>
-    </div>
-  )
-}
-
-// ── Cash-in vs save-for-later prompt (framed: frame_popup) ──
-function CashPrompt({ drawnBead, wallet, getBeadColor, onCashIn, onSpinTier1 }) {
-  const cashable = isCashable(wallet)
-  const color = getBeadColor(drawnBead.slot, drawnBead.isGold)
-  const best = cashable.bestOption
+  const glow = bead.isGold ? '#FFD700' : color
+  const [landed, setLanded] = useState(false)
+  const best = isCashable(wallet).bestOption
+  const canCashTier = !bead.isGold && best && best.tier >= 2
+  const tier = bead.isGold ? 3 : (best ? best.tier : 1)
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 300,
-      background: 'rgba(61,43,79,0.5)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 20,
+      background: 'rgba(40,28,54,0.62)', backdropFilter: 'blur(7px)',
     }}>
+      {/* Decision panel — floats in above the bead once it lands */}
       <div style={{
-        position: 'relative',
-        width: '100%', maxWidth: 360,
-        aspectRatio: '600 / 900',
-        background: "url('/ui/frame_popup.png') center / 100% 100% no-repeat",
-        filter: 'drop-shadow(0 12px 30px rgba(155,126,200,0.4))',
-        animation: 'bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+        position: 'absolute', left: 0, right: 0, top: '5%',
+        display: 'flex', justifyContent: 'center', padding: '0 18px',
+        opacity: landed ? 1 : 0,
+        transform: landed ? 'translateY(0)' : 'translateY(-16px)',
+        transition: 'opacity 380ms ease, transform 420ms cubic-bezier(0.34,1.56,0.64,1)',
+        pointerEvents: landed ? 'auto' : 'none',
       }}>
         <div style={{
-          position: 'absolute', inset: 0,
-          padding: '16% 14% 13%',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
-          textAlign: 'center', overflowY: 'auto',
+          position: 'relative', width: '100%', maxWidth: 330,
+          aspectRatio: '396 / 352',
+          background: "url('/ui/frame_med.png') center / 100% 100% no-repeat",
+          filter: bead.isGold
+            ? 'drop-shadow(0 0 36px rgba(255,215,0,0.5)) drop-shadow(0 12px 28px rgba(155,126,200,0.4))'
+            : 'drop-shadow(0 12px 28px rgba(155,126,200,0.4))',
         }}>
-          <BeadDisplay color={color} slot={drawnBead.slot} isGold={drawnBead.isGold} size="xl" animate={drawnBead.isGold} />
-
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#9B3D6B' }}>
-            🌸 BEAD EARNED!
-          </div>
           <div style={{
-            fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.3,
+            position: 'absolute', inset: 0, padding: '22% 13% 13%',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+            textAlign: 'center',
           }}>
-            {best && best.tier >= 2
-              ? `Cash in matching beads for a Tier ${best.tier} spin — or keep them and play at Tier 1.`
-              : 'Spin now at Tier 1! Keep saving beads to unlock higher tiers.'}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-            {best && best.tier >= 2 && (
-              <KawaiiButton variant="mint" size="lg" fullWidth onClick={onCashIn}>
-                💎 Cash In &amp; Spin — Tier {best.tier}
-              </KawaiiButton>
+            {bead.isGold ? (
+              <>
+                <div style={{ fontSize: 28, lineHeight: 1 }}>✨</div>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#5C3A00', textShadow: '2px 2px 0 rgba(184,150,12,0.3)' }}>
+                  GOLD BEAD!
+                </div>
+                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14.5, color: '#7B5EA7', lineHeight: 1.3 }}>
+                  The rare one — straight to a Tier 3 spin! ⚡
+                </div>
+                <KawaiiButton variant="gold" size="md" fullWidth onClick={onCashIn}>
+                  💎 Cash In → Tier 3
+                </KawaiiButton>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#9B3D6B' }}>
+                  🌸 BEAD EARNED!
+                </div>
+                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
+                  {canCashTier
+                    ? `Cash in your matching beads for a Tier ${tier} spin — or keep them and play Tier 1.`
+                    : 'Spin now at Tier 1, or keep saving to match beads for higher tiers!'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  {canCashTier && (
+                    <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
+                      💎 Cash In &amp; Spin — Tier {tier}
+                    </KawaiiButton>
+                  )}
+                  <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
+                    🎰 Keep Beads &amp; Spin (Tier 1)
+                  </KawaiiButton>
+                </div>
+              </>
             )}
-            <KawaiiButton variant={best && best.tier >= 2 ? 'secondary' : 'primary'} size="lg" fullWidth onClick={onSpinTier1}>
-              🎰 Keep Beads &amp; Spin (Tier 1)
-            </KawaiiButton>
           </div>
         </div>
       </div>
+
+      {/* The earned bead — slow-falls, settles, and stays glowing */}
+      <div style={{ position: 'absolute', left: '50%', top: '66%', transform: 'translate(-50%, -50%)' }}>
+        <div style={{ animation: 'beadReveal 1.5s cubic-bezier(0.5,0.05,0.3,1) forwards' }}
+          onAnimationEnd={() => setLanded(true)}>
+          <div style={{ position: 'relative', width: 120, height: 120, display: 'grid', placeItems: 'center' }}>
+            {/* pulsing glow halo behind the bead */}
+            <div style={{
+              position: 'absolute', width: '185%', height: '185%', borderRadius: '50%',
+              background: `radial-gradient(circle, ${glow}99 0%, ${glow}33 38%, transparent 68%)`,
+              animation: 'revealHalo 2.2s ease-in-out infinite', pointerEvents: 'none',
+            }} />
+            <BeadDisplay color={color} slot={bead.slot} isGold={bead.isGold}
+              style={{ width: 120, height: 120, boxShadow: `0 0 26px ${glow}, 0 0 60px ${glow}88` }} />
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes beadReveal {
+          0%   { transform: translateY(-440px) scale(0.45); opacity: 0; }
+          16%  { transform: translateY(-372px) scale(1.12); opacity: 1; }
+          72%  { transform: translateY(20px)  scale(1.05); }
+          88%  { transform: translateY(-7px)  scale(0.99); }
+          100% { transform: translateY(0)     scale(1);    opacity: 1; }
+        }
+        @keyframes revealHalo {
+          0%, 100% { opacity: 0.55; transform: scale(0.92); }
+          50%      { opacity: 0.9;  transform: scale(1.06); }
+        }
+      `}</style>
     </div>
   )
 }
@@ -426,14 +451,12 @@ export default function HomeScreen() {
     addCategory, addHabit, jarSeenCount, markJarSeen,
   } = useStore()
 
-  const [dropping, setDropping] = useState(null)
-  const [prompt, setPrompt]     = useState(null)
-  const [gold, setGold]         = useState(false)
+  const [reveal, setReveal] = useState(null)   // the earned bead being revealed
 
   useEffect(() => {
-    if (location.state?.freeBead && !dropping && !prompt) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff: consume the nav-state bead, then scrub history so refresh can't re-drop it
-      setDropping(location.state.freeBead)
+    if (location.state?.freeBead && !reveal) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff: consume the nav-state bead, then scrub history so refresh can't re-reveal it
+      setReveal(location.state.freeBead)
       window.history.replaceState({}, document.title)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: nav-state is consumed exactly once
@@ -453,38 +476,25 @@ export default function HomeScreen() {
   }, [habits, categories, settings.beadSlots])
 
   function handleHabitTap(habit) {
-    if (dropping || prompt || gold) return
+    if (reveal) return
     const bead = drawBead(habit.id)
     playBeadDraw(bead.isGold)
-    setDropping(bead)
     setSession({ selectedHabit: habit })
+    setReveal(bead)
   }
 
-  function handleDropDone() {
-    const bead = dropping
-    setDropping(null)
-    if (!bead) return
-    if (bead.isGold) {
-      const cashable = isCashable(wallet)
-      const goldOption = cashable.options.find(o => o.tier === 3)
-      if (goldOption) cashInBeads(goldOption.beads)
-      setSession({ activeTier: 3 })
-      setGold(true)
-    } else {
-      setPrompt(bead)
-    }
+  // Cash in (gold or matching beads): move them wallet→jar, then off to the
+  // cash-in screen where each bead pops and its 3D marble drops into the jar.
+  function handleRevealCashIn() {
+    const best = isCashable(wallet).bestOption
+    setReveal(null)
+    if (best) cashInBeads(best.beads)   // sets cashedBeads + activeTier + phase 'cashIn'
+    navigate('/cash-in')
   }
 
-  function handleCashIn() {
-    const cashable = isCashable(wallet)
-    setPrompt(null)
-    if (cashable.bestOption) cashInBeads(cashable.bestOption.beads)
-    navigate('/spin')
-  }
-
-  function handleSpinTier1() {
-    // Keep all beads in the wallet (don't cash any in) and still get to play at Tier 1.
-    setPrompt(null)
+  // Keep the beads in your wallet and just play Tier 1 — nothing enters the jar.
+  function handleRevealKeep() {
+    setReveal(null)
     setSession({ activeTier: 1 })
     navigate('/spin')
   }
@@ -538,64 +548,14 @@ export default function HomeScreen() {
             matching beads only upgrades the tier of your NEXT earned spin. */}
       </div>
 
-      {dropping && (
-        <BeadDropAnim bead={dropping} getBeadColor={getBeadColor} onDone={handleDropDone} />
-      )}
-
-      {prompt && (
-        <CashPrompt
-          drawnBead={prompt}
+      {reveal && (
+        <BeadReveal
+          bead={reveal}
           wallet={wallet}
           getBeadColor={getBeadColor}
-          onCashIn={handleCashIn}
-          onSpinTier1={handleSpinTier1}
+          onCashIn={handleRevealCashIn}
+          onKeep={handleRevealKeep}
         />
-      )}
-
-      {gold && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 300,
-          background: 'rgba(61,43,79,0.65)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 24,
-        }}>
-          <div style={{
-            position: 'relative',
-            width: '100%', maxWidth: 380,
-            aspectRatio: '396 / 352',
-            background: "url('/ui/frame_med.png') center / 100% 100% no-repeat",
-            filter: 'drop-shadow(0 0 40px rgba(255,215,0,0.45)) drop-shadow(0 12px 30px rgba(155,126,200,0.4))',
-            animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)',
-          }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              padding: '20% 14% 13%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: 40, lineHeight: 1 }}>✨</div>
-              <div style={{
-                fontFamily: "'Fredoka', cursive", fontSize: 32, color: '#5C3A00',
-                textShadow: '2px 2px 0 rgba(184,150,12,0.35)',
-              }}>
-                GOLD BEAD!
-              </div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#7B5EA7' }}>
-                Automatic cash-in ⚡
-              </div>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#B8960C', marginBottom: 8 }}>
-                TIER 3 UNLOCKED!
-              </div>
-              <KawaiiButton variant="gold" size="md" fullWidth onClick={() => {
-                setGold(false)
-                navigate('/spin')
-              }}>
-                🎰 SPIN AT TIER 3!
-              </KawaiiButton>
-            </div>
-          </div>
-        </div>
       )}
 
       <WalletStrip
@@ -604,7 +564,7 @@ export default function HomeScreen() {
         onOpenWallet={() => navigate('/wallet')}
       />
 
-      {habits.length === 0 && !dropping && !prompt && !gold && (
+      {habits.length === 0 && !reveal && (
         <OnboardingModal onComplete={handleOnboardingComplete} />
       )}
     </div>

@@ -11,6 +11,7 @@ import SettingsScreen from './screens/SettingsScreen'
 import SpinScreen     from './screens/SpinScreen'
 import BonusScreen    from './screens/BonusScreen'
 import RewardScreen   from './screens/RewardScreen'
+import CashInScreen   from './screens/CashInScreen'
 
 const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
@@ -22,7 +23,7 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
 ]
 
-const HIDDEN_NAV_ROUTES = ['/spin', '/bonus', '/reward']
+const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward']
 
 function BottomNav() {
   const { pathname } = useLocation()
@@ -77,6 +78,7 @@ function AppShell() {
           <Route path="/stats"    element={<StatsScreen />} />
           <Route path="/edit"     element={<EditorScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/cash-in"  element={<CashInScreen />} />
           <Route path="/spin"     element={<SpinScreen />} />
           <Route path="/bonus"    element={<BonusScreen />} />
           <Route path="/reward"   element={<RewardScreen />} />
