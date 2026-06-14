@@ -196,64 +196,62 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
       position: 'fixed', inset: 0, zIndex: 300,
       background: 'rgba(40,28,54,0.62)', backdropFilter: 'blur(7px)',
     }}>
-      {/* Decision panel — floats in above the bead once it lands */}
+      {/* Decision panel — floats in above the bead once it lands. Auto-height
+          (grows to fit its content) so the title can never clip the frame. */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, top: '5%',
-        display: 'flex', justifyContent: 'center', padding: '0 18px',
+        position: 'absolute', left: 0, right: 0, top: '7%',
+        display: 'flex', justifyContent: 'center', padding: '0 22px',
         opacity: landed ? 1 : 0,
         transform: landed ? 'translateY(0)' : 'translateY(-16px)',
         transition: 'opacity 380ms ease, transform 420ms cubic-bezier(0.34,1.56,0.64,1)',
         pointerEvents: landed ? 'auto' : 'none',
       }}>
         <div style={{
-          position: 'relative', width: '100%', maxWidth: 330,
-          aspectRatio: '396 / 352',
-          background: "url('/ui/frame_med.png') center / 100% 100% no-repeat",
-          filter: bead.isGold
-            ? 'drop-shadow(0 0 36px rgba(255,215,0,0.5)) drop-shadow(0 12px 28px rgba(155,126,200,0.4))'
-            : 'drop-shadow(0 12px 28px rgba(155,126,200,0.4))',
+          width: '100%', maxWidth: 320,
+          background: 'linear-gradient(180deg, #FFF5FB 0%, #FBE6F4 100%)',
+          border: '3px solid #F1B2D6', borderRadius: 26,
+          boxShadow: bead.isGold
+            ? '0 0 0 4px rgba(255,255,255,0.6), 0 0 32px rgba(255,215,0,0.5), 0 14px 32px rgba(155,126,200,0.4)'
+            : '0 0 0 4px rgba(255,255,255,0.6), 0 14px 32px rgba(155,126,200,0.4)',
+          padding: '18px 20px 20px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9,
+          textAlign: 'center',
         }}>
-          <div style={{
-            position: 'absolute', inset: 0, padding: '22% 13% 13%',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-            textAlign: 'center',
-          }}>
-            {bead.isGold ? (
-              <>
-                <div style={{ fontSize: 28, lineHeight: 1 }}>✨</div>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#5C3A00', textShadow: '2px 2px 0 rgba(184,150,12,0.3)' }}>
-                  GOLD BEAD!
-                </div>
-                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14.5, color: '#7B5EA7', lineHeight: 1.3 }}>
-                  The rare one — straight to a Tier 3 spin! ⚡
-                </div>
-                <KawaiiButton variant="gold" size="md" fullWidth onClick={onCashIn}>
-                  💎 Cash In → Tier 3
-                </KawaiiButton>
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#9B3D6B' }}>
-                  🌸 BEAD EARNED!
-                </div>
-                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
-                  {canCashTier
-                    ? `Cash in your matching beads for a Tier ${tier} spin — or keep them and play Tier 1.`
-                    : 'Spin now at Tier 1, or keep saving to match beads for higher tiers!'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-                  {canCashTier && (
-                    <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
-                      💎 Cash In &amp; Spin — Tier {tier}
-                    </KawaiiButton>
-                  )}
-                  <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
-                    🎰 Keep Beads &amp; Spin (Tier 1)
+          {bead.isGold ? (
+            <>
+              <div style={{ fontSize: 26, lineHeight: 1 }}>✨</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#5C3A00', textShadow: '2px 2px 0 rgba(184,150,12,0.28)' }}>
+                GOLD BEAD!
+              </div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14.5, color: '#7B5EA7', lineHeight: 1.3 }}>
+                The rare one — straight to a Tier 3 spin! ⚡
+              </div>
+              <KawaiiButton variant="gold" size="md" fullWidth onClick={onCashIn}>
+                💎 Cash In · Tier 3
+              </KawaiiButton>
+            </>
+          ) : (
+            <>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#9B3D6B' }}>
+                🌸 BEAD EARNED!
+              </div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
+                {canCashTier
+                  ? `Cash in your matching beads for a Tier ${tier} spin — or keep them for Tier 1.`
+                  : 'Spin now at Tier 1, or keep saving to match beads for higher tiers!'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                {canCashTier && (
+                  <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
+                    💎 Cash In · Tier {tier}
                   </KawaiiButton>
-                </div>
-              </>
-            )}
-          </div>
+                )}
+                <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
+                  🎰 Keep · Tier 1
+                </KawaiiButton>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
