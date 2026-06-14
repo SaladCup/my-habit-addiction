@@ -185,7 +185,7 @@ function HabitButton({ habit, color, onTap }) {
 //    Tier 3 cash-in); regular beads offer cash-in (if matches) or keep+Tier 1. ──
 function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
   const color = getBeadColor(bead.slot, bead.isGold)
-  const glow = bead.isGold ? '#FFD700' : color
+  const glow = bead.isGold ? '#FFD700' : bead.isRainbow ? '#FF8AE0' : color
   const [landed, setLanded] = useState(false)
   const best = isCashable(wallet).bestOption
   const canCashTier = !bead.isGold && best && best.tier >= 2
@@ -212,7 +212,9 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
           border: '3px solid #F1B2D6', borderRadius: 26,
           boxShadow: bead.isGold
             ? '0 0 0 4px rgba(255,255,255,0.6), 0 0 32px rgba(255,215,0,0.5), 0 14px 32px rgba(155,126,200,0.4)'
-            : '0 0 0 4px rgba(255,255,255,0.6), 0 14px 32px rgba(155,126,200,0.4)',
+            : bead.isRainbow
+              ? '0 0 0 4px rgba(255,255,255,0.7), 0 0 22px rgba(255,120,210,0.45), 0 0 42px rgba(110,180,255,0.4), 0 14px 32px rgba(155,126,200,0.4)'
+              : '0 0 0 4px rgba(255,255,255,0.6), 0 14px 32px rgba(155,126,200,0.4)',
           padding: '18px 20px 20px',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9,
           textAlign: 'center',
@@ -229,6 +231,31 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
               <KawaiiButton variant="gold" size="md" fullWidth onClick={onCashIn}>
                 💎 Cash In · Tier 3
               </KawaiiButton>
+            </>
+          ) : bead.isRainbow ? (
+            <>
+              <div style={{ fontSize: 26, lineHeight: 1 }}>🌈</div>
+              <div style={{
+                fontFamily: "'Fredoka', cursive", fontSize: 24, lineHeight: 1.05,
+                background: 'linear-gradient(90deg, #FF5C5C, #FF9D3D, #FFD93D, #4DD97E, #3FAFFF, #8F6BFF, #F060D0)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 1px 2px rgba(120,90,160,0.35))',
+              }}>
+                RAINBOW BEAD!
+              </div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.32 }}>
+                Whoa — the <strong>beautiful gay rainbow bead</strong>! 🏳️‍🌈 The wild card: match it with <strong>ANY</strong> beads in your wallet to unlock higher tiers.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                {canCashTier && (
+                  <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
+                    💎 Cash In · Tier {tier}
+                  </KawaiiButton>
+                )}
+                <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
+                  🎰 Keep · Tier 1
+                </KawaiiButton>
+              </div>
             </>
           ) : (
             <>
@@ -260,12 +287,21 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
         <div style={{ animation: 'beadReveal 1.5s cubic-bezier(0.5,0.05,0.3,1) forwards' }}
           onAnimationEnd={() => setLanded(true)}>
           <div style={{ position: 'relative', width: 120, height: 120, display: 'grid', placeItems: 'center' }}>
-            {/* pulsing glow halo behind the bead */}
-            <div style={{
-              position: 'absolute', width: '185%', height: '185%', borderRadius: '50%',
-              background: `radial-gradient(circle, ${glow}99 0%, ${glow}33 38%, transparent 68%)`,
-              animation: 'revealHalo 2.2s ease-in-out infinite', pointerEvents: 'none',
-            }} />
+            {/* glow halo behind the bead — a rotating rainbow for the wild card */}
+            {bead.isRainbow ? (
+              <div style={{
+                position: 'absolute', width: '198%', height: '198%', borderRadius: '50%',
+                background: 'conic-gradient(from 0deg, #FF5C5C, #FF9D3D, #FFD93D, #4DD97E, #3FAFFF, #8F6BFF, #F060D0, #FF5C5C)',
+                filter: 'blur(13px)', opacity: 0.6,
+                animation: 'revealSpin 6s linear infinite', pointerEvents: 'none',
+              }} />
+            ) : (
+              <div style={{
+                position: 'absolute', width: '185%', height: '185%', borderRadius: '50%',
+                background: `radial-gradient(circle, ${glow}99 0%, ${glow}33 38%, transparent 68%)`,
+                animation: 'revealHalo 2.2s ease-in-out infinite', pointerEvents: 'none',
+              }} />
+            )}
             <BeadDisplay color={color} slot={bead.slot} isGold={bead.isGold}
               style={{ width: 120, height: 120, boxShadow: `0 0 26px ${glow}, 0 0 60px ${glow}88` }} />
           </div>
@@ -284,6 +320,7 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
           0%, 100% { opacity: 0.55; transform: scale(0.92); }
           50%      { opacity: 0.9;  transform: scale(1.06); }
         }
+        @keyframes revealSpin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   )
