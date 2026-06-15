@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
-import { isCashable } from '../engine/gameLogic'
+import { cashInGroupForBead } from '../engine/gameLogic'
 import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw, playCreateHabit } from '../engine/sounds'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
@@ -188,14 +188,16 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
   const glow = bead.isGold ? '#FFD700' : bead.isRainbow ? '#FF8AE0' : color
   const [landed, setLanded] = useState(false)
   const [flanked, setFlanked] = useState(false)
-  const best = isCashable(wallet).bestOption
-  const canCashTier = !bead.isGold && best && best.tier >= 2
-  const tier = bead.isGold ? 3 : (best ? best.tier : 1)
+  // The cash-in group is built from THE EARNED bead (its slot + wilds), so the
+  // beads shown here are exactly the ones that drop into the jar.
+  const group = cashInGroupForBead(bead, wallet)
+  const canCashTier = !bead.isGold && group.tier >= 2
+  const tier = bead.isGold ? 3 : group.tier
   const beadName = beadSlots?.find(s => s.slot === bead.slot)?.name || 'Bead'
 
   // Regular bead with matches: the OTHER cash-in beads float up to flank the
   // earned one (which scoots to keep the row centred). Gold/rainbow stay solo.
-  const matches = (!bead.isGold && !bead.isRainbow && canCashTier) ? best.beads.filter(b => b.id !== bead.id) : []
+  const matches = (!bead.isGold && !bead.isRainbow && canCashTier) ? group.beads.filter(b => b.id !== bead.id) : []
   const rowBeads = [...matches.slice(0, Math.floor(matches.length / 2)), bead, ...matches.slice(Math.floor(matches.length / 2))]
   const SPACING = 90
 
@@ -569,12 +571,12 @@ export default function HomeScreen() {
     setReveal(bead)
   }
 
-  // Cash in (gold or matching beads): move them wallet→jar, then off to the
-  // cash-in screen where each bead pops and its 3D marble drops into the jar.
+  // Cash in the EARNED bead's group (its slot + wilds): move them wallet→jar,
+  // then off to the cash-in screen where each pops and its 3D marble drops in.
   function handleRevealCashIn() {
-    const best = isCashable(wallet).bestOption
+    const group = cashInGroupForBead(reveal, wallet)
     setReveal(null)
-    if (best) cashInBeads(best.beads)   // sets cashedBeads + activeTier + phase 'cashIn'
+    if (group.beads.length) cashInBeads(group.beads)   // sets cashedBeads + activeTier + phase 'cashIn'
     navigate('/cash-in')
   }
 

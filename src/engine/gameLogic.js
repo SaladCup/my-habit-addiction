@@ -164,6 +164,33 @@ export function isCashable(wallet) {
   }
 }
 
+/**
+ * The cash-in group for a freshly EARNED bead: the bead itself + its same-slot
+ * matches + rainbow wilds, padded to the best tier (max 3). So earning a pink
+ * bead always cashes in YOUR pink beads — not some other higher-tier group you
+ * happen to hold (which is what `isCashable().bestOption` returns globally).
+ * @returns {{ beads: Array, tier: 1|2|3 }}
+ */
+export function cashInGroupForBead(bead, wallet) {
+  if (!bead) return { beads: [], tier: 1 }
+  if (bead.isGold) {
+    const gold = wallet.find(b => b.isGold) || bead
+    return { beads: [gold], tier: 3 }
+  }
+  const wilds = wallet.filter(b => !b.isGold && b.isRainbow && b.id !== bead.id)
+  let real
+  if (bead.isRainbow) {
+    // earned a wild — pair it with the largest real same-slot group
+    const bySlot = {}
+    wallet.forEach(b => { if (!b.isGold && !b.isRainbow) (bySlot[b.slot] = bySlot[b.slot] || []).push(b) })
+    real = Object.values(bySlot).sort((a, b) => b.length - a.length)[0] || []
+  } else {
+    real = wallet.filter(b => !b.isGold && !b.isRainbow && b.slot === bead.slot && b.id !== bead.id)
+  }
+  const beads = [bead, ...real, ...wilds].slice(0, 3)
+  return { beads, tier: Math.min(beads.length, 3) }
+}
+
 // ─────────────────────────────────────────────
 // WHEEL
 // ─────────────────────────────────────────────

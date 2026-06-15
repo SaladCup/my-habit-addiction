@@ -115,8 +115,11 @@ const glassMat = new THREE.MeshPhysicalMaterial({
   depthWrite: false, envMapIntensity: 1.4,
 })
 const satinMat = new THREE.MeshPhysicalMaterial({
-  color: '#F9A8C5', roughness: 0.38, clearcoat: 0.5, clearcoatRoughness: 0.18,
-  sheen: 1, sheenColor: '#FFD9E8', envMapIntensity: 0.9,
+  // slightly more pink, and more matte / less env-reflection so the low-poly
+  // bow's imperfect normals stop throwing bluish specular specks; double-sided
+  // so any gaps left by the heavy decimation read as bow, not see-through holes.
+  color: '#F58CB6', roughness: 0.52, clearcoat: 0.22, clearcoatRoughness: 0.3,
+  sheen: 1, sheenColor: '#FFD9E8', envMapIntensity: 0.45, side: THREE.DoubleSide,
 })
 
 function Jar() {
