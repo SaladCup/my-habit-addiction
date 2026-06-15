@@ -832,12 +832,12 @@ export function spinBonusWheel() {
 /**
  * Format the bonus challenge description.
  * @param {string} bonusResult  - '75'|'50'|'25'|'free'
- * @param {object} habit        - habit object with description
+ * @param {string} activity     - the "just a bit more" quick task (e.g. "10 push-ups")
  * @returns {string}
  */
-export function formatBonusChallenge(bonusResult, habit) {
-  if (bonusResult === 'free')  return 'Free bead! No habit needed 🎁'
-  const activity = habit?.rewards?.bonusActivity || habit?.description || 'your habit'
+export function formatBonusChallenge(bonusResult, activity) {
+  if (bonusResult === 'free')  return 'Free bead! No task needed 🎁'
+  const task = (typeof activity === 'string' && activity.trim()) || 'your quick task'
   const pct = parseInt(bonusResult)
-  return `Do ${pct}% of: "${activity}" within 10 minutes`
+  return `Do ${pct}% of: "${task}" within 10 minutes`
 }

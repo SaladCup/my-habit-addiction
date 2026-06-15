@@ -285,6 +285,18 @@ export default function SettingsScreen() {
               onChange={e => updateSettings({ timeActivity: e.target.value })}
             />
           </div>
+          <div>
+            <label style={labelStyle}>BONUS TASK ("just a bit more")</label>
+            <input
+              style={inputStyle}
+              placeholder="e.g. 10 push-ups"
+              value={settings.bonusActivity || ''}
+              onChange={e => updateSettings({ bonusActivity: e.target.value })}
+            />
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
+              The quick task you do when a spin lands on ⭐ BONUS.
+            </div>
+          </div>
         </div>
       </PixelPanel>
 

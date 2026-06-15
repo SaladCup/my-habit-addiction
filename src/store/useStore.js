@@ -144,6 +144,7 @@ const useStore = create(
         moneyPerCoin:   0.01,   // 1 coin = 1¢
         secondsPerCoin: 2,      // 1 coin = 2 sec → T1/T2/T3 ≈ 4/8/12.5 min
         timeActivity:   'free time',
+        bonusActivity:  '10 push-ups',  // the "just a bit more" quick task for BONUS spins
         muted:          false,
         volume:         0.6,
       },
@@ -455,7 +456,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 15,
+      version: 16,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -565,6 +566,13 @@ const useStore = create(
           // physics-drops NEW ones. Treat every existing jar bead as already seen so
           // the whole jar doesn't re-pour on the first load after this update.
           persisted.jarSeenCount = Array.isArray(persisted.jarBeads) ? persisted.jarBeads.length : 0
+        }
+        if (version < 16 && persisted.settings && !persisted.settings.bonusActivity) {
+          // BONUS wheel now has a global "just a bit more" task (set in onboarding).
+          // Seed a sensible default for installs created before that screen existed,
+          // so the bonus challenge reads cleanly instead of falling back to a long
+          // habit description. Editable in Settings.
+          persisted.settings.bonusActivity = '10 push-ups'
         }
         return persisted
       },

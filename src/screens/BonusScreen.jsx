@@ -7,7 +7,7 @@ import BonusWheel from '../components/BonusWheel'
 
 export default function BonusScreen() {
   const navigate = useNavigate()
-  const { session, setSession, addBonusBead, resetSession, resetRewardChain } = useStore()
+  const { session, setSession, addBonusBead, resetSession, resetRewardChain, settings } = useStore()
   const { bonusResult, selectedHabit, bonusTimerEnd } = session
 
   // Bonus rounds are EARNED: the triggering spin pre-rolls bonusResult before
@@ -70,7 +70,13 @@ export default function BonusScreen() {
 
   if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
 
-  const challengeText = formatBonusChallenge(currentResult, selectedHabit)
+  // The "just a bit more" task is set globally in onboarding; fall back to the
+  // habit's own activity/description for installs created before that screen existed.
+  const bonusActivity = settings.bonusActivity
+    || selectedHabit?.rewards?.bonusActivity
+    || selectedHabit?.description
+    || 'your quick task'
+  const challengeText = formatBonusChallenge(currentResult, bonusActivity)
 
   return (
     <div style={{
