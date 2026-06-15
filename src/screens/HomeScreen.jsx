@@ -183,13 +183,26 @@ function HabitButton({ habit, color, onTap }) {
 //    the decision prompt floats in ABOVE it — so you can admire the bead while
 //    choosing what to do with it. Gold beads show their own message (always a
 //    Tier 3 cash-in); regular beads offer cash-in (if matches) or keep+Tier 1. ──
-function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
+function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep }) {
   const color = getBeadColor(bead.slot, bead.isGold)
   const glow = bead.isGold ? '#FFD700' : bead.isRainbow ? '#FF8AE0' : color
   const [landed, setLanded] = useState(false)
+  const [flanked, setFlanked] = useState(false)
   const best = isCashable(wallet).bestOption
   const canCashTier = !bead.isGold && best && best.tier >= 2
   const tier = bead.isGold ? 3 : (best ? best.tier : 1)
+  const beadName = beadSlots?.find(s => s.slot === bead.slot)?.name || 'Bead'
+
+  // Regular bead with matches: the OTHER cash-in beads float up to flank the
+  // earned one (which scoots to keep the row centred). Gold/rainbow stay solo.
+  const matches = (!bead.isGold && !bead.isRainbow && canCashTier) ? best.beads.filter(b => b.id !== bead.id) : []
+  const rowBeads = [...matches.slice(0, Math.floor(matches.length / 2)), bead, ...matches.slice(Math.floor(matches.length / 2))]
+  const SPACING = 90
+
+  function onEarnedLanded() {
+    setLanded(true)
+    if (matches.length) setTimeout(() => setFlanked(true), 280)
+  }
 
   return (
     <div style={{
@@ -259,12 +272,12 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
             </>
           ) : (
             <>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#9B3D6B' }}>
-                🌸 BEAD EARNED!
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: darken(color, 70) }}>
+                ✨ {beadName}!
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
                 {canCashTier
-                  ? `Cash in your matching beads for a Tier ${tier} spin — or keep them for Tier 1.`
+                  ? `Cash in your matching ${beadName} beads for a Tier ${tier} spin — or keep them for Tier 1.`
                   : 'Spin now at Tier 1, or keep saving to match beads for higher tiers!'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
@@ -282,30 +295,66 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
         </div>
       </div>
 
-      {/* The earned bead — slow-falls, settles, and stays glowing */}
-      <div style={{ position: 'absolute', left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }}>
-        <div style={{ animation: 'beadReveal 1.5s cubic-bezier(0.5,0.05,0.3,1) forwards' }}
-          onAnimationEnd={() => setLanded(true)}>
-          <div style={{ position: 'relative', width: 120, height: 120, display: 'grid', placeItems: 'center' }}>
-            {/* glow halo behind the bead — a rotating rainbow for the wild card */}
-            {bead.isRainbow ? (
-              <div style={{
-                position: 'absolute', width: '198%', height: '198%', borderRadius: '50%',
-                background: 'conic-gradient(from 0deg, #FF5C5C, #FF9D3D, #FFD93D, #4DD97E, #3FAFFF, #8F6BFF, #F060D0, #FF5C5C)',
-                filter: 'blur(13px)', opacity: 0.6,
-                animation: 'revealSpin 6s linear infinite', pointerEvents: 'none',
-              }} />
-            ) : (
-              <div style={{
-                position: 'absolute', width: '185%', height: '185%', borderRadius: '50%',
-                background: `radial-gradient(circle, ${glow}99 0%, ${glow}33 38%, transparent 68%)`,
-                animation: 'revealHalo 2.2s ease-in-out infinite', pointerEvents: 'none',
-              }} />
-            )}
-            <BeadDisplay color={color} slot={bead.slot} isGold={bead.isGold}
-              style={{ width: 120, height: 120, boxShadow: `0 0 26px ${glow}, 0 0 60px ${glow}88` }} />
-          </div>
-        </div>
+      {/* Bead row — the earned bead drops to centre; matching beads float up to
+          flank it (flashing, to set them apart from the brand-new one) */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: '70%' }}>
+        {rowBeads.map((b, i) => {
+          const isEarned = b.id === bead.id
+          const slotX = matches.length ? (i - (rowBeads.length - 1) / 2) * SPACING : 0
+          if (isEarned) {
+            return (
+              <div key={b.id} style={{
+                position: 'absolute', left: '50%', top: 0,
+                transform: `translate(-50%,-50%) translateX(${flanked ? slotX : 0}px)`,
+                transition: 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1)',
+              }}>
+                <div style={{ animation: 'beadReveal 1.5s cubic-bezier(0.5,0.05,0.3,1) forwards' }}
+                  onAnimationEnd={onEarnedLanded}>
+                  <div style={{ position: 'relative', width: 114, height: 114, display: 'grid', placeItems: 'center' }}>
+                    {bead.isRainbow ? (
+                      <div style={{
+                        position: 'absolute', width: '198%', height: '198%', borderRadius: '50%',
+                        background: 'conic-gradient(from 0deg, #FF5C5C, #FF9D3D, #FFD93D, #4DD97E, #3FAFFF, #8F6BFF, #F060D0, #FF5C5C)',
+                        filter: 'blur(13px)', opacity: 0.6,
+                        animation: 'revealSpin 6s linear infinite', pointerEvents: 'none',
+                      }} />
+                    ) : (
+                      <div style={{
+                        position: 'absolute', width: '185%', height: '185%', borderRadius: '50%',
+                        background: `radial-gradient(circle, ${glow}99 0%, ${glow}33 38%, transparent 68%)`,
+                        animation: 'revealHalo 2.2s ease-in-out infinite', pointerEvents: 'none',
+                      }} />
+                    )}
+                    <BeadDisplay color={color} slot={bead.slot} isGold={bead.isGold}
+                      style={{ width: 114, height: 114, boxShadow: `0 0 26px ${glow}, 0 0 60px ${glow}88` }} />
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          // matching bead — floats up from below into its slot, flashing
+          const bColor = getBeadColor(b.slot, b.isGold)
+          const bGlow = b.isGold ? '#FFD700' : b.isRainbow ? '#FF8AE0' : bColor
+          const stagger = (i < rowBeads.length / 2 ? i : rowBeads.length - 1 - i) * 0.08
+          return (
+            <div key={b.id} style={{
+              position: 'absolute', left: '50%', top: 0,
+              transform: `translate(-50%,-50%) translateX(${slotX}px) translateY(${flanked ? 0 : 190}px)`,
+              opacity: flanked ? 1 : 0,
+              transition: `transform 0.6s cubic-bezier(0.34,1.56,0.64,1) ${stagger}s, opacity 0.45s ease ${stagger}s`,
+            }}>
+              <div style={{ position: 'relative', width: 80, height: 80, display: 'grid', placeItems: 'center', animation: 'matchPulse 0.95s ease-in-out infinite' }}>
+                <div style={{
+                  position: 'absolute', width: '158%', height: '158%', borderRadius: '50%',
+                  background: `radial-gradient(circle, ${bGlow} 0%, transparent 62%)`,
+                  animation: 'matchGlow 0.95s ease-in-out infinite', pointerEvents: 'none',
+                }} />
+                <BeadDisplay color={bColor} slot={b.slot} isGold={b.isGold}
+                  style={{ width: 80, height: 80, boxShadow: `0 0 14px ${bGlow}` }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <style>{`
@@ -321,6 +370,8 @@ function BeadReveal({ bead, wallet, getBeadColor, onCashIn, onKeep }) {
           50%      { opacity: 0.9;  transform: scale(1.06); }
         }
         @keyframes revealSpin { to { transform: rotate(360deg); } }
+        @keyframes matchPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+        @keyframes matchGlow  { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.85; } }
       `}</style>
     </div>
   )
@@ -589,6 +640,7 @@ export default function HomeScreen() {
           bead={reveal}
           wallet={wallet}
           getBeadColor={getBeadColor}
+          beadSlots={settings.beadSlots}
           onCashIn={handleRevealCashIn}
           onKeep={handleRevealKeep}
         />
