@@ -199,7 +199,7 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
   // earned one (which scoots to keep the row centred). Gold/rainbow stay solo.
   const matches = (!bead.isGold && !bead.isRainbow && canCashTier) ? group.beads.filter(b => b.id !== bead.id) : []
   const rowBeads = [...matches.slice(0, Math.floor(matches.length / 2)), bead, ...matches.slice(Math.floor(matches.length / 2))]
-  const SPACING = 90
+  const SPACING = 118   // > earned radius(57) + match radius(40) so they don't overlap
 
   function onEarnedLanded() {
     setLanded(true)
