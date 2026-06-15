@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
 import { KawaiiButton, PixelPanel } from '../components/ui'
+
+// The localStorage key Zustand persists under (see useStore persist config).
+const STORE_KEY = 'my-habit-addiction'
 
 function ColorSwatches({ selected, onSelect }) {
   return (
@@ -87,8 +90,81 @@ export default function SettingsScreen() {
   const [newCatColor, setNewCatColor] = useState('#FFB7C5')
   const [confirmReset, setConfirmReset] = useState(false)
 
+  const fileRef = useRef(null)
+  const [pendingImport, setPendingImport] = useState(null)  // { text, summary } awaiting confirm
+  const [backupMsg, setBackupMsg]         = useState(null)  // { ok, text } feedback line
+
   const [draftMilestones, setDraftMilestones] = useState(() => milestones)
   const [milestoneDirty, setMilestoneDirty]   = useState(false)
+
+  // ── Backup: export/import the WHOLE save (the raw persisted blob, version and
+  // all) so a friend can keep a file in a folder and reload it after any update.
+  // Re-importing runs Zustand's migrate chain on reload, so old saves upgrade
+  // cleanly instead of corrupting. ──
+  function handleExport() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY)
+      if (!raw) { setBackupMsg({ ok: false, text: 'Nothing to export yet.' }); return }
+      const d = new Date()
+      const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `habit-addiction-save-${stamp}.json`
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+      setBackupMsg({ ok: true, text: `Saved habit-addiction-save-${stamp}.json to your downloads. Keep it in your backup folder. 💾` })
+    } catch {
+      setBackupMsg({ ok: false, text: 'Export failed — could not read your save.' })
+    }
+  }
+
+  function onFilePicked(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''   // let the same file be re-picked later
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const text = String(reader.result)
+        const parsed = JSON.parse(text)
+        const s = parsed?.state
+        const looksValid = s && typeof s === 'object' && typeof parsed.version === 'number'
+          && ('habits' in s || 'wallet' in s || 'coinTotals' in s)
+        if (!looksValid) {
+          setPendingImport(null)
+          setBackupMsg({ ok: false, text: "That isn't a Habit Addiction save file." })
+          return
+        }
+        const beads = (s.wallet?.length || 0) + (s.jarBeads?.length || 0)
+        setBackupMsg(null)
+        setPendingImport({
+          text,
+          summary: {
+            habits: s.habits?.length || 0,
+            categories: s.categories?.length || 0,
+            beads,
+            version: parsed.version,
+          },
+        })
+      } catch {
+        setPendingImport(null)
+        setBackupMsg({ ok: false, text: 'Could not read that file (not valid JSON).' })
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  function applyImport() {
+    try {
+      localStorage.setItem(STORE_KEY, pendingImport.text)
+      setPendingImport(null)
+      setBackupMsg({ ok: true, text: 'Save loaded! Reloading…' })
+      setTimeout(() => window.location.reload(), 600)
+    } catch {
+      setBackupMsg({ ok: false, text: 'Import failed — could not write your save.' })
+    }
+  }
 
   function handleMilestoneChange(id, updated) {
     setDraftMilestones(prev => prev.map(d => d.id === id ? updated : d))
@@ -360,6 +436,63 @@ export default function SettingsScreen() {
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>
           No sound? Reload the page and tap once — browsers block audio until you interact.
         </div>
+      </PixelPanel>
+
+      {/* Backup / transfer */}
+      <PixelPanel color="sky" title="BACKUP & TRANSFER" style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+          Save everything — habits, beads, coins, jackpot, streak, settings — to a file you
+          can keep in a folder and load back after any update, on any device. Your progress
+          never has to start from scratch.
+        </div>
+
+        <KawaiiButton variant="secondary" size="md" fullWidth onClick={handleExport}>
+          💾 EXPORT MY SAVE
+        </KawaiiButton>
+
+        <div style={{ height: 8 }} />
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={onFilePicked}
+          style={{ display: 'none' }}
+        />
+
+        {!pendingImport ? (
+          <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => fileRef.current?.click()}>
+            📂 IMPORT A SAVE
+          </KawaiiButton>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{
+              fontFamily: 'Mulish, sans-serif', fontSize: 20, color: '#3D2B4F',
+              background: 'rgba(75,197,245,0.12)', border: '2px solid #B4E0F5', borderRadius: 12,
+              padding: '10px 12px', textAlign: 'center',
+            }}>
+              This file has <strong>{pendingImport.summary.habits}</strong> habits ·{' '}
+              <strong>{pendingImport.summary.beads}</strong> beads ·{' '}
+              <strong>{pendingImport.summary.categories}</strong> categories (save v{pendingImport.summary.version}).
+              <br />Loading it <strong>replaces</strong> everything you have now.
+            </div>
+            <KawaiiButton variant="primary" size="md" fullWidth onClick={applyImport}>
+              REPLACE WITH THIS SAVE
+            </KawaiiButton>
+            <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => setPendingImport(null)}>
+              CANCEL
+            </KawaiiButton>
+          </div>
+        )}
+
+        {backupMsg && (
+          <div style={{
+            fontFamily: 'Mulish, sans-serif', fontSize: 19, marginTop: 10, textAlign: 'center',
+            color: backupMsg.ok ? '#2A9BC8' : '#C44B6A',
+          }}>
+            {backupMsg.text}
+          </div>
+        )}
       </PixelPanel>
 
       {/* Danger zone */}
