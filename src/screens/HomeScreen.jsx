@@ -455,7 +455,7 @@ function OnboardingModal({ onComplete }) {
       }}>
         <div style={{
           position: 'absolute', inset: 0,
-          padding: '11% 13% 10%',
+          padding: '12% 18% 11%',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           overflowY: 'auto',
         }}>
