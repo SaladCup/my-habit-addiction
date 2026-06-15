@@ -5,8 +5,8 @@ import { PixelPanel } from '../components/ui'
 const GAMES = [
   { key: 'coinflip', to: '/casino/coinflip', emoji: '🪙', name: 'Coin Flip', tag: 'Heads or tails — let it ride', live: true },
   { key: 'crash',    to: '/casino/crash',    emoji: '🚀', name: 'Crash',     tag: 'Cash out before it blows up', live: true },
-  { key: 'penguin',  emoji: '🐧', name: 'Penguin Cross', tag: 'Cross for more — or get hit', live: false },
-  { key: 'mines',    emoji: '💣', name: 'Mines',         tag: 'Dodge the bombs, bank the gems', live: false },
+  { key: 'penguin',  to: '/casino/penguin', emoji: '🐧', name: 'Penguin Cross', tag: 'Cross for more — or get hit', live: true },
+  { key: 'mines',    to: '/casino/mines',   emoji: '💣', name: 'Mines',         tag: 'Dodge the bombs, bank the gems', live: true },
   { key: 'plinko',   emoji: '🎯', name: 'Plinko',        tag: 'Drop a bead, chase the edge', live: false },
   { key: 'blackjack',emoji: '🃏', name: 'Blackjack',     tag: 'Beat the dealer to 21', live: false },
 ]
