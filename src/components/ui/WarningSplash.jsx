@@ -11,8 +11,9 @@ export default function WarningSplash({ onDismiss }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '32px 24px',
+      padding: '28px 24px',
       textAlign: 'center',
+      overflowY: 'auto',
       animation: 'slide-up 0.4s ease',
     }}>
       {/* Floating decor */}
@@ -40,7 +41,7 @@ export default function WarningSplash({ onDismiss }) {
         fontSize: '32px',
         color: '#FF85A1',
         letterSpacing: '0.05em',
-        marginBottom: '24px',
+        marginBottom: '18px',
         lineHeight: 1.4,
       }}>
         WARNING
@@ -52,31 +53,31 @@ export default function WarningSplash({ onDismiss }) {
         borderRadius: '20px',
         padding: '20px',
         boxShadow: '4px 4px 0 #9B7EC8',
-        marginBottom: '28px',
-        maxWidth: '340px',
+        marginBottom: '22px',
+        maxWidth: '352px',
       }}>
         <p style={{
           fontFamily: 'Mulish, sans-serif',
           fontSize: '14px',
-          lineHeight: 1.7,
+          lineHeight: 1.55,
           color: '#3D2B4F',
         }}>
-          This app reverse-engineers the most addictive machines ever built and points them at your habits.
+          This app reverse-engineers the most addictive machines ever built and points them at your habits. We deploy every dirty psychological trick in the book to transform you into the enhanced lab rat you were born to be.
         </p>
         <p style={{
           fontFamily: 'Mulish, sans-serif',
-          fontSize: '13px',
-          lineHeight: 1.7,
+          fontSize: '13.5px',
+          lineHeight: 1.55,
           color: '#7B5EA7',
           marginTop: '12px',
         }}>
-          Side effects include: actually becoming consistent, embarrassing excitement about colored beads, and explaining <em>"the system"</em> to everyone you know.
+          Side effects include: being consistent for the first time in your life, genuine physiological arousal at the sight of shiny beads, evangelizing <em>"the system"</em> to everyone you love, risking it all, losing everything, and then doing your habits again — for just one more spin.
         </p>
         <p style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: '24px',
+          fontSize: '23px',
           color: '#FF85A1',
-          marginTop: '16px',
+          marginTop: '14px',
         }}>
           You have been warned. 💅
         </p>
@@ -93,7 +94,7 @@ export default function WarningSplash({ onDismiss }) {
         marginTop: '16px',
         opacity: 0.7,
       }}>
-        Based on The Slot Machine Habit System by SpoonFedStudy
+        Based on The Habit Casino System by SpoonFedStudy
       </p>
     </div>
   )
