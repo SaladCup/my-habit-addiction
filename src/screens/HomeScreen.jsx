@@ -597,8 +597,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (location.state?.freeBead && !reveal) {
+      const fb = location.state.freeBead
+      playBeadDraw(fb.isGold ? 'gold' : fb.isRainbow ? 'rainbow' : null)
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff: consume the nav-state bead, then scrub history so refresh can't re-reveal it
-      setReveal(location.state.freeBead)
+      setReveal(fb)
       window.history.replaceState({}, document.title)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: nav-state is consumed exactly once
@@ -620,7 +622,7 @@ export default function HomeScreen() {
   function handleHabitTap(habit) {
     if (reveal) return
     const bead = drawBead(habit.id)
-    playBeadDraw(bead.isGold)
+    playBeadDraw(bead.isGold ? 'gold' : bead.isRainbow ? 'rainbow' : null)
     setSession({ selectedHabit: habit })
     setReveal(bead)
   }

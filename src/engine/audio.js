@@ -15,8 +15,13 @@ const MANIFEST = {
   jackpot:         'jackpot.mp3',       // crowd cheering
   bonus:           'bonus.mp3',
   streak:          'streak.mp3',
+  streakBreak:     'streak-break.mp3',  // descending arcade "game over" — a broken streak
   createHabit:     'create-habit.mp3',
   rewardOpen:      'reward-open.mp3',
+  beadDraw:        'bead-draw.mp3',     // kawaii fairy sparkle — earning a normal bead (the core reward)
+  beadGold:        'bead-gold.mp3',     // gold-coin prize jingle — gold bead
+  beadRainbow:     'bead-rainbow.mp3',  // magic-wand sparkle — the rainbow wild-card bead
+  reelStop:        'reel-stop.mp3',     // crisp mechanical click — a slot reel landing
 }
 
 let ctx = null

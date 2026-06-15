@@ -52,10 +52,14 @@ function play(fn) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function playBeadDraw(isGold = false) {
+// Earning a bead. `kind` is 'gold' | 'rainbow' | falsy (normal) → a different
+// real sparkle each; synth sparkle is the pre-decode fallback.
+const BEAD_FILE = { gold: 'beadGold', rainbow: 'beadRainbow' }
+export function playBeadDraw(kind = null) {
+  if (playSfx(BEAD_FILE[kind] || 'beadDraw', 0.9)) return
   play(c => {
     const t = c.currentTime
-    if (isGold) {
+    if (kind === 'gold' || kind === 'rainbow') {
       note(c, 1047, t,       0.12, 'sine', 0.24)
       note(c, 1319, t+0.07,  0.12, 'sine', 0.20)
       note(c, 1568, t+0.14,  0.18, 'sine', 0.18)
@@ -121,6 +125,7 @@ export function playNearMiss() {
 }
 
 export function playReelStop() {
+  if (playSfx('reelStop', 0.8)) return
   play(c => {
     const t = c.currentTime
     note(c, 180, t,       0.07, 'square', 0.16)
