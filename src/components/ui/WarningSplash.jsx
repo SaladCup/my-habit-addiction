@@ -62,7 +62,7 @@ export default function WarningSplash({ onDismiss }) {
           lineHeight: 1.55,
           color: '#3D2B4F',
         }}>
-          This app reverse-engineers the most addictive machines ever built and points them at your habits. We deploy every dirty psychological trick in the book to transform you into the enhanced lab rat you were born to be.
+          This app reverse-engineers the most addictive machines ever built and points them at your habits. We use every psychological trick possible to transform you into the enhanced lab rat you were born to be.
         </p>
         <p style={{
           fontFamily: 'Mulish, sans-serif',
@@ -71,7 +71,7 @@ export default function WarningSplash({ onDismiss }) {
           color: '#7B5EA7',
           marginTop: '12px',
         }}>
-          Side effects include: being consistent for the first time in your life, genuine physiological arousal at the sight of shiny beads, evangelizing <em>"the system"</em> to everyone you love, risking it all, losing everything, and then doing your habits again — for just one more spin.
+          Side effects include: Being consistent for the first time in your life, physiological arousal at the sight of shiny beads, evangelizing <em>'the system'</em> to everyone you love, risking it all, losing everything, then doing your habits again for one more spin.
         </p>
         <p style={{
           fontFamily: "'Fredoka', cursive",
@@ -79,7 +79,7 @@ export default function WarningSplash({ onDismiss }) {
           color: '#FF85A1',
           marginTop: '14px',
         }}>
-          You have been warned. 💅
+          You have been warned.
         </p>
       </div>
 
