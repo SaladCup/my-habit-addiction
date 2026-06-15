@@ -10,10 +10,11 @@ drains your balance, so losing pushes you back to your habits to earn more → g
 more. No real money anywhere; coins are play-money (but redeemable in-app for guilt-free
 $/time, which is exactly what makes betting them feel like real stakes).
 
-## Research note (2026-06-15)
-Deep-research run; the adversarial-verify phase was cut short by a usage limit, so the
-specifics below are **cross-checked against established gambling math** rather than fully
-independently verified. Key finds:
+## Research note (2026-06-15, updated)
+A deep-research run + a targeted follow-up. (The first run's "all claims refuted" was a
+false alarm — the verifier agents *abstained* on a usage limit, 0-0 votes, not genuine
+refutations.) Follow-up search **confirmed** the game identity + math and added exact tables;
+the 8-row Plinko Low table below math-checks to 99.0% RTP, so the sources are sound. Key finds:
 - **"Gamble With Your Friends"** = a **Steam co-op multiplayer casino** game (not Roblox).
   Floor progression (Floors 1–4), shared bank, daily quota, usable items (Taser, Golden
   Chip, Holy Statue, Drink, Insurance), 55 achievements.
@@ -31,13 +32,16 @@ independently verified. Key finds:
 **Universal rule:** `RTP = win_probability × payout_multiplier`. To hit a target RTP `R`
 at win-probability `p`, set the win payout `m = R / p`. House edge = `1 − R`.
 
-**Recommendation for THIS app: ~93% RTP (7% house edge) as the default, with HIGH
-variance on the exciting games.** Reasoning: real crypto-casinos run 96–99% because players
-make *thousands* of bets — a bigger edge would bankrupt them fast. Here coins are *scarce*
-(earned slowly from habits), so a steep edge would vaporize a balance in one sitting and
-feel punishing → kills motivation (the opposite of the goal). A **modest edge drains
-slowly across many sessions** (the habit driver) while **high variance supplies the thrill**
-(big swings session to session). Edge is the feature; variance is the fun. Tune per game.
+**Recommendation for THIS app: ~95% RTP (5% house edge) default, with HIGH variance on
+the exciting games.** The research clarified something important: **variance, not the edge,
+is what actually busts a balance.** A player who goes all-in chasing a 5× crash busts ~80%
+of the time whether the edge is 1% or 7% — so the motivational "I lost it, go earn more"
+moment comes from *greed + variance*, not from a punishing payout table. That means I can
+keep RTP fairly **high (feels fair, "winnable," self-blame not "rigged")** and let the
+player's own all-in behavior (full-send) create the busts. The modest 5% edge just stops the
+coin supply from inflating over the long run. Real crypto-casinos sit at 96–99%; I'd go a
+touch lower (90–96% band, tunable per game) since coins are scarcer here. Edge = anti-inflation;
+variance + greed = the habit driver.
 
 ## Games — specs + math
 
@@ -53,19 +57,28 @@ Each: rule → math → RTP knob → variance → hook → build cost.
 
 ### 2. Crash  *(headliner — build alongside Coin Flip)*
 - Multiplier climbs from 1.00×; tap **CASH OUT** before it busts. Optional auto-cashout target.
-- **Math:** bust point `b = max(1.00, R / (1 − random()))`, `random()` in [0,1). This gives
-  `P(reach t) = R/t`, so cashing out at any target `t` yields EV `= (R/t)·t = R` → RTP is `R`
-  no matter the target. Add a small instant-bust chance for extra edge if wanted.
-- Variance: very high (heavy-tailed; median bust ≈ 2×, rare 50×+). Knob: `R` (and instant-bust %).
+- **Math (VERIFIED standard):** survival function `P(bust ≥ m) = R / m`. Generate a round with
+  `bust = max(1.00, R / (1 − random()))`, `random()` in [0,1). Cashing out at any target `t`
+  yields EV `= (R/t)·t = R` → RTP is `R` regardless of target (the multiplier cancels). Real
+  operators bake the edge in by multiplying every bust by `(1−edge)`: Stake/BC.Game/Roobet ≈1%
+  (99% RTP), Aviator 3%, Spaceman 4%, F777 5%. Bustabit's classic variant uses an instant-bust
+  (~1-in-101 rounds bust at 1.00×) to carry the edge instead.
+- Variance: very high (heavy-tailed). At ~1% edge: ~50% of rounds bust below 2×, ~10% exceed
+  10×, median ≈ 1.98×. Knob: `R` (and/or instant-bust %).
 - **Hook:** the live rising counter + cash-out-button tension is the single stickiest mechanic
   in modern gambling. Auto-bet + "1 more round."
 
 ### 3. Penguin Cross  *(your reference game — build after Crash; shares its engine)*
 - A penguin crosses lanes one tap at a time. Each lane survived raises the multiplier; cash
   out anytime; get hit = lose it all. Difficulty (Easy/Med/Hard) sets the danger.
-- **Math (cumulative survival):** per-lane survival prob `s` (Easy .90 / Med .80 / Hard .65).
-  Multiplier after `k` lanes `m_k = R / s^k`. Each lane: survive if `random() < s`.
-- Variance: tunable by difficulty. Hard = few lanes survive but multipliers rocket.
+- **Math (cumulative survival, VALIDATED vs "Chicken Road"):** per-lane survival prob `s`.
+  Multiplier after `k` lanes `m_k = R / s^k`; each lane survives if `random() < s`. Chicken
+  Road (the canonical version, 98% RTP) uses Easy 24 lanes / 4% hazard (`s=.96`), Medium 22 /
+  12% (`s=.88`), Hard 20 / 20% (`s=.80`), Hardcore 18 / higher. Check: Easy step-1 `= .98/.96 =`
+  **1.02×**, matching the real game exactly. For our app I'd **cap the lane count** (their Hard
+  tops out at 52,000×, absurd for us) — e.g. 8–12 lanes so the top multiplier stays in the
+  ~5×–50× range while keeping the per-lane hazard.
+- Variance: tunable by difficulty (hazard + lane count). Hard = few survive but multipliers rocket.
 - **Hook:** visible "one more lane" greed; the penguin animation makes the bust *hurt* (cute).
 - Build: medium; same survival engine reused for Mines & Dragon Tower later.
 
@@ -79,10 +92,18 @@ Each: rule → math → RTP knob → variance → hook → build cost.
 ### 5. Plinko
 - Drop a token (a bead!) through `n` rows of pegs into bucket `k` (0..n).
 - **Math:** `P(bucket k) = C(n,k) / 2^n` (binomial). Pick bucket multipliers `v_k` so
-  `Σ P(k)·v_k = R`. Risk modes (Low/Med/High) reshape `v_k`: High = huge outer (e.g. 100×–
-  1000×), near-zero center (0.2×); Low = gentle 0.5×–5×. Rows 8–16.
+  `Σ P(k)·v_k = R`. Risk modes reshape `v_k`: High = huge outer / near-zero center; Low = gentle.
+- **VERIFIED tables** (Stake, ~99% RTP — center-out, mirror the other half; the 8-row Low array
+  math-checks to exactly 99.0%):
+  - **8 rows** — Low `[5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6]`; Med `[13, 3, 1.3, 0.7, 0.4, …]`;
+    High `[29, 4, 1.5, 0.3, 0.2, …]`
+  - **12 rows** — Low `[10, 3, 1.6, 1.4, 1.1, 1, 0.5, …]`; Med `[33, 11, 4, 2, 1.1, 0.6, 0.3, …]`;
+    High `[170, 24, 8.1, 2, 0.7, 0.2, 0.2, …]`
+  - **16 rows** — Low `[16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, …]`; Med `[110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, …]`;
+    High `[1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, …]`
+  - (To retune to a lower app RTP, scale every value by `targetRTP/0.99`.)
 - **Hook:** mesmerizing physical drop; high-risk mode is a slot-machine-grade dopamine engine.
-- Build: medium; reuse the 3D bead/physics work for the drop.
+- Build: medium; reuse the 3D bead/physics work for the drop (the token *is* a bead).
 
 ### 6. Dice / Limbo
 - Pick a target multiplier (or roll-under number); win if the roll clears it.
@@ -174,8 +195,9 @@ Each: rule → math → RTP knob → variance → hook → build cost.
   RTP tuning pass, optional power-up items.
 
 ## Open calls for Lauren
-1. **RTP aggressiveness** — recommend ~93% / 7% edge default (high variance on Crash/Plinko/Mines).
-   How hard should it bite? (Higher edge = faster drain = more habit pressure, but more "feels bad.")
+1. **RTP aggressiveness** — recommend ~95% / 5% edge default (high variance on Crash/Plinko/Mines);
+   variance + your own all-in greed do the busting, so it feels fair instead of rigged. Want it
+   gentler (96–97%, fairer) or more punishing (~90%, faster grind)?
 2. **v1 scope to greenlight** — recommend P0 + P1 (skeleton + Coin Flip + Crash) as the first
    shippable slice, then iterate.
 3. New **Casino nav icon** art (you generate to spec, like the other icons).
