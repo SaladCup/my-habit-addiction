@@ -13,18 +13,21 @@ import SpinScreen     from './screens/SpinScreen'
 import BonusScreen    from './screens/BonusScreen'
 import RewardScreen   from './screens/RewardScreen'
 import CashInScreen   from './screens/CashInScreen'
+import CasinoScreen   from './screens/CasinoScreen'
+import CoinFlipScreen from './screens/casino/CoinFlipScreen'
+import CrashScreen    from './screens/casino/CrashScreen'
 
 const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
   { to: '/',         label: 'Home',     icon: `/ui/icon_home.png?v=${ICON_V}` },
-  { to: '/wallet',   label: 'Beads',    icon: `/ui/icon_beads.png?v=${ICON_V}` },
+  { to: '/casino',   label: 'Casino',   icon: `/ui/icon_spin.png?v=${ICON_V}` },
   { to: '/spend',    label: 'Spend',    icon: `/ui/icon_spend.png?v=${ICON_V}` },
   { to: '/stats',    label: 'Stats',    icon: `/ui/icon_stats.png?v=${ICON_V}` },
   { to: '/edit',     label: 'Habits',   icon: `/ui/icon_editor.png?v=${ICON_V}` },
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
 ]
 
-const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward']
+const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/casino/coinflip', '/casino/crash']
 
 function BottomNav() {
   const { pathname } = useLocation()
@@ -80,6 +83,9 @@ function AppShell() {
           <Route path="/edit"     element={<EditorScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/cash-in"  element={<CashInScreen />} />
+          <Route path="/casino"          element={<CasinoScreen />} />
+          <Route path="/casino/coinflip" element={<CoinFlipScreen />} />
+          <Route path="/casino/crash"    element={<CrashScreen />} />
           <Route path="/spin"     element={<SpinScreen />} />
           <Route path="/bonus"    element={<BonusScreen />} />
           <Route path="/reward"   element={<RewardScreen />} />

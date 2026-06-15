@@ -132,6 +132,8 @@ const useStore = create(
       coinLog:    [],     // recent history (capped at COIN_LOG_MAX) — { id, type, amount, source, habitId, note, timestamp }
       coinTotals: { earned: 0, spent: 0 },   // running balance — O(1) reads, never trimmed
       coinLogComplete: true,                 // true while coinLog holds FULL history (so totals can be rebuilt from it)
+      gambling:   { wagered: 0, won: 0 },    // DISPLAY-ONLY casino tally (Stats). NOT the balance — bets route
+                                             // through spend/earn so the log-rebuild keeps the balance correct.
       milestones: [],
 
       // ── Engagement systems (persisted) ──
@@ -159,6 +161,7 @@ const useStore = create(
       getTotalCoinsEarned: () => get().coinTotals.earned,
       getTotalCoinsSpent:  () => get().coinTotals.spent,
       getCoinsAvailable:   () => get().coinTotals.earned - get().coinTotals.spent,
+      getCasinoNet:        () => { const g = get().gambling || {}; return (g.won ?? 0) - (g.wagered ?? 0) },
       getJarCount: () => get().jarBeads.length,
       getBeadColor: (slot, isGold) => {
         if (isGold) return '#FFD700'
@@ -252,6 +255,25 @@ const useStore = create(
             coinTotals: { earned: s.coinTotals?.earned ?? 0, spent: (s.coinTotals?.spent ?? 0) + amount },
           }
         })
+      },
+
+      // ── Casino: bet / settle ──
+      // A bet is a `spent` and a win is an `earned`, tagged with a casino source so the
+      // proven balance-rebuild (onRehydrateStorage / migrate) stays correct — NEVER give
+      // gambling its own log type, or a reload would wipe its effect on the balance.
+      // `gambling` is a separate display-only tally for Stats. Returns false if unaffordable.
+      placeBet: (amount, game = 'casino') => {
+        amount = Math.floor(amount)
+        if (!Number.isFinite(amount) || amount <= 0 || amount > get().getCoinsAvailable()) return false
+        get().spendCoins(amount, `casino:${game}`)
+        set(s => ({ gambling: { wagered: (s.gambling?.wagered ?? 0) + amount, won: s.gambling?.won ?? 0 } }))
+        return true
+      },
+      settleBet: (payout, game = 'casino') => {
+        payout = Math.floor(payout)
+        if (!Number.isFinite(payout) || payout <= 0) return
+        get().awardCoins(payout, `casino:${game}`)
+        set(s => ({ gambling: { wagered: s.gambling?.wagered ?? 0, won: (s.gambling?.won ?? 0) + payout } }))
       },
 
       // ── Engagement engine: spins, luck, progressive jackpot ──
@@ -445,6 +467,7 @@ const useStore = create(
         coinLog:    [],
         coinTotals: { earned: 0, spent: 0 },
         coinLogComplete: true,
+        gambling:   { wagered: 0, won: 0 },
         milestones: [],
         jackpotPool: JACKPOT_SEED,
         spinStats:  { ...DEFAULT_SPIN_STATS },
@@ -456,7 +479,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 16,
+      version: 17,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -574,6 +597,10 @@ const useStore = create(
           // habit description. Editable in Settings.
           persisted.settings.bonusActivity = '10 push-ups'
         }
+        if (version < 17 && !persisted.gambling) {
+          // Casino added — seed the display-only gambling tally for older saves.
+          persisted.gambling = { wagered: 0, won: 0 }
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -586,6 +613,7 @@ const useStore = create(
         coinLog:    state.coinLog,
         coinTotals: state.coinTotals,
         coinLogComplete: state.coinLogComplete,
+        gambling:   state.gambling,
         milestones: state.milestones,
         settings:   state.settings,
         jackpotPool: state.jackpotPool,
