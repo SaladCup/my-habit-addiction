@@ -21,6 +21,7 @@ import MinesScreen        from './screens/casino/MinesScreen'
 import PlinkoScreen       from './screens/casino/PlinkoScreen'
 import HiLoScreen         from './screens/casino/HiLoScreen'
 import LimboScreen        from './screens/casino/LimboScreen'
+import BlackjackScreen    from './screens/casino/BlackjackScreen'
 
 const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
@@ -32,7 +33,7 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
 ]
 
-const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/limbo']
+const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/limbo', '/casino/blackjack']
 
 function BottomNav() {
   const { pathname } = useLocation()
@@ -96,6 +97,7 @@ function AppShell() {
           <Route path="/casino/plinko"   element={<PlinkoScreen />} />
           <Route path="/casino/hilo"     element={<HiLoScreen />} />
           <Route path="/casino/limbo"    element={<LimboScreen />} />
+          <Route path="/casino/blackjack" element={<BlackjackScreen />} />
           <Route path="/spin"     element={<SpinScreen />} />
           <Route path="/bonus"    element={<BonusScreen />} />
           <Route path="/reward"   element={<RewardScreen />} />

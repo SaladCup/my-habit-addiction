@@ -10,7 +10,7 @@ const GAMES = [
   { key: 'plinko',   to: '/casino/plinko', emoji: '🎯', name: 'Plinko', tag: 'Drop a bead, chase the edge', live: true },
   { key: 'hilo',     to: '/casino/hilo',   emoji: '🎴', name: 'Hi-Lo',  tag: 'Higher or lower? Bank the streak', live: true },
   { key: 'limbo',    to: '/casino/limbo',  emoji: '📈', name: 'Limbo',  tag: 'Roll over your target to win', live: true },
-  { key: 'blackjack',emoji: '🃏', name: 'Blackjack',     tag: 'Beat the dealer to 21', live: false },
+  { key: 'blackjack',to: '/casino/blackjack', emoji: '🃏', name: 'Blackjack', tag: 'Beat the dealer to 21', live: true },
 ]
 
 export default function CasinoScreen() {
