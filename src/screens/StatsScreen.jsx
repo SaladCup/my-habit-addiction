@@ -111,8 +111,10 @@ const tooltipStyle = {
 export default function StatsScreen() {
   const [tab, setTab] = useState('Week')
   const { chartData, totalBeads, totalCoins, streak, best, habitCounts, slotCounts, habits } = useStats(tab)
-  const { settings } = useStore()
+  const { settings, gambling, getCasinoNet } = useStore()
   const coinName = 'coins'
+  const casinoNet = getCasinoNet()
+  const hasGambled = (gambling?.wagered ?? 0) > 0
 
   const moneyValue = settings.moneyPerCoin > 0
     ? `$${(totalCoins * settings.moneyPerCoin).toFixed(2)}`
@@ -180,6 +182,31 @@ export default function StatsScreen() {
                 ⏱ {timeValue} {settings.timeActivity || ''}
               </div>
             )}
+          </div>
+        </PixelPanel>
+      )}
+
+      {/* Casino record (all-time — the gambling tally is separate from habit earnings) */}
+      {hasGambled && (
+        <PixelPanel color="lavender" title="🎰 CASINO · ALL-TIME" style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>WAGERED</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#7B5EA7' }}>{(gambling.wagered ?? 0).toLocaleString()} 🪙</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>WON BACK</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#7B5EA7' }}>{(gambling.won ?? 0).toLocaleString()} 🪙</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>NET</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: casinoNet >= 0 ? '#3E9B6A' : '#C44B6A' }}>
+                {casinoNet >= 0 ? '+' : '−'}{Math.abs(casinoNet).toLocaleString()} 🪙
+              </div>
+            </div>
+          </div>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', textAlign: 'center', marginTop: 10 }}>
+            {casinoNet >= 0 ? "You're up on the house — quit while you're ahead? 😏" : 'Down at the tables — go do a habit and win it back. 💪'}
           </div>
         </PixelPanel>
       )}
