@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
-import { PLINKO_ROWS, PLINKO_BUCKETS, PLINKO_RISKS, PLINKO_TABLES, dropBall, plinkoMultiplier } from '../../engine/casino/plinko'
+import Plinko3D from '../../components/Plinko3D'
+import { BUCKET_MULTS, GAP } from '../../components/plinkoBoard'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
 
 const MIN_BET = 10
-
-const bucketColor = m =>
-  m >= 10 ? '#FF6B6B' : m >= 3 ? '#F2933C' : m >= 1.5 ? '#F2C94C' : m >= 1 ? '#C8B4E0' : '#B8C0CC'
+const bucketColor = m => m >= 2 ? '#FF6B6B' : m >= 1.5 ? '#F2933C' : m >= 1 ? '#F2C94C' : m >= 0.7 ? '#C8B4E0' : '#8E7FB0'
 
 export default function PlinkoScreen() {
   const navigate = useNavigate()
@@ -17,40 +16,45 @@ export default function PlinkoScreen() {
   const balance = getCoinsAvailable()
 
   const [betRaw, setBet] = useState(() => Math.min(50, Math.max(MIN_BET, balance)))
-  const [risk, setRisk]  = useState('medium')
   const [phase, setPhase] = useState('betting')   // betting | dropping | landed
-  const [ball, setBall]  = useState({ top: 0, left: 50 })
+  const [drop, setDrop]   = useState({ id: 0, spawnX: 0 })
   const [result, setResult] = useState(null)      // { bucket, mult, win }
-  const timerRef = useRef(0)
+  const stakeRef = useRef(0)
+  const timeoutRef = useRef(0)
+  const settledRef = useRef(false)
   const aliveRef = useRef(true)
-  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; clearTimeout(timerRef.current) } }, [])
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; clearTimeout(timeoutRef.current) } }, [])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
-  const table = PLINKO_TABLES[risk]
+  const dropping = phase === 'dropping'
 
-  function drop() {
-    if (tooPoor || bet < MIN_BET || bet > balance || phase === 'dropping') return
-    if (!placeBet(bet, 'plinko')) return
-    const { bucket } = dropBall()
-    const mult = plinkoMultiplier(risk, bucket)
-    const win = Math.floor(bet * mult)
-    setResult(null)
-    setBall({ top: 0, left: 50 })
-    setPhase('dropping')
-    playButtonTap()
-    // let the reset paint, then animate to the bucket
-    requestAnimationFrame(() => setBall({ top: 82, left: (bucket + 0.5) / PLINKO_BUCKETS * 100 }))
-    timerRef.current = setTimeout(() => {
-      if (!aliveRef.current) return
-      settleBet(win, 'plinko')
-      setResult({ bucket, mult, win })
-      setPhase('landed')
-      if (mult >= 1) { playWin(mult >= 5 ? 't3' : mult >= 2 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
-    }, 1350)
+  // ref-guarded so onLand + the safety timeout can't double-settle (closures are stale)
+  function settle(bucket) {
+    if (settledRef.current) return
+    settledRef.current = true
+    clearTimeout(timeoutRef.current)
+    const mult = BUCKET_MULTS[bucket] ?? 0.5
+    const win = Math.floor(stakeRef.current * mult)
+    settleBet(win, 'plinko')
+    setResult({ bucket, mult, win })
+    setPhase('landed')
+    if (mult >= 1) { playWin(mult >= 2 ? 't3' : 't2'); playCoinDrop() } else playNearMiss()
   }
 
-  function again() { setPhase('betting'); setResult(null); setBall({ top: 0, left: 50 }) }
+  function dropBall() {
+    if (tooPoor || bet < MIN_BET || bet > balance || dropping) return
+    if (!placeBet(bet, 'plinko')) return
+    settledRef.current = false
+    stakeRef.current = bet
+    setResult(null)
+    setDrop(d => ({ id: d.id + 1, spawnX: (Math.random() - 0.5) * GAP * 0.5 }))
+    setPhase('dropping')
+    playButtonTap()
+    // safety net: if the ball never settles (stuck), resolve at the common center bucket
+    clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => { if (aliveRef.current) settle(Math.floor(BUCKET_MULTS.length / 2)) }, 9000)
+  }
 
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -60,68 +64,43 @@ export default function PlinkoScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎯 Plinko</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 10 }}>
-        Drop the bead. The edges pay huge — the middle, not so much.
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 8 }}>
+        Drop the marble — real physics decides where it lands.
       </div>
 
-      {phase === 'betting' && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {PLINKO_RISKS.map(r => (
-            <button key={r.key} type="button" onClick={() => { setRisk(r.key); playButtonTap() }} style={modeBtn(risk === r.key)}>{r.label}</button>
-          ))}
-        </div>
-      )}
+      {/* 3D board */}
+      <div style={{ width: '100%', maxWidth: 344, height: 384, borderRadius: 18, overflow: 'hidden', border: '3px solid #E0A800', marginBottom: 8, background: '#2E2142' }}>
+        <Plinko3D dropId={drop.id} spawnX={drop.spawnX} onLand={settle} active={dropping} />
+      </div>
 
-      {/* board */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 360, height: 240, marginBottom: 10, background: 'linear-gradient(180deg, #46355F 0%, #5E4A7E 100%)', borderRadius: 18, overflow: 'hidden', border: '3px solid #E0A800', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.35)' }}>
-        {/* pegs */}
-        <div style={{ position: 'absolute', inset: '6% 4% 26% 4%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          {Array.from({ length: PLINKO_ROWS - 2 }).map((_, r) => (
-            <div key={r} style={{ display: 'flex', justifyContent: 'center', gap: `${4 + r * 0.4}%` }}>
-              {Array.from({ length: r + 3 }).map((__, p) => (
-                <div key={p} style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFF6E0', boxShadow: '0 0 5px rgba(255,240,200,0.8)' }} />
-              ))}
-            </div>
-          ))}
-        </div>
-        {/* ball */}
-        <div style={{
-          position: 'absolute', width: 18, height: 18, borderRadius: '50%', marginLeft: -9,
-          top: `${ball.top}%`, left: `${ball.left}%`,
-          background: 'radial-gradient(circle at 35% 30%, #FFF 0%, #FF9ECF 55%, #E0508F 100%)',
-          boxShadow: '0 2px 6px rgba(200,60,120,0.5)',
-          transition: phase === 'dropping' ? 'top 1.3s cubic-bezier(0.45,0,0.7,1), left 1.3s ease-in-out' : 'none',
-          opacity: phase === 'betting' ? 0 : 1,
-        }} />
-        {/* buckets */}
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, display: 'flex', gap: 2 }}>
-          {table.map((m, i) => (
-            <div key={i} style={{
-              flex: 1, textAlign: 'center', padding: '4px 0', borderRadius: 6,
-              background: bucketColor(m), color: '#fff',
-              fontFamily: "'Fredoka', cursive", fontSize: 9.5, lineHeight: 1.1,
-              outline: result && result.bucket === i ? '3px solid #3D2B4F' : 'none',
-              transform: result && result.bucket === i ? 'translateY(-3px)' : 'none',
-            }}>{m}×</div>
-          ))}
-        </div>
+      {/* bucket multiplier strip (aligned to the 11 buckets) */}
+      <div style={{ display: 'flex', gap: 2, width: '100%', maxWidth: 344, marginBottom: 10 }}>
+        {BUCKET_MULTS.map((m, i) => (
+          <div key={i} style={{
+            flex: 1, textAlign: 'center', padding: '4px 0', borderRadius: 6, fontFamily: "'Fredoka', cursive", fontSize: 11,
+            background: bucketColor(m), color: '#fff',
+            outline: result && result.bucket === i ? '3px solid #3D2B4F' : 'none',
+            transform: result && result.bucket === i ? 'translateY(-3px)' : 'none',
+          }}>{m}×</div>
+        ))}
       </div>
 
       <div style={{ height: 26, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
         {phase === 'landed' && (result.mult >= 1
           ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} 🪙</span>
-          : <span style={{ color: '#C44B6A' }}>×{result.mult} — got back {result.win.toLocaleString()} 🪙</span>)}
+          : <span style={{ color: '#C44B6A' }}>×{result.mult} — got {result.win.toLocaleString()} 🪙 back</span>)}
+        {dropping && <span style={{ color: '#9B7EC8' }}>dropping…</span>}
       </div>
 
-      {phase !== 'dropping' && (
+      {!dropping && (
         <>
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
-            <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'landed' ? again : drop}>
-              {phase === 'landed' ? '↻ DROP AGAIN' : (tooPoor ? 'NOT ENOUGH COINS' : `🎯 DROP FOR ${bet.toLocaleString()} 🪙`)}
+            <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={dropBall}>
+              {tooPoor ? 'NOT ENOUGH COINS' : `🎯 DROP FOR ${bet.toLocaleString()} 🪙`}
             </KawaiiButton>
           </div>
-          {tooPoor && phase === 'betting' && (
+          {tooPoor && (
             <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
               Go do a habit to earn more coins 💪
             </div>
@@ -140,7 +119,3 @@ const balancePill = {
   fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#E0A800',
   background: '#FFF5F9', border: '2px solid #ECC0DE', borderRadius: 12, padding: '4px 12px',
 }
-const modeBtn = on => ({
-  fontFamily: "'Fredoka', cursive", fontSize: 16, padding: '8px 18px', borderRadius: 12, cursor: 'pointer',
-  color: on ? '#fff' : '#7B5EA7', background: on ? '#C8B4E0' : '#F5EDFC', border: `2px solid ${on ? '#8B6BAE' : '#D8C4EC'}`,
-})
