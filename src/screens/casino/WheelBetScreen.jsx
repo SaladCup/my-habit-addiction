@@ -34,7 +34,7 @@ export default function WheelBetScreen() {
   const [result, setResult] = useState(null)      // { mult, win }
   const timerRef = useRef(0)
   const aliveRef = useRef(true)
-  useEffect(() => () => { aliveRef.current = false; clearTimeout(timerRef.current) }, [])
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; clearTimeout(timerRef.current) } }, [])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET

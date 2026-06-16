@@ -23,7 +23,7 @@ export default function PlinkoScreen() {
   const [result, setResult] = useState(null)      // { bucket, mult, win }
   const timerRef = useRef(0)
   const aliveRef = useRef(true)
-  useEffect(() => () => { aliveRef.current = false; clearTimeout(timerRef.current) }, [])
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; clearTimeout(timerRef.current) } }, [])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -73,13 +73,13 @@ export default function PlinkoScreen() {
       )}
 
       {/* board */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 360, height: 240, marginBottom: 10 }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: 360, height: 240, marginBottom: 10, background: 'linear-gradient(180deg, #46355F 0%, #5E4A7E 100%)', borderRadius: 18, overflow: 'hidden', border: '3px solid #E0A800', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.35)' }}>
         {/* pegs */}
         <div style={{ position: 'absolute', inset: '6% 4% 26% 4%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           {Array.from({ length: PLINKO_ROWS - 2 }).map((_, r) => (
             <div key={r} style={{ display: 'flex', justifyContent: 'center', gap: `${4 + r * 0.4}%` }}>
               {Array.from({ length: r + 3 }).map((__, p) => (
-                <div key={p} style={{ width: 6, height: 6, borderRadius: '50%', background: '#C9B6E6', opacity: 0.7 }} />
+                <div key={p} style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFF6E0', boxShadow: '0 0 5px rgba(255,240,200,0.8)' }} />
               ))}
             </div>
           ))}

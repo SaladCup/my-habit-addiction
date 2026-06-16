@@ -7,9 +7,9 @@
 export const CROSS_RTP = 0.97
 
 export const CROSS_MODES = {
-  easy:   { key: 'easy',   label: 'Easy',   hazard: 0.04, lanes: 12, emoji: '🚲' },
-  medium: { key: 'medium', label: 'Medium', hazard: 0.12, lanes: 10, emoji: '🚗' },
-  hard:   { key: 'hard',   label: 'Hard',   hazard: 0.20, lanes: 8,  emoji: '🚚' },
+  easy:   { key: 'easy',   label: 'Easy',   hazard: 0.08, lanes: 12, emoji: '🚲' },
+  medium: { key: 'medium', label: 'Medium', hazard: 0.18, lanes: 10, emoji: '🚗' },
+  hard:   { key: 'hard',   label: 'Hard',   hazard: 0.28, lanes: 8,  emoji: '🚚' },
 }
 
 // Multiplier for cashing out after crossing `k` lanes (k = 1..lanes) in a mode.

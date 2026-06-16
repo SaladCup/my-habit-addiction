@@ -25,7 +25,7 @@ export default function CrashScreen() {
   const autoRef  = useRef(0)
   const tickRef  = useRef(1)                          // last integer multiplier we ticked a sound for
   const aliveRef = useRef(true)
-  useEffect(() => () => { aliveRef.current = false; cancelAnimationFrame(rafRef.current) }, [])
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; cancelAnimationFrame(rafRef.current) } }, [])
 
   // Effective bet, derived (not an effect) so it stays affordable as the balance moves.
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
