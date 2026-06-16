@@ -4,6 +4,7 @@ import useStore from '../../store/useStore'
 import { KawaiiButton } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { SLOT_SYMBOLS, spinSlots } from '../../engine/casino/slots'
+import SlotsPixi from '../../components/SlotsPixi'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playReelStop } from '../../engine/sounds'
 
 const MIN_BET = 10
@@ -17,6 +18,7 @@ export default function SlotsBetScreen() {
   const [betRaw, setBet] = useState(() => Math.min(50, Math.max(MIN_BET, balance)))
   const [phase, setPhase] = useState('betting')   // betting | spinning | done
   const [reels, setReels] = useState([0, 1, 2])
+  const [spinId, setSpinId] = useState(0)
   const [result, setResult] = useState(null)      // { mult, win, win3 }
   const timerRef = useRef(0)
   const aliveRef = useRef(true)
@@ -30,24 +32,23 @@ export default function SlotsBetScreen() {
     if (!placeBet(bet, 'slots')) return
     const r = spinSlots()
     const win = Math.floor(bet * r.mult)
+    setReels(r.reels)                 // the Pixi reels spin and land on these
+    setSpinId(id => id + 1)           // trigger the Pixi spin
     setResult(null); setPhase('spinning'); playButtonTap()
     timerRef.current = setTimeout(() => {
       if (!aliveRef.current) return
-      setReels(r.reels); playReelStop()
+      playReelStop()
       settleBet(win, 'slots')
       setResult({ mult: r.mult, win, win3: r.win3 })
       setPhase('done')
       if (r.win3) { playWin(r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
-    }, 900)
+    }, 1650)   // match the Pixi reel-stop timing (~1.5s) + a beat
   }
 
   function again() { setPhase('betting'); setResult(null) }
 
-  const spinning = phase === 'spinning'
-
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <style>{`@keyframes slot-buzz{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}`}</style>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
         <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
@@ -58,22 +59,9 @@ export default function SlotsBetScreen() {
         Match three to win. Rarer symbols pay way more.
       </div>
 
-      {/* reels */}
-      <div style={{
-        display: 'flex', gap: 10, padding: '18px 18px', marginBottom: 12, borderRadius: 20,
-        background: 'linear-gradient(180deg,#3D2B4F 0%,#5A4072 100%)', border: '4px solid #E0A800',
-        boxShadow: '0 6px 0 #B07A00, inset 0 2px 8px rgba(0,0,0,0.4)',
-      }}>
-        {reels.map((s, i) => (
-          <div key={i} style={{
-            width: 76, height: 86, borderRadius: 12, background: '#FFF8FC',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 46,
-            border: result?.win3 ? '3px solid #F2C94C' : '3px solid #C8B4E0',
-            animation: spinning ? 'slot-buzz 0.28s linear infinite' : 'none',
-          }}>
-            {spinning ? '🎰' : SYM[s]}
-          </div>
-        ))}
+      {/* PixiJS slot machine */}
+      <div style={{ width: 330, height: 200, marginBottom: 12 }}>
+        <SlotsPixi reels={reels} spinId={spinId} win3={result?.win3 ?? false} />
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
