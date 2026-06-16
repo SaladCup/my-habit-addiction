@@ -1,5 +1,6 @@
 import { useRef, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { OrthographicCamera } from '@react-three/drei'
 import { Physics, RigidBody, BallCollider, CuboidCollider } from '@react-three/rapier'
 import {
   BUCKETS, BUCKET_MULTS, PEG_R, BALL_R, REST, FRICTION, GRAV_Y,
@@ -9,6 +10,7 @@ import {
 
 const Z_HALF = BALL_R + 0.06
 const MID_Y = (SPAWN_Y + FLOOR_Y) / 2
+const VIEW_Y = (TOP_PEG_Y + FLOOR_Y) / 2 - 0.3   // camera look-at: centers pegs+buckets
 const BW = (HALF_W * 2) / BUCKETS
 const bColor = m => m >= 2 ? 0xff6b6b : m >= 1.5 ? 0xf2933c : m >= 1 ? 0xf2c94c : m >= 0.7 ? 0xc8b4e0 : 0x8e7fb0
 
@@ -19,8 +21,8 @@ function Pegs() {
       {pegs.map(([x, y], i) => <BallCollider key={'c' + i} args={[PEG_R]} position={[x, y, 0]} restitution={REST} friction={FRICTION} />)}
       {pegs.map(([x, y], i) => (
         <mesh key={'m' + i} position={[x, y, 0]}>
-          <sphereGeometry args={[PEG_R, 14, 14]} />
-          <meshStandardMaterial color="#FFF6E0" emissive="#FFD98A" emissiveIntensity={0.45} roughness={0.4} />
+          <sphereGeometry args={[PEG_R * 1.25, 16, 16]} />
+          <meshStandardMaterial color="#FFFBEC" emissive="#FFCE6A" emissiveIntensity={0.85} roughness={0.35} toneMapped={false} />
         </mesh>
       ))}
     </RigidBody>
@@ -41,9 +43,9 @@ function Statics() {
       <CuboidCollider args={[HALF_W + 1, 0.2, Z_HALF + 0.5]} position={[0, FLOOR_Y - 0.2, 0]} restitution={0.1} friction={0.6} />
       {/* colored bucket floors (visual — match the multiplier strip) */}
       {BUCKET_MULTS.map((m, i) => (
-        <mesh key={'b' + i} position={[-HALF_W + BW * (i + 0.5), FLOOR_Y + 0.16, 0]}>
-          <boxGeometry args={[BW * 0.92, 0.32, Z_HALF * 1.7]} />
-          <meshStandardMaterial color={bColor(m)} emissive={bColor(m)} emissiveIntensity={0.35} />
+        <mesh key={'b' + i} position={[-HALF_W + BW * (i + 0.5), FLOOR_Y + 0.42, 0]}>
+          <boxGeometry args={[BW * 0.9, 0.82, Z_HALF * 1.9]} />
+          <meshStandardMaterial color={bColor(m)} emissive={bColor(m)} emissiveIntensity={0.85} toneMapped={false} />
         </mesh>
       ))}
       {/* bucket dividers (collider + gold post) */}
@@ -76,8 +78,8 @@ function Ball({ dropId, spawnX, onLand }) {
     <RigidBody ref={ref} key={dropId} colliders={false} position={[spawnX, SPAWN_Y, 0]} ccd linearDamping={0.05} angularDamping={0.4}>
       <BallCollider args={[BALL_R]} restitution={REST} friction={FRICTION} density={1.2} />
       <mesh>
-        <sphereGeometry args={[BALL_R, 24, 24]} />
-        <meshStandardMaterial color="#FF8FC6" emissive="#E0508F" emissiveIntensity={0.25} roughness={0.25} metalness={0.1} />
+        <sphereGeometry args={[BALL_R * 1.15, 28, 28]} />
+        <meshStandardMaterial color="#FFB3DC" emissive="#FF5AA0" emissiveIntensity={0.6} roughness={0.18} metalness={0.2} toneMapped={false} />
       </mesh>
     </RigidBody>
   )
@@ -90,13 +92,12 @@ function Ball({ dropId, spawnX, onLand }) {
 export default function Plinko3D({ dropId, spawnX, onLand }) {
   return (
     <Canvas
-      orthographic
-      camera={{ position: [0, MID_Y, 12], zoom: 38, near: 0.1, far: 100 }}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true }}
       frameloop="always"
       style={{ width: '100%', height: '100%' }}
     >
+      <OrthographicCamera makeDefault position={[0, VIEW_Y, 12]} zoom={47} near={0.1} far={100} />
       <ambientLight intensity={0.75} />
       <directionalLight position={[3, 6, 8]} intensity={1.4} />
       <directionalLight position={[-4, -2, 4]} intensity={0.4} />
