@@ -22,6 +22,8 @@ export default function SlotsBetScreen() {
   const [result, setResult] = useState(null)      // { mult, win, win3 }
   const timerRef = useRef(0)
   const aliveRef = useRef(true)
+  const pendingRef = useRef(null)     // the spin's result, settled when the reels stop
+  const settledRef = useRef(false)
   useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; clearTimeout(timerRef.current) } }, [])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
@@ -32,17 +34,27 @@ export default function SlotsBetScreen() {
     if (!placeBet(bet, 'slots')) return
     const r = spinSlots()
     const win = Math.floor(bet * r.mult)
+    pendingRef.current = { r, win }
+    settledRef.current = false
     setReels(r.reels)                 // the Pixi reels spin and land on these
     setSpinId(id => id + 1)           // trigger the Pixi spin
     setResult(null); setPhase('spinning'); playButtonTap()
-    timerRef.current = setTimeout(() => {
-      if (!aliveRef.current) return
-      playReelStop()
-      settleBet(win, 'slots')
-      setResult({ mult: r.mult, win, win3: r.win3 })
-      setPhase('done')
-      if (r.win3) { playWin(r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
-    }, 1650)   // match the Pixi reel-stop timing (~1.5s) + a beat
+    // settle on the reels' onSettled; safety net if it never fires
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(doSettle, 2400)
+  }
+
+  // ref-guarded so onSettled + the safety timeout can't double-settle
+  function doSettle() {
+    if (settledRef.current || !aliveRef.current || !pendingRef.current) return
+    settledRef.current = true
+    clearTimeout(timerRef.current)
+    const { r, win } = pendingRef.current
+    playReelStop()
+    settleBet(win, 'slots')
+    setResult({ mult: r.mult, win, win3: r.win3 })
+    setPhase('done')
+    if (r.win3) { playWin(r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
   }
 
   function again() { setPhase('betting'); setResult(null) }
@@ -60,8 +72,8 @@ export default function SlotsBetScreen() {
       </div>
 
       {/* PixiJS slot machine */}
-      <div style={{ width: 330, height: 200, marginBottom: 12 }}>
-        <SlotsPixi reels={reels} spinId={spinId} win3={result?.win3 ?? false} />
+      <div style={{ width: 360, height: 300, marginBottom: 12 }}>
+        <SlotsPixi reels={reels} spinId={spinId} win3={result?.win3 ?? false} onSettled={doSettle} />
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
