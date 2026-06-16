@@ -194,6 +194,32 @@ Each: rule → math → RTP knob → variance → hook → build cost.
 - **P5 — Depth & polish:** **Blackjack** + **Scratch**, Stats casino section, win celebrations,
   RTP tuning pass, optional power-up items.
 
+## ENGINE DIRECTION — make the games look pro (research-backed, 2026-06-15)
+Deep-research (25 verified claims) on how real slot/casino software is built. Verdict: **keep the React
+habit-tracker app; render the GAMES with real engines embedded inside it. You already have BOTH engines
+in this app.** Reuse the existing `src/engine/casino/*` logic (renderer-agnostic) under any new visuals.
+- **2D slot/card/wheel games → PixiJS via `@pixi/react` v8.** PixiJS is THE standard for web-based slot
+  rendering (GPU/WebGL; official slot example; `pixi-reels` MIT lib has `setAnticipation()`/`slamStop()` —
+  the exact "juice"). `@pixi/react` v8 ("the best way to write PixiJS in React", supports React 19 + Pixi
+  v8) drops a Pixi canvas inside a React component — habit tracker untouched. Use for Slots, Wheel, Hi-Lo,
+  Blackjack, Coin Flip, etc.
+- **3D physics games (Plinko, and "lots of parts" Lauren wants) → React-Three-Fiber + rapier.** ALREADY in
+  this app (the bead jar `BeadJar3D.jsx` uses it). 3D Plinko with real ball-through-pegs physics = the same
+  R3F+rapier stack as the jar. No new engine needed.
+- **NOT Unity/Godot** — overkill, fragments the stack, worse web integration. Phaser is fine but Pixi is the
+  slot standard.
+- **Assets:** generate with local SDXL/Flux → sprite sheets (TexturePacker) → premium animation via **Spine**
+  2D skeletal (ships PixiJS/R3F runtimes) for win celebrations, or simpler code tweens / Lottie. (AI
+  auto-animation/sprite-sheet gen is still research-grade — generate static art, animate with code/Spine.)
+- **Juice that sells it (from the research):** slow the final reel (anticipation), near-miss framing,
+  backout easing (overshoot+settle), velocity-driven motion blur, coin showers, screen shake, tight
+  audio-sync. `pixi-reels` gives several of these out of the box.
+- **Phones later → Capacitor** wraps the same React/Vite app to native iOS/Android + PWA, no rewrite.
+  **Heads-up:** Apple rates simulated-gambling apps **17+ even with no real money** — fine, just expect the
+  mature rating if it ever ships to the App Store.
+- **Recommended first move:** flagship ONE game in the new approach to prove the pipeline — either **3D
+  Plinko (R3F+rapier, real physics — Lauren explicitly asked)** or **Slots (PixiJS, max slot-software feel)**.
+
 ## Open calls for Lauren
 1. **RTP aggressiveness** — recommend ~95% / 5% edge default (high variance on Crash/Plinko/Mines);
    variance + your own all-in greed do the busting, so it feels fair instead of rigged. Want it
