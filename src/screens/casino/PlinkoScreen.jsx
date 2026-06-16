@@ -70,7 +70,7 @@ export default function PlinkoScreen() {
 
       {/* 3D board */}
       <div style={{ width: '100%', maxWidth: 344, height: 384, borderRadius: 18, overflow: 'hidden', border: '3px solid #E0A800', marginBottom: 8, background: '#2E2142' }}>
-        <Plinko3D dropId={drop.id} spawnX={drop.spawnX} onLand={settle} active={dropping} />
+        <Plinko3D dropId={drop.id} spawnX={drop.spawnX} onLand={settle} />
       </div>
 
       {/* bucket multiplier strip (aligned to the 11 buckets) */}

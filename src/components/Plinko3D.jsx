@@ -2,13 +2,15 @@ import { useRef, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Physics, RigidBody, BallCollider, CuboidCollider } from '@react-three/rapier'
 import {
-  PEG_R, BALL_R, REST, FRICTION, GRAV_Y,
+  BUCKETS, BUCKET_MULTS, PEG_R, BALL_R, REST, FRICTION, GRAV_Y,
   TOP_PEG_Y, BOTTOM_PEG_Y, SPAWN_Y, FLOOR_Y, HALF_W,
   pegPositions, dividerXs, bucketForX,
 } from './plinkoBoard.js'
 
 const Z_HALF = BALL_R + 0.06
 const MID_Y = (SPAWN_Y + FLOOR_Y) / 2
+const BW = (HALF_W * 2) / BUCKETS
+const bColor = m => m >= 2 ? 0xff6b6b : m >= 1.5 ? 0xf2933c : m >= 1 ? 0xf2c94c : m >= 0.7 ? 0xc8b4e0 : 0x8e7fb0
 
 function Pegs() {
   const pegs = pegPositions()
@@ -37,13 +39,20 @@ function Statics() {
       <CuboidCollider args={[HALF_W + 1, 8, 0.2]} position={[0, TOP_PEG_Y - 4, -Z_HALF - 0.2]} />
       <CuboidCollider args={[HALF_W + 1, 8, 0.2]} position={[0, TOP_PEG_Y - 4, Z_HALF + 0.2]} />
       <CuboidCollider args={[HALF_W + 1, 0.2, Z_HALF + 0.5]} position={[0, FLOOR_Y - 0.2, 0]} restitution={0.1} friction={0.6} />
-      {/* bucket dividers (collider + slim gold post) */}
+      {/* colored bucket floors (visual — match the multiplier strip) */}
+      {BUCKET_MULTS.map((m, i) => (
+        <mesh key={'b' + i} position={[-HALF_W + BW * (i + 0.5), FLOOR_Y + 0.16, 0]}>
+          <boxGeometry args={[BW * 0.92, 0.32, Z_HALF * 1.7]} />
+          <meshStandardMaterial color={bColor(m)} emissive={bColor(m)} emissiveIntensity={0.35} />
+        </mesh>
+      ))}
+      {/* bucket dividers (collider + gold post) */}
       {divs.map((x, i) => (
         <group key={i}>
-          <CuboidCollider args={[0.03, dHalfH, Z_HALF]} position={[x, dCenterY, 0]} restitution={0.2} />
+          <CuboidCollider args={[0.04, dHalfH, Z_HALF]} position={[x, dCenterY, 0]} restitution={0.2} />
           <mesh position={[x, dCenterY, 0]}>
-            <boxGeometry args={[0.06, dHalfH * 2, 0.12]} />
-            <meshStandardMaterial color="#E0A800" emissive="#9A6A00" emissiveIntensity={0.25} />
+            <boxGeometry args={[0.09, dHalfH * 2, 0.16]} />
+            <meshStandardMaterial color="#E0A800" emissive="#9A6A00" emissiveIntensity={0.3} />
           </mesh>
         </group>
       ))}
@@ -75,17 +84,20 @@ function Ball({ dropId, spawnX, onLand }) {
 }
 
 // dropId: bump to drop a new ball. spawnX: per-drop horizontal jitter (drives the outcome).
-export default function Plinko3D({ dropId, spawnX, onLand, active }) {
+// frameloop stays 'always' + physics always steps, so the marble falls smoothly (toggling
+// the loop made the first step after a gap jump straight to the bottom — the "nothing
+// happened" bug). Only one ball exists at a time (keyed by dropId), so the idle cost is tiny.
+export default function Plinko3D({ dropId, spawnX, onLand }) {
   return (
     <Canvas
       orthographic
-      camera={{ position: [0, MID_Y, 12], zoom: 42, near: 0.1, far: 100 }}
+      camera={{ position: [0, MID_Y, 12], zoom: 38, near: 0.1, far: 100 }}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true }}
-      frameloop={active ? 'always' : 'demand'}
+      frameloop="always"
       style={{ width: '100%', height: '100%' }}
     >
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.75} />
       <directionalLight position={[3, 6, 8]} intensity={1.4} />
       <directionalLight position={[-4, -2, 4]} intensity={0.4} />
       {/* dark board backdrop so pegs/ball pop */}
@@ -94,7 +106,7 @@ export default function Plinko3D({ dropId, spawnX, onLand, active }) {
         <meshStandardMaterial color="#3A2B52" roughness={0.9} />
       </mesh>
       <Suspense fallback={null}>
-        <Physics gravity={[0, GRAV_Y, 0]} paused={!active} numSolverIterations={8}>
+        <Physics gravity={[0, GRAV_Y, 0]} timeStep={1 / 60} numSolverIterations={8}>
           <Pegs />
           <Statics />
           {dropId > 0 && <Ball dropId={dropId} spawnX={spawnX} onLand={onLand} />}
