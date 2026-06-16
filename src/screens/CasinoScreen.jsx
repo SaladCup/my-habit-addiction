@@ -7,7 +7,9 @@ const GAMES = [
   { key: 'crash',    to: '/casino/crash',    emoji: '🚀', name: 'Crash',     tag: 'Cash out before it blows up', live: true },
   { key: 'penguin',  to: '/casino/penguin', emoji: '🐧', name: 'Penguin Cross', tag: 'Cross for more — or get hit', live: true },
   { key: 'mines',    to: '/casino/mines',   emoji: '💣', name: 'Mines',         tag: 'Dodge the bombs, bank the gems', live: true },
-  { key: 'plinko',   emoji: '🎯', name: 'Plinko',        tag: 'Drop a bead, chase the edge', live: false },
+  { key: 'plinko',   to: '/casino/plinko', emoji: '🎯', name: 'Plinko', tag: 'Drop a bead, chase the edge', live: true },
+  { key: 'hilo',     to: '/casino/hilo',   emoji: '🎴', name: 'Hi-Lo',  tag: 'Higher or lower? Bank the streak', live: true },
+  { key: 'limbo',    to: '/casino/limbo',  emoji: '📈', name: 'Limbo',  tag: 'Roll over your target to win', live: true },
   { key: 'blackjack',emoji: '🃏', name: 'Blackjack',     tag: 'Beat the dealer to 21', live: false },
 ]
 
