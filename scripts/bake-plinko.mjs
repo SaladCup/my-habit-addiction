@@ -8,10 +8,14 @@ import RAPIER from '@dimforge/rapier3d-compat'
 import {
   ROWS, BUCKETS, GAP, PEG_R, BALL_R, REST, FRICTION, GRAV_Y,
   TOP_PEG_Y, BOTTOM_PEG_Y, SPAWN_Y, FLOOR_Y, HALF_W,
+  DIVIDER_HALF_W, DIVIDER_REST, DIVIDER_CAP_R, DIVIDER_CAP_REST, DIVIDER_CAP_FRICTION,
   pegPositions, dividerXs, bucketForX,
 } from '../src/components/plinkoBoard.js'
 
 const N = 20000          // drops to measure the distribution
+// Pre-rounding tuning target. The REALIZED RTP printed below is the source of truth — the
+// round-to-0.1 + the 0.2 floor on each multiplier lift realized ~2pp above this target, so
+// 0.95 here lands the shipped game at the intended ~0.97. Copy the realized value to BUCKET_RTP.
 const TARGET_RTP = 0.95
 const STEPS_PER_BALL = 600
 const Z_HALF = BALL_R + 0.06
@@ -33,7 +37,10 @@ world.createCollider(RAPIER.ColliderDesc.cuboid(HALF_W + 1, 8, 0.2).setTranslati
 const dCenterY = (FLOOR_Y + BOTTOM_PEG_Y) / 2
 const dHalfH = Math.abs(BOTTOM_PEG_Y - FLOOR_Y) / 2 + 0.1
 for (const x of dividerXs()) {
-  world.createCollider(RAPIER.ColliderDesc.cuboid(0.03, dHalfH, Z_HALF).setTranslation(x, dCenterY, 0).setRestitution(0.2), fixed)
+  // wall + rounded cap on top — IDENTICAL to Plinko3D.jsx's rendered dividers, so the
+  // measured distribution matches the board the player actually drops into.
+  world.createCollider(RAPIER.ColliderDesc.cuboid(DIVIDER_HALF_W, dHalfH, Z_HALF).setTranslation(x, dCenterY, 0).setRestitution(DIVIDER_REST), fixed)
+  world.createCollider(RAPIER.ColliderDesc.ball(DIVIDER_CAP_R).setTranslation(x, dCenterY + dHalfH, 0).setRestitution(DIVIDER_CAP_REST).setFriction(DIVIDER_CAP_FRICTION), fixed)
 }
 world.createCollider(RAPIER.ColliderDesc.cuboid(HALF_W + 1, 0.2, Z_HALF + 0.5).setTranslation(0, FLOOR_Y - 0.2, 0).setRestitution(0.1).setFriction(0.6), fixed)
 

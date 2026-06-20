@@ -1,6 +1,8 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import './styles/global.css'
+import useStore from './store/useStore'
+import { setMusicConfig } from './engine/music'
 import { WarningSplash } from './components/ui'
 import StreakPopup from './components/StreakPopup'
 import HomeScreen     from './screens/HomeScreen'
@@ -79,9 +81,23 @@ function BottomNav() {
   )
 }
 
+// Drives the background music: pushes the live audio settings into the music
+// engine whenever they change. The engine handles the autoplay-unlock gesture,
+// so music begins on the first tap (e.g. dismissing the warning splash).
+function MusicController() {
+  const musicEnabled = useStore(s => s.settings.musicEnabled ?? true)
+  const musicVolume  = useStore(s => s.settings.musicVolume ?? 0.2)
+  const muted        = useStore(s => s.settings.muted)
+  useEffect(() => {
+    setMusicConfig({ musicEnabled, musicVolume, muted })
+  }, [musicEnabled, musicVolume, muted])
+  return null
+}
+
 function AppShell() {
   return (
     <div className="app-shell">
+      <MusicController />
       <main className="screen">
         <Routes>
           <Route path="/"         element={<HomeScreen />} />
@@ -128,9 +144,9 @@ export default function App() {
   return (
     <>
       {showWarning && <WarningSplash onDismiss={dismissWarning} />}
-      <BrowserRouter>
+      <HashRouter>
         <AppShell />
-      </BrowserRouter>
+      </HashRouter>
       {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
     </>
   )

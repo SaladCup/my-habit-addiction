@@ -57,7 +57,7 @@ export default function PenguinCrossScreen() {
     settleBet(win, 'cross')
     setOutcome({ win, mult })
     setPhase('cashed')
-    playWin(mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1')
+    playWin(mult >= 10 ? 'jackpot' : mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1')
     playCoinDrop()
   }
 

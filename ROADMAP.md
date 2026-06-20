@@ -2,11 +2,30 @@
 
 _Kawaii casino-psychology habit tracker. React 19 + Vite, Zustand (persist), plain inline CSS. Fonts: Fredoka (display) + Mulish (body). Local dev on port 5173 (launcher) / 5175 (preview)._
 
-Last updated: 2026-06-10
+Last updated: 2026-06-17
 
 ---
 
-## ⏸️ PAUSED HERE (2026-06-10) — state + how to resume
+## 📍 CURRENT STATUS (2026-06-17)
+
+A working kawaii habit tracker + a full **Casino** (10 bet games) + the habit **Spin** reward (real-cabinet slot machine). **Served as a static build via a LaunchAgent on :5175** — **after ANY code change: `npm run build && rm -rf ~/.habit-app/dist && cp -R dist ~/.habit-app/dist`** (the dev server won't run under launchd). eslint 0.
+
+**Recent (2026-06-16/17):**
+- ✅ **3D Plinko** (R3F+rapier) stuck-marble bug fixed — `ROWS` 10→9 so the bottom pegs land on the bucket WALLS not over the holes; re-baked `BUCKET_MULTS` (RTP 97%); velocity-based settle + rounded divider caps.
+- ✅ **Win-sound tiering** — all 10 casino games retiered so the loud "jackpot" crowd-cheer only fires on rare top wins; medium/large swapped to clearer, better-differentiated library sounds (library: `~/Desktop/My Habit Addiciton Assets/Sound Effects/`).
+- ✅ **Crash** "Play Again" un-stuck (was disabled by a betting-phase-only check); **SpinScreen** spin-counter made a sticky pill (was cut off below the tall cabinet); **bead popup** "[Color] Bead!" + recentered.
+- ✅ **Premium PixiJS Slots cabinet** (`SlotsPixi.jsx`) — scrolling reels, motion blur, win FX; emoji symbols (placeholder).
+- ✅ **Static-serve + launcher** plumbing (jar-icon `.app` → app; cache headers so redeploys show on refresh).
+
+**🎯 BIGGEST NEXT TASKS:**
+1. **Casino Slots should reuse the REAL cabinet.** It currently uses a code-drawn `SlotsPixi.jsx`, but `SlotMachine.jsx` (habit Spin reward) already renders Lauren's gorgeous `slot_cabinet.png` with researched reel timing. **Migrate casino Slots to the real cabinet, retire SlotsPixi**, then drop in symbol art.
+2. **Illustrated symbol art** — Lauren is setting up local AI image-gen on her PC (Forge/SDXL; `~/Downloads/Recraft-Replacement-PC-Setup.md`); symbols replace the emoji placeholders.
+3. **Animation/particle "juice"** (code, in PixiJS) — coin showers, symbol pop+glow on wins = the "real slot software" feel (no Spine needed for social-casino quality; Spine/DragonBones/AI-sprite-tools are the optional top tier).
+4. **Run the bug-audit** (a comprehensive audit prompt was written for a fresh session).
+
+---
+
+## ⏸️ PAUSED HERE (2026-06-10) — state + how to resume  _(older — 3D-jar era, kept for reference)_
 
 Work paused to free RAM for another project. Everything is committed (`master`,
 clean tree, latest `763c19e`). Safe to quit: **Blender** (scene saved to

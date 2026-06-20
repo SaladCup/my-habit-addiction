@@ -39,7 +39,8 @@ export default function PlinkoScreen() {
     settleBet(win, 'plinko')
     setResult({ bucket, mult, win })
     setPhase('landed')
-    if (mult >= 1) { playWin(mult >= 2 ? 't3' : 't2'); playCoinDrop() } else playNearMiss()
+    // max 3× here, so no jackpot: 1× small · ~2× medium · 2.6×/3× large
+    if (mult >= 1) { playWin(mult >= 2.5 ? 't3' : mult >= 1.8 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
   }
 
   function dropBall() {
@@ -51,7 +52,8 @@ export default function PlinkoScreen() {
     setDrop(d => ({ id: d.id + 1, spawnX: (Math.random() - 0.5) * GAP * 0.5 }))
     setPhase('dropping')
     playButtonTap()
-    // safety net: if the ball never settles (stuck), resolve at the common center bucket
+    // safety net for a GENUINELY stuck ball only — normal drops settle in ~3–5s, so this
+    // sits well above that (a 5s net was cutting slow-but-normal drops off to center).
     clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => { if (aliveRef.current) settle(Math.floor(BUCKET_MULTS.length / 2)) }, 9000)
   }

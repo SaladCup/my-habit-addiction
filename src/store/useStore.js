@@ -12,6 +12,11 @@ const JACKPOT_PER_SPIN  = 2 * COIN_SCALE    // 50/spin — slow progressive buil
 const SESSION_GAP_MS    = 30 * 60 * 1000  // >30min idle starts a fresh "session" (warm-up)
 const COIN_LOG_MAX      = 500             // log is a recent-history view; totals live in coinTotals
 
+// Persisted-save schema version. Exported so the backup/restore UI can reject a save from a
+// NEWER app version (Zustand's persist skips migrate() when persistedVersion >= current, so a
+// future-shaped save would load unmigrated). Bump this AND add a migrate() branch together.
+export const PERSIST_VERSION = 18
+
 const DEFAULT_SPIN_STATS = {
   totalSpins: 0,
   sessionSpins: 0,
@@ -115,9 +120,6 @@ const DEFAULT_SESSION = {
   bonusResult: null,       // '75'|'50'|'25'|'free'
   bonusTimerEnd: null,
   coinsEarned: 0,
-  pullsRemaining: 3,
-  bestPullResult: null,
-  pullHistory: [],
 }
 
 const useStore = create(
@@ -148,7 +150,9 @@ const useStore = create(
         timeActivity:   'free time',
         bonusActivity:  '10 push-ups',  // the "just a bit more" quick task for BONUS spins
         muted:          false,
-        volume:         0.6,
+        volume:         0.6,   // SFX volume (Web Audio one-shots/loops in audio.js + sounds.js)
+        musicEnabled:   true,  // background music on/off (independent of SFX)
+        musicVolume:    0.2,   // background music — intentionally low by default (it sits UNDER everything)
       },
 
       // ── Ephemeral session (not persisted) ──
@@ -384,7 +388,9 @@ const useStore = create(
         set(s => ({ engagement: { ...s.engagement, startedSessions: s.engagement.startedSessions + 1 } }))
         const session = resolveSlotSession(activeTier, luck, profile)
         const fin = get()._finalizeSpin({
-          awardedResult: session.isJackpot ? 'jackpot' : session.isBonus ? 'bonus' : 't1',
+          // record the engine's OWN classification (t1 win / 'nothing' / bonus / jackpot)
+          // rather than a hard-coded 't1', so a zero-coin session isn't logged as a win
+          awardedResult: session.isJackpot ? 'jackpot' : session.isBonus ? 'bonus' : session.awardedResult,
           rawResult: session.awardedResult, isNearMiss: false,
           coinsAwarded: session.baseCoins,
         })
@@ -479,7 +485,7 @@ const useStore = create(
     }),
     {
       name: 'my-habit-addiction',
-      version: 17,
+      version: PERSIST_VERSION,
       migrate: (persisted, version) => {
         if (version < 2 && persisted.settings?.beadSlots) {
           persisted.settings.beadSlots = persisted.settings.beadSlots.map(s => {
@@ -600,6 +606,11 @@ const useStore = create(
         if (version < 17 && !persisted.gambling) {
           // Casino added — seed the display-only gambling tally for older saves.
           persisted.gambling = { wagered: 0, won: 0 }
+        }
+        if (version < 18 && persisted.settings) {
+          // Background music added — seed the new audio settings on older saves.
+          if (persisted.settings.musicEnabled === undefined) persisted.settings.musicEnabled = true
+          if (persisted.settings.musicVolume === undefined) persisted.settings.musicVolume = 0.2
         }
         return persisted
       },

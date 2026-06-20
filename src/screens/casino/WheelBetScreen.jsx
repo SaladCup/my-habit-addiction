@@ -61,7 +61,8 @@ export default function WheelBetScreen() {
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
+        <button type="button" onClick={() => phase !== 'spinning' && navigate('/casino')} disabled={phase === 'spinning'}
+          style={{ ...backBtn, opacity: phase === 'spinning' ? 0.4 : 1, cursor: phase === 'spinning' ? 'default' : 'pointer' }}>← Lobby</button>
         <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
       </div>
 

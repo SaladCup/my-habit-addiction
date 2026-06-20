@@ -54,7 +54,8 @@ export default function SlotsBetScreen() {
     settleBet(win, 'slots')
     setResult({ mult: r.mult, win, win3: r.win3 })
     setPhase('done')
-    if (r.win3) { playWin(r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
+    // 🍒4×/🍋14× small · 🔔40× medium · ⭐130× large · 💎600×/7️⃣2000× JACKPOT (crowd cheer)
+    if (r.win3) { playWin(r.mult >= 600 ? 'jackpot' : r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
   }
 
   function again() { setPhase('betting'); setResult(null) }
@@ -62,7 +63,8 @@ export default function SlotsBetScreen() {
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
+        <button type="button" onClick={() => phase !== 'spinning' && navigate('/casino')} disabled={phase === 'spinning'}
+          style={{ ...backBtn, opacity: phase === 'spinning' ? 0.4 : 1, cursor: phase === 'spinning' ? 'default' : 'pointer' }}>← Lobby</button>
         <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
       </div>
 

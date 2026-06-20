@@ -5,6 +5,7 @@ import { Physics, RigidBody, BallCollider, CuboidCollider } from '@react-three/r
 import {
   BUCKETS, BUCKET_MULTS, PEG_R, BALL_R, REST, FRICTION, GRAV_Y,
   TOP_PEG_Y, BOTTOM_PEG_Y, SPAWN_Y, FLOOR_Y, HALF_W,
+  DIVIDER_HALF_W, DIVIDER_REST, DIVIDER_CAP_R, DIVIDER_CAP_REST, DIVIDER_CAP_FRICTION,
   pegPositions, dividerXs, bucketForX,
 } from './plinkoBoard.js'
 
@@ -48,10 +49,12 @@ function Statics() {
           <meshStandardMaterial color={bColor(m)} emissive={bColor(m)} emissiveIntensity={0.85} toneMapped={false} />
         </mesh>
       ))}
-      {/* bucket dividers (collider + gold post) */}
+      {/* bucket dividers (collider + gold post). A rounded ball cap on top means a marble
+          can't balance on the flat edge — it rolls off into a bucket. */}
       {divs.map((x, i) => (
         <group key={i}>
-          <CuboidCollider args={[0.04, dHalfH, Z_HALF]} position={[x, dCenterY, 0]} restitution={0.2} />
+          <CuboidCollider args={[DIVIDER_HALF_W, dHalfH, Z_HALF]} position={[x, dCenterY, 0]} restitution={DIVIDER_REST} />
+          <BallCollider args={[DIVIDER_CAP_R]} position={[x, dCenterY + dHalfH, 0]} restitution={DIVIDER_CAP_REST} friction={DIVIDER_CAP_FRICTION} />
           <mesh position={[x, dCenterY, 0]}>
             <boxGeometry args={[0.09, dHalfH * 2, 0.16]} />
             <meshStandardMaterial color="#E0A800" emissive="#9A6A00" emissiveIntensity={0.3} />
@@ -62,20 +65,29 @@ function Statics() {
   )
 }
 
-function Ball({ dropId, spawnX, onLand }) {
+function Ball({ spawnX, onLand }) {
   const ref = useRef(null)
   const landed = useRef(false)
+  const still = useRef(0)
   useFrame(() => {
     const rb = ref.current
     if (!rb || landed.current) return
     const p = rb.translation(), v = rb.linvel()
-    if (p.y <= FLOOR_Y + BALL_R + 0.12 && Math.abs(v.x) < 0.12 && Math.abs(v.y) < 0.12) {
+    const slow = Math.abs(v.x) < 0.15 && Math.abs(v.y) < 0.15
+    // Only count "stillness" once the ball is BELOW the last peg row — i.e. committed to a
+    // bucket column. A brief pause wedged in the pegs mid-board must NOT resolve the round
+    // (that reported the WRONG hole); only down here is bucketForX(x) the column it fell into.
+    const inBucketZone = p.y < BOTTOM_PEG_Y
+    still.current = (slow && inBucketZone) ? still.current + 1 : 0
+    // Settle when it comes to rest on the bucket floor, OR once it's sat still in the bucket
+    // zone for ~0.4s (a marble balanced on a divider resolves into the bucket it's over).
+    if ((slow && p.y <= FLOOR_Y + BALL_R + 0.16) || still.current > 24) {
       landed.current = true
       onLand(bucketForX(p.x))
     }
   })
   return (
-    <RigidBody ref={ref} key={dropId} colliders={false} position={[spawnX, SPAWN_Y, 0]} ccd linearDamping={0.05} angularDamping={0.4}>
+    <RigidBody ref={ref} colliders={false} position={[spawnX, SPAWN_Y, 0]} ccd linearDamping={0.05} angularDamping={0.4}>
       <BallCollider args={[BALL_R]} restitution={REST} friction={FRICTION} density={1.2} />
       <mesh>
         <sphereGeometry args={[BALL_R * 1.15, 28, 28]} />
@@ -110,7 +122,10 @@ export default function Plinko3D({ dropId, spawnX, onLand }) {
         <Physics gravity={[0, GRAV_Y, 0]} timeStep={1 / 60} numSolverIterations={8}>
           <Pegs />
           <Statics />
-          {dropId > 0 && <Ball dropId={dropId} spawnX={spawnX} onLand={onLand} />}
+          {/* key={dropId} so EACH drop is a FRESH Ball — without it the component persists
+              and its `landed` ref stays true after the first drop, so every later ball never
+              detects its landing (resolved only by the 5s safety net → always center bucket). */}
+          {dropId > 0 && <Ball key={dropId} spawnX={spawnX} onLand={onLand} />}
         </Physics>
       </Suspense>
     </Canvas>

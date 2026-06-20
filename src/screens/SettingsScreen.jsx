@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import useStore, { KAWAII_COLORS } from '../store/useStore'
+import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
 import { KawaiiButton, PixelPanel } from '../components/ui'
@@ -136,6 +136,13 @@ export default function SettingsScreen() {
           setBackupMsg({ ok: false, text: "That isn't a Habit Addiction save file." })
           return
         }
+        if (parsed.version > PERSIST_VERSION) {
+          // Newer save than this app — persist would SKIP migrate() and load an
+          // unmigrated, future-shaped state the current code may mishandle.
+          setPendingImport(null)
+          setBackupMsg({ ok: false, text: `That save is from a newer version (v${parsed.version}) than this app (v${PERSIST_VERSION}). Update the app first, then import.` })
+          return
+        }
         const beads = (s.wallet?.length || 0) + (s.jarBeads?.length || 0)
         setBackupMsg(null)
         setPendingImport({
@@ -187,11 +194,14 @@ export default function SettingsScreen() {
     const draftIds = new Set(draftMilestones.map(d => d.id))
     milestones.forEach(m => { if (!draftIds.has(m.id)) deleteMilestone(m.id) })
     draftMilestones.forEach(d => {
-      if (d.id.startsWith('draft-')) {
-        const { id, ...rest } = d
+      // beadCount comes from a number field — blank/NaN/0 are all invalid (0 marks the
+      // milestone reached instantly; NaN never triggers it). Force a sane positive integer.
+      const clean = { ...d, beadCount: Math.max(1, Math.floor(d.beadCount) || 1) }
+      if (clean.id.startsWith('draft-')) {
+        const { id, ...rest } = clean
         addMilestone(rest)
       } else {
-        updateMilestone(d.id, d)
+        updateMilestone(clean.id, clean)
       }
     })
     setMilestoneDirty(false)
@@ -227,6 +237,8 @@ export default function SettingsScreen() {
 
   function handleReset() {
     resetEverything()
+    setDraftMilestones([])   // store milestones are wiped — clear the local editor draft too
+    setMilestoneDirty(false)
     setConfirmReset(false)
   }
 
@@ -286,7 +298,8 @@ export default function SettingsScreen() {
                 <KawaiiButton variant="secondary" size="sm" onClick={() => startEdit(cat)}>
                   ✏️
                 </KawaiiButton>
-                <KawaiiButton variant="danger" size="sm" onClick={() => deleteCategory(cat.id)}>
+                <KawaiiButton variant="danger" size="sm"
+                  onClick={() => { if (window.confirm(`Delete "${cat.name}"? Habits in it keep their data but become uncategorized.`)) deleteCategory(cat.id) }}>
                   ✕
                 </KawaiiButton>
               </div>
@@ -418,14 +431,43 @@ export default function SettingsScreen() {
           </KawaiiButton>
         </div>
 
-        {/* Volume */}
-        <label style={labelStyle}>VOLUME — {Math.round((settings.volume ?? 0.6) * 100)}%</label>
-        <input
-          type="range" min={0} max={1} step={0.05}
-          value={settings.volume ?? 0.6}
-          onChange={e => updateSettings({ volume: parseFloat(e.target.value) })}
-          style={{ width: '100%', accentColor: '#FF85A1', marginBottom: 12 }}
-        />
+        {/* Level controls. MUTE is a master switch (it silences SFX *and* music),
+            so when muted we dim these and the music row reads "Muted" — otherwise
+            it would say "Music on" while nothing plays. They stay adjustable so you
+            can preset levels before unmuting. */}
+        <div style={{ opacity: settings.muted ? 0.5 : 1, transition: 'opacity 0.2s ease' }}>
+          {/* Sound-effects volume */}
+          <label style={labelStyle}>SOUND EFFECTS — {Math.round((settings.volume ?? 0.6) * 100)}%</label>
+          <input
+            type="range" min={0} max={1} step={0.05}
+            value={settings.volume ?? 0.6}
+            onChange={e => updateSettings({ volume: parseFloat(e.target.value) })}
+            style={{ width: '100%', accentColor: '#FF85A1', marginBottom: 18 }}
+          />
+
+          {/* Background music — its own on/off + volume (low by default) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F' }}>
+              {settings.muted
+                ? '🔇 Muted'
+                : ((settings.musicEnabled ?? true) ? '🎵 Music on' : '🎵 Music off')}
+            </span>
+            <KawaiiButton
+              variant={(settings.musicEnabled ?? true) ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => updateSettings({ musicEnabled: !(settings.musicEnabled ?? true) })}
+            >
+              {(settings.musicEnabled ?? true) ? 'MUTE' : 'UNMUTE'}
+            </KawaiiButton>
+          </div>
+          <label style={labelStyle}>MUSIC VOLUME — {Math.round((settings.musicVolume ?? 0.2) * 100)}%</label>
+          <input
+            type="range" min={0} max={1} step={0.05}
+            value={settings.musicVolume ?? 0.2}
+            onChange={e => updateSettings({ musicVolume: parseFloat(e.target.value) })}
+            style={{ width: '100%', accentColor: '#C8A2E0', marginBottom: 12 }}
+          />
+        </div>
 
         {/* Test — tapping this also unlocks the browser's audio */}
         <KawaiiButton variant="mint" size="md" fullWidth
@@ -498,7 +540,7 @@ export default function SettingsScreen() {
       {/* Danger zone */}
       <PixelPanel color="pink" title="DANGER ZONE" style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
-          Wipes all beads, coins, categories, and progress. Keeps settings.
+          Wipes all habits, beads, coins, categories, and progress. Keeps settings.
         </div>
         {!confirmReset ? (
           <KawaiiButton variant="danger" size="md" fullWidth onClick={() => setConfirmReset(true)}>

@@ -59,7 +59,7 @@ export default function HiLoScreen() {
   }
 
   function bank() {
-    settleBet(pot, 'hilo'); playWin(pot >= bet * 4 ? 't3' : pot >= bet * 2 ? 't2' : 't1'); playCoinDrop()
+    settleBet(pot, 'hilo'); playWin(pot >= bet * 10 ? 'jackpot' : pot >= bet * 4 ? 't3' : pot >= bet * 2 ? 't2' : 't1'); playCoinDrop()
     setPhase('cashed')
   }
   function reset() { setPhase('betting'); setPot(0); setStreak(0) }

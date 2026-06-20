@@ -35,7 +35,7 @@ export default function LimboScreen() {
     setResult({ roll: r, win, target: t })
     setPhase('rolled')
     playButtonTap()
-    if (win) { playWin(t >= 5 ? 't3' : t >= 2 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
+    if (win) { playWin(t >= 10 ? 'jackpot' : t >= 5 ? 't3' : t >= 2 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
   }
 
   function again() { setPhase('betting'); setResult(null) }

@@ -9,10 +9,10 @@ const MANIFEST = {
   coin:            'coin.mp3',          // single clink, per coin
   coinsLoop:       'coins-loop.mp3',    // "lots of coins" — looped under the reward cascade
   coinsDispensing: 'coins-dispensing.mp3',
-  winSmall:        'win-small.mp3',     // Tier 1
-  winMedium:       'win-medium.mp3',    // Tier 2
-  winLarge:        'win-large.mp3',     // Tier 3
-  jackpot:         'jackpot.mp3',       // crowd cheering
+  winSmall:        'win-small.mp3',         // Tier 1 — quick chime (1.6s), common wins
+  winMedium:       'win-medium-chimes.wav', // Tier 2 — winning chimes (2.6s)
+  winLarge:        'win-large-casino.wav',  // Tier 3 — casino reward (4.4s), big wins
+  jackpot:         'jackpot.mp3',           // Tier 4 — crowd cheering (5.5s), rare jackpots only
   bonus:           'bonus.mp3',
   streak:          'streak.mp3',
   streakBreak:     'streak-break.mp3',  // descending arcade "game over" — a broken streak

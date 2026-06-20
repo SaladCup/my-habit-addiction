@@ -62,7 +62,7 @@ export default function CrashScreen() {
     const win = Math.floor(bet * at)
     settleBet(win, 'crash')
     setMult(at); setOutcome({ win, at }); setPhase('cashed')
-    playWin(at >= 3 ? 't3' : at >= 1.8 ? 't2' : 't1')
+    playWin(at >= 10 ? 'jackpot' : at >= 3 ? 't3' : at >= 1.8 ? 't2' : 't1')
   }
 
   function endBust() {
@@ -128,7 +128,7 @@ export default function CrashScreen() {
           )}
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
-            <KawaiiButton variant="primary" size="lg" fullWidth disabled={!canLaunch} onClick={phase === 'betting' ? launch : reset}>
+            <KawaiiButton variant="primary" size="lg" fullWidth disabled={phase === 'betting' && !canLaunch} onClick={phase === 'betting' ? launch : reset}>
               {phase === 'betting'
                 ? (tooPoor ? 'NOT ENOUGH COINS' : `🚀 LAUNCH FOR ${bet.toLocaleString()} 🪙`)
                 : '↻ PLAY AGAIN'}

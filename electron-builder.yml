@@ -1,0 +1,29 @@
+# How the Mac (.dmg) and Windows (.exe) installers are built from the one codebase.
+# Run locally with `npm run dist:mac` / `npm run dist:win`, or let GitHub Actions
+# build BOTH (it runs this on a Mac runner and a Windows runner).
+appId: com.lauren.habitaddiction
+productName: My Habit Addiction
+# Output installers land here (gitignored).
+directories:
+  output: release
+  buildResources: build
+# Only ship the built web app + the Electron shell (not src, node_modules, etc.).
+files:
+  - dist/**
+  - electron/**
+  - package.json
+mac:
+  category: public.app-category.lifestyle
+  icon: build/icon.icns      # the rounded squircle icon
+  target:
+    - dmg
+    - zip
+  identity: null             # unsigned (no Apple Developer cert yet) — open via right-click → Open
+win:
+  icon: build/icon.png       # square art; electron-builder generates the .ico
+  target:
+    - nsis                   # a normal Windows installer
+nsis:
+  oneClick: false            # show an install wizard instead of silent-installing
+  allowToChangeInstallationDirectory: true
+  perMachine: false          # installs per-user, so no admin password needed

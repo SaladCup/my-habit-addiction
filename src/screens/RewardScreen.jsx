@@ -79,7 +79,7 @@ const RESULT_CFG = {
 export default function RewardScreen() {
   const navigate = useNavigate()
   const { session, resetSession, checkMilestones, settings, rewardChain, resetRewardChain } = useStore()
-  const { spinResult, coinsEarned, isNearMiss, pullHistory } = session
+  const { spinResult, coinsEarned, isNearMiss } = session
 
   // Only a finished spin lands here (SpinScreen/BonusScreen set phase 'reward'
   // before navigating). A typed URL or stale forward-nav has no win to show —
@@ -207,20 +207,6 @@ export default function RewardScreen() {
           </div>
         )}
       </PixelPanel>
-
-      {/* Slot pull history */}
-      {pullHistory && pullHistory.length > 0 && (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#9B7EC8', marginBottom: 6 }}>
-            YOUR 3 PULLS:
-          </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            {pullHistory.map((r, i) => (
-              <TierBadge key={i} tier={r} />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* New milestones */}
       {newMilestones && newMilestones.length > 0 && (

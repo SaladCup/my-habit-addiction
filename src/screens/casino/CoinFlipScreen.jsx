@@ -33,7 +33,7 @@ export default function CoinFlipScreen() {
     if (win) {
       const newPot = Math.floor(stake * COINFLIP_PAYOUT)
       setPot(newPot); setStreak(s => s + 1); setPhase('won')
-      playWin(newPot >= bet * 6 ? 't3' : newPot >= bet * 2.5 ? 't2' : 't1')
+      playWin(newPot >= bet * 16 ? 'jackpot' : newPot >= bet * 6 ? 't3' : newPot >= bet * 2.5 ? 't2' : 't1')
     } else {
       setPot(0); setStreak(0); setPhase('lost'); playNearMiss()
     }

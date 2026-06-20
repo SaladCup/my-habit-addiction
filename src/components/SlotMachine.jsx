@@ -373,10 +373,15 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         )}
       </div>
 
-      {/* Spin counter + spins-left */}
+      {/* Spin counter — a sticky pill during play so it stays visible below the tall
+          cabinet; static at the end so it doesn't fight the continue button. */}
       <div style={{
-        fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#9B7EC8',
-        letterSpacing: '0.05em', minHeight: 26, textAlign: 'center',
+        position: phase === 'done' ? 'static' : 'sticky', bottom: 12, zIndex: 30,
+        fontFamily: "'Fredoka', cursive", fontSize: 21, color: '#7B5EA7',
+        letterSpacing: '0.04em', textAlign: 'center',
+        background: 'rgba(255,245,251,0.96)', border: '2px solid #ECC0DE',
+        borderRadius: 16, padding: '7px 20px', marginTop: 6,
+        boxShadow: '0 4px 14px rgba(155,126,200,0.35)',
       }}>
         {phase === 'spinning' ? 'SPINNING…'
           : phase === 'done' ? '✦ ALL DONE ✦'

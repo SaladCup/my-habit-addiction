@@ -51,7 +51,6 @@ export default function SpinScreen() {
   const [mode, setMode] = useState(null)          // 'wheel' | 'slots'
   const [wheelOutcome, setWheelOutcome] = useState(null)
   const [shouldSpin, setShouldSpin] = useState(false)
-  const [wheelDone, setWheelDone] = useState(false)
 
   const [slotSession, setSlotSession] = useState(null)   // resolved multi-spin slot session
   const slotGuard = useRef(false)      // prevent double-complete from the slot animation
@@ -87,7 +86,6 @@ export default function SpinScreen() {
   }, [shouldSpin, wheelOutcome])
 
   function handleWheelDone() {
-    setWheelDone(true)
     // Coins were already banked by spinWheel at spin start (abandon-safe) — this
     // handler is pure presentation. coinsEarned is set to THIS spin's coins only
     // (the store folds in any daily-login bonus too; don't inflate the reward total).
@@ -224,16 +222,9 @@ export default function SpinScreen() {
               ✨ SPIN! ✨
             </KawaiiButton>
           )}
-
-          {wheelDone && wheelOutcome && (
-            <div style={{ textAlign: 'center', animation: 'bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
-              <TierBadge tier={wheelOutcome.awardedResult} />
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, color: '#7B5EA7', marginTop: 8 }}>
-                {wheelOutcome.isNearMiss && '(near miss!) '}
-                +{wheelOutcome.coinsAwarded} coins earned
-              </div>
-            </div>
-          )}
+          {/* The wheel lands visually on its wedge; the single reward reveal is /reward
+              (the sticky "TAP TO SEE REWARDS" button below), matching the slots path —
+              no inline "+N coins" pre-announcement to double up the win. */}
         </>
       )}
 

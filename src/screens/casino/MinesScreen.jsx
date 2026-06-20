@@ -56,7 +56,7 @@ export default function MinesScreen() {
     const win = Math.floor(bet * mult)
     settleBet(win, 'mines')
     setOutcome({ win, mult }); setPhase('cashed')
-    playWin(mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1'); playCoinDrop()
+    playWin(mult >= 10 ? 'jackpot' : mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1'); playCoinDrop()
   }
 
   function reset() { setPhase('betting'); setRevealed(new Set()); setHitTile(-1); setOutcome(null) }

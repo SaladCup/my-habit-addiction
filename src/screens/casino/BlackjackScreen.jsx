@@ -59,7 +59,8 @@ export default function BlackjackScreen() {
       : handValue(p).total > 21 ? `Bust! Lost ${totalStaked.toLocaleString()} 🪙`
       : `Dealer wins — lost ${totalStaked.toLocaleString()} 🪙`
     setDealer(dealt); setResult({ mult, label }); setPhase('done')
-    if (mult >= 2) { playWin(mult >= 2.5 ? 't3' : 't2'); playCoinDrop() }
+    // blackjack tops out at 2.5×, so keep it modest: 2× win small · 2.5× blackjack medium
+    if (mult >= 2) { playWin(mult >= 2.5 ? 't2' : 't1'); playCoinDrop() }
     else if (mult === 1) playButtonTap()
     else playNearMiss()
   }

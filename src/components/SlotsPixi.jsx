@@ -95,9 +95,8 @@ function Scene({ reels, spinId, win3, onSettled }) {
       })
       if (allDone && sp.t >= SETTLE_MS) {
         sp.active = false
-        sp.winT = win3 ? 0 : -1
-        if (win3) onSettled?.()
-        else onSettled?.()
+        sp.winT = win3 ? 0 : -1   // ≥0 kicks off the win celebration; <0 = no win
+        onSettled?.()
       }
     }
 

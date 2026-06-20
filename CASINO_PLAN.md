@@ -227,3 +227,16 @@ in this app.** Reuse the existing `src/engine/casino/*` logic (renderer-agnostic
 2. **v1 scope to greenlight** — recommend P0 + P1 (skeleton + Coin Flip + Crash) as the first
    shippable slice, then iterate.
 3. New **Casino nav icon** art (you generate to spec, like the other icons).
+
+---
+
+## SHIPPED + CURRENT STATE (2026-06-17)
+**All 10 games are LIVE** (Coin Flip, Crash, Penguin Cross, Mines, Plinko, Hi-Lo, Limbo, Blackjack, Slots, Fortune Wheel) + bet/settle economy + a Stats casino panel. Engines in `src/engine/casino/*` (pure, stress-tested); screens in `src/screens/casino/*`. **Economy:** `placeBet`/`settleBet` route through `spendCoins`/`awardCoins` tagged `casino:<game>` (NEVER a new coinLog type — the balance rebuilds from the log on reload); `gambling:{wagered,won}` is display-only (persist v17).
+
+**RTPs:** CoinFlip/Crash 0.95 · PenguinCross/Mines/HiLo/Limbo 0.97 · Slots ~0.93 · Wheel 0.96 · **Plinko ~0.97 (re-baked vs the exact rendered board)** · Blackjack ~0.995.
+
+**Engines:** 2D games render via React/CSS or **PixiJS** (`SlotsPixi.jsx`); **Plinko** is real 3D physics via **R3F + rapier** (`Plinko3D.jsx` + headless bake `scripts/bake-plinko.mjs` sharing `plinkoBoard.js`). Plinko `ROWS=9` (bottom pegs on the bucket WALLS, not over the holes — fixes stuck marbles); `BUCKET_MULTS` re-baked to RTP 97%.
+
+**Win sounds (2026-06-17):** 4 tiers in `sounds.js`/`audio.js` — `t1`→win-small · `t2`→win-medium · `t3`→win-large · **`jackpot`**→jackpot (crowd cheer). Each game's `playWin(...)` reserves jackpot for genuine top wins (Slots 💎600×/7️⃣2000× · Crash/Limbo/Mines/PenguinCross ≥10× · CoinFlip 16× pot · HiLo 10× pot); Wheel/Plinko/Blackjack don't use jackpot (low ceilings); common wins use small/medium. (See SOUNDS.md.)
+
+**⚠️ KEY OPEN ITEM — casino Slots should reuse the REAL cabinet.** The casino Slots game (`SlotsBetScreen` + `SlotsPixi.jsx`) uses a **code-drawn** flat cabinet. But `SlotMachine.jsx` (the HABIT Spin reward on `SpinScreen.jsx`) already renders Lauren's gorgeous **real `slot_cabinet.png`** art with researched reel timing (anticipation, near-miss tease, staggered stops, bounce). **NEXT: migrate the casino Slots to reuse `SlotMachine.jsx`'s real cabinet (adapt for bet/settle), retire `SlotsPixi`, then drop in AI symbol art** (Lauren is generating the symbols via local image-gen on her PC; they replace the emoji placeholders). That's the real path to "casino Slots looks like real casino slots." (`public/casino/symbols/cherry.png` = a leftover generic test asset, unused.)

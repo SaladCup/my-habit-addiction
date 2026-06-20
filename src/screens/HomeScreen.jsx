@@ -214,7 +214,7 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
       {/* Decision panel — floats in above the bead once it lands. Auto-height
           (grows to fit its content) so the title can never clip the frame. */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, top: '12%',
+        position: 'absolute', left: 0, right: 0, top: '30%',
         display: 'flex', justifyContent: 'center', padding: '0 22px',
         opacity: landed ? 1 : 0,
         transform: landed ? 'translateY(0)' : 'translateY(-16px)',
@@ -275,7 +275,7 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
           ) : (
             <>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: darken(color, 70) }}>
-                ✨ {beadName}!
+                ✨ {beadName} Bead!
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
                 {canCashTier
