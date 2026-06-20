@@ -2,6 +2,8 @@
 // [min, balance]. Pure presentation — the parent owns the `bet` state and clamps on
 // balance changes too.
 
+import { CoinIcon } from '../ui'
+
 const STEP = 10
 
 export default function BetBar({ bet, setBet, balance, min = 10, disabled = false }) {
@@ -33,7 +35,7 @@ export default function BetBar({ bet, setBet, balance, min = 10, disabled = fals
           background: '#FFF5F9', border: '2px solid #ECC0DE', borderRadius: 14,
           minWidth: 0, padding: '4px 8px',
         }}>
-          {(tooPoor ? 0 : bet).toLocaleString()}&nbsp;<span style={{ fontSize: 20 }}>🪙</span>
+          {(tooPoor ? 0 : bet).toLocaleString()}&nbsp;<CoinIcon size={20} />
         </div>
         <button type="button" disabled={disabled || tooPoor} onClick={() => set(bet + STEP)} style={roundBtn(disabled || tooPoor)}>+</button>
       </div>

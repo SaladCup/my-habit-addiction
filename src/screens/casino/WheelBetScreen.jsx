@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { WHEEL_SEGMENTS, spinWheel } from '../../engine/casino/wheel'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playWheelTick } from '../../engine/sounds'
@@ -63,7 +63,7 @@ export default function WheelBetScreen() {
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => phase !== 'spinning' && navigate('/casino')} disabled={phase === 'spinning'}
           style={{ ...backBtn, opacity: phase === 'spinning' ? 0.4 : 1, cursor: phase === 'spinning' ? 'default' : 'pointer' }}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎡 Fortune Wheel</h2>
@@ -95,10 +95,10 @@ export default function WheelBetScreen() {
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
         {phase === 'done' && (result.mult >= 1
-          ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} 🪙</span>
+          ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} <CoinIcon /></span>
           : result.mult > 0
-            ? <span style={{ color: '#F2933C' }}>×{result.mult} — got {result.win.toLocaleString()} 🪙 back</span>
-            : <span style={{ color: '#C44B6A' }}>✕ — lost {bet.toLocaleString()} 🪙</span>)}
+            ? <span style={{ color: '#F2933C' }}>×{result.mult} — got {result.win.toLocaleString()} <CoinIcon /> back</span>
+            : <span style={{ color: '#C44B6A' }}>✕ — lost {bet.toLocaleString()} <CoinIcon /></span>)}
       </div>
 
       {phase !== 'spinning' && (
@@ -106,7 +106,7 @@ export default function WheelBetScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'done' ? again : spin}>
-              {phase === 'done' ? '↻ SPIN AGAIN' : (tooPoor ? 'NOT ENOUGH COINS' : `🎡 SPIN FOR ${bet.toLocaleString()} 🪙`)}
+              {phase === 'done' ? '↻ SPIN AGAIN' : (tooPoor ? 'NOT ENOUGH COINS' : <>🎡 SPIN FOR {bet.toLocaleString()} <CoinIcon /></>)}
             </KawaiiButton>
           </div>
         </>

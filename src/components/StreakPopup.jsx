@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import useStore from '../store/useStore'
-import { KawaiiButton } from './ui'
+import { KawaiiButton, CoinIcon } from './ui'
 import { playStreak, playStreakBreak } from '../engine/sounds'
 
 // Per-day streak messages (Lauren's voice). Day 0 = broken.
@@ -132,7 +132,7 @@ export default function StreakPopup({ onClose }) {
               fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#1A5C3A',
               background: '#D9F3E5', border: '2px solid #9CDcc0', borderRadius: 999, padding: '5px 18px',
             }}>
-              🪙 +{status.bonus} streak bonus!
+              <CoinIcon /> +{status.bonus} streak bonus!
             </div>
             <KawaiiButton variant="mint" size="md" fullWidth onClick={onClose}>
               ✨ Let's get addicted →

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import useStore from '../store/useStore'
-import { KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel, CoinIcon } from '../components/ui'
 
 // Format a number of seconds as a friendly duration.
 function fmtTime(sec) {
@@ -43,7 +43,7 @@ export default function SpendScreen() {
           You have
         </div>
         <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 44, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
-          {coins.toLocaleString()} <span style={{ fontSize: 24 }}>🪙</span>
+          {coins.toLocaleString()} <CoinIcon size={24} />
         </div>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', marginTop: 4 }}>
           {coinName}
@@ -94,7 +94,7 @@ export default function SpendScreen() {
           {spendCoinsForDollars > 0 && (
             <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: canLog ? '#7B5EA7' : '#D4607A', textAlign: 'center', marginBottom: 10 }}>
               {canLog
-                ? `That's ${spendCoinsForDollars.toLocaleString()} ${coinName} 🪙`
+                ? <>That's {spendCoinsForDollars.toLocaleString()} {coinName} <CoinIcon /></>
                 : `Not enough ${coinName} — you have ${coins.toLocaleString()}`}
             </div>
           )}
@@ -125,7 +125,7 @@ export default function SpendScreen() {
                 </div>
               </div>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#D4607A' }}>
-                −{e.amount.toLocaleString()} 🪙
+                −{e.amount.toLocaleString()} <CoinIcon />
               </div>
             </div>
           ))}

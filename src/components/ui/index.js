@@ -1,4 +1,5 @@
 export { default as KawaiiButton }    from './KawaiiButton'
+export { default as CoinIcon }        from './CoinIcon'
 export { default as BeadDisplay }     from './BeadDisplay'
 export { default as TierBadge }       from './TierBadge'
 export { default as PixelPanel }      from './PixelPanel'

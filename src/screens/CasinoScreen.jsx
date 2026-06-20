@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { PixelPanel } from '../components/ui'
+import { PixelPanel, CoinIcon } from '../components/ui'
 
 const GAMES = [
   { key: 'coinflip', to: '/casino/coinflip', emoji: '🪙', name: 'Coin Flip', tag: 'Heads or tails — let it ride', live: true },
@@ -33,11 +33,11 @@ export default function CasinoScreen() {
           Coins to play with
         </div>
         <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 44, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
-          {coins.toLocaleString()} <span style={{ fontSize: 24 }}>🪙</span>
+          {coins.toLocaleString()} <CoinIcon size={24} />
         </div>
         {net !== 0 && (
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, marginTop: 4, color: net > 0 ? '#5CBFA0' : '#C44B6A', fontWeight: 700 }}>
-            Casino record: {net > 0 ? '+' : '−'}{Math.abs(net).toLocaleString()} 🪙
+            Casino record: {net > 0 ? '+' : '−'}{Math.abs(net).toLocaleString()} <CoinIcon />
           </div>
         )}
       </PixelPanel>
@@ -63,7 +63,7 @@ export default function CasinoScreen() {
               opacity: g.live ? 1 : 0.7,
             }}
           >
-            <div style={{ fontSize: 34, lineHeight: 1 }}>{g.emoji}</div>
+            <div style={{ fontSize: 34, lineHeight: 1 }}>{g.emoji === '🪙' ? <CoinIcon /> : g.emoji}</div>
             <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 21, color: '#9B3D6B', marginTop: 6 }}>{g.name}</div>
             <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#7B5EA7', marginTop: 2, lineHeight: 1.35 }}>{g.tag}</div>
             {!g.live && (

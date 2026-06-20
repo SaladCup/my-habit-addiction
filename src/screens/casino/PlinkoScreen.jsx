@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import Plinko3D from '../../components/Plinko3D'
 import { BUCKET_MULTS, GAP } from '../../components/plinkoBoard'
@@ -62,7 +62,7 @@ export default function PlinkoScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎯 Plinko</h2>
@@ -89,8 +89,8 @@ export default function PlinkoScreen() {
 
       <div style={{ height: 26, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
         {phase === 'landed' && (result.mult >= 1
-          ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} 🪙</span>
-          : <span style={{ color: '#C44B6A' }}>×{result.mult} — got {result.win.toLocaleString()} 🪙 back</span>)}
+          ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} <CoinIcon /></span>
+          : <span style={{ color: '#C44B6A' }}>×{result.mult} — got {result.win.toLocaleString()} <CoinIcon /> back</span>)}
         {dropping && <span style={{ color: '#9B7EC8' }}>dropping…</span>}
       </div>
 
@@ -99,7 +99,7 @@ export default function PlinkoScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={dropBall}>
-              {tooPoor ? 'NOT ENOUGH COINS' : `🎯 DROP FOR ${bet.toLocaleString()} 🪙`}
+              {tooPoor ? 'NOT ENOUGH COINS' : <>🎯 DROP FOR {bet.toLocaleString()} <CoinIcon /></>}
             </KawaiiButton>
           </div>
           {tooPoor && (

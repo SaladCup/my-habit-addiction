@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { CROSS_MODES, crossMultiplier, crossSurvive } from '../../engine/casino/cross'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
@@ -71,7 +71,7 @@ export default function PenguinCrossScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 460, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🐧 Penguin Cross</h2>
@@ -129,10 +129,10 @@ export default function PenguinCrossScreen() {
 
       {/* status line */}
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {crossing && lane >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} 🪙 (×{curMult})</span>}
+        {crossing && lane >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
         {crossing && lane === 0 && <span style={{ color: '#7B5EA7' }}>Next lane pays ×{nextMult}</span>}
-        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Safe! Banked {outcome.win.toLocaleString()} 🪙 (×{outcome.mult})</span>}
-        {phase === 'hit' && <span style={{ color: '#C44B6A' }}>💥 Splat! Lost {bet.toLocaleString()} 🪙</span>}
+        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Safe! Banked {outcome.win.toLocaleString()} <CoinIcon /> (×{outcome.mult})</span>}
+        {phase === 'hit' && <span style={{ color: '#C44B6A' }}>💥 Splat! Lost {bet.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {crossing && (
@@ -141,7 +141,7 @@ export default function PenguinCrossScreen() {
             🐧 CROSS → ×{nextMult}
           </KawaiiButton>
           <KawaiiButton variant="gold" size="md" fullWidth disabled={lane < 1} onClick={() => finishCash()}>
-            {lane < 1 ? 'CROSS AT LEAST ONE LANE' : `💰 CASH OUT ${Math.floor(bet * curMult).toLocaleString()} 🪙`}
+            {lane < 1 ? 'CROSS AT LEAST ONE LANE' : <>💰 CASH OUT {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
         </div>
       )}
@@ -151,7 +151,7 @@ export default function PenguinCrossScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'betting' ? start : reset}>
-              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : `🐧 START FOR ${bet.toLocaleString()} 🪙`) : '↻ PLAY AGAIN'}
+              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : <>🐧 START FOR {bet.toLocaleString()} <CoinIcon /></>) : '↻ PLAY AGAIN'}
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { RANKS, SUITS, drawCard, hiloMults, hiloWin } from '../../engine/casino/hilo'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playCoinTick } from '../../engine/sounds'
@@ -70,7 +70,7 @@ export default function HiLoScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎴 Hi-Lo</h2>
@@ -83,9 +83,9 @@ export default function HiLoScreen() {
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {playing && pot > 0 && <span style={{ color: '#5CBFA0' }}>Pot {pot.toLocaleString()} 🪙{streak > 0 ? `  🔥×${streak}` : ''}</span>}
-        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {pot.toLocaleString()} 🪙!</span>}
-        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💔 Missed it — lost {bet.toLocaleString()} 🪙</span>}
+        {playing && pot > 0 && <span style={{ color: '#5CBFA0' }}>Pot {pot.toLocaleString()} <CoinIcon />{streak > 0 ? `  🔥×${streak}` : ''}</span>}
+        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {pot.toLocaleString()} <CoinIcon />!</span>}
+        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💔 Missed it — lost {bet.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {playing && (
@@ -99,7 +99,7 @@ export default function HiLoScreen() {
             </KawaiiButton>
           </div>
           <KawaiiButton variant="gold" size="md" fullWidth disabled={streak < 1} onClick={bank}>
-            {streak < 1 ? 'GUESS TO BUILD A POT' : `💰 BANK ${pot.toLocaleString()} 🪙`}
+            {streak < 1 ? 'GUESS TO BUILD A POT' : <>💰 BANK {pot.toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
         </div>
       )}
@@ -109,7 +109,7 @@ export default function HiLoScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'betting' ? deal : reset}>
-              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : `🎴 DEAL FOR ${bet.toLocaleString()} 🪙`) : '↻ PLAY AGAIN'}
+              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : <>🎴 DEAL FOR {bet.toLocaleString()} <CoinIcon /></>) : '↻ PLAY AGAIN'}
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (

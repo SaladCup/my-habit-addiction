@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { rollLimbo, limboWinChance } from '../../engine/casino/limbo'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
@@ -44,7 +44,7 @@ export default function LimboScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>📈 Limbo</h2>
@@ -63,7 +63,7 @@ export default function LimboScreen() {
         </div>
         {phase === 'rolled' && (
           <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, marginTop: 4, color: result.win ? '#3E9B6A' : '#C44B6A' }}>
-            {result.win ? `✅ Won ${Math.floor(bet * result.target).toLocaleString()} 🪙` : `💥 Needed ≥ ${result.target}× — lost ${bet.toLocaleString()} 🪙`}
+            {result.win ? <>✅ Won {Math.floor(bet * result.target).toLocaleString()} <CoinIcon /></> : <>💥 Needed ≥ {result.target}× — lost {bet.toLocaleString()} <CoinIcon /></>}
           </div>
         )}
       </div>
@@ -90,7 +90,7 @@ export default function LimboScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={!canRoll} onClick={roll}>
-              {tooPoor ? 'NOT ENOUGH COINS' : !validTarget ? 'PICK A TARGET > 1×' : `📈 ROLL FOR ${bet.toLocaleString()} 🪙`}
+              {tooPoor ? 'NOT ENOUGH COINS' : !validTarget ? 'PICK A TARGET > 1×' : <>📈 ROLL FOR {bet.toLocaleString()} <CoinIcon /></>}
             </KawaiiButton>
           </div>
           {tooPoor && (

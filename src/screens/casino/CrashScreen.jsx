@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { rollCrashPoint, crashMultiplierAt } from '../../engine/casino/crash'
 import { playButtonTap, playWin, playNearMiss, playWheelTick } from '../../engine/sounds'
@@ -81,7 +81,7 @@ export default function CrashScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🚀 Crash</h2>
@@ -99,16 +99,16 @@ export default function CrashScreen() {
           {(phase === 'betting' ? 1 : mult).toFixed(2)}×
         </div>
         {running && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#7B5EA7', marginTop: 6 }}>
-          cash out = {Math.floor(bet * mult).toLocaleString()} 🪙
+          cash out = {Math.floor(bet * mult).toLocaleString()} <CoinIcon />
         </div>}
-        {phase === 'busted' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C44B6A', marginTop: 4 }}>💥 CRASHED — lost {bet.toLocaleString()} 🪙</div>}
-        {phase === 'cashed' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#5CBFA0', marginTop: 4 }}>✅ Banked {outcome.win.toLocaleString()} 🪙</div>}
+        {phase === 'busted' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C44B6A', marginTop: 4 }}>💥 CRASHED — lost {bet.toLocaleString()} <CoinIcon /></div>}
+        {phase === 'cashed' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#5CBFA0', marginTop: 4 }}>✅ Banked {outcome.win.toLocaleString()} <CoinIcon /></div>}
       </div>
 
       {running && (
         <div style={{ width: '100%', maxWidth: 420 }}>
           <KawaiiButton variant="gold" size="lg" fullWidth onClick={() => cashOut()}>
-            💰 CASH OUT {Math.floor(bet * mult).toLocaleString()} 🪙
+            💰 CASH OUT {Math.floor(bet * mult).toLocaleString()} <CoinIcon />
           </KawaiiButton>
         </div>
       )}
@@ -130,7 +130,7 @@ export default function CrashScreen() {
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={phase === 'betting' && !canLaunch} onClick={phase === 'betting' ? launch : reset}>
               {phase === 'betting'
-                ? (tooPoor ? 'NOT ENOUGH COINS' : `🚀 LAUNCH FOR ${bet.toLocaleString()} 🪙`)
+                ? (tooPoor ? 'NOT ENOUGH COINS' : <>🚀 LAUNCH FOR {bet.toLocaleString()} <CoinIcon /></>)
                 : '↻ PLAY AGAIN'}
             </KawaiiButton>
           </div>

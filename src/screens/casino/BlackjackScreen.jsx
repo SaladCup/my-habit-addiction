@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { RANKS, SUITS, drawCard, handValue, isBlackjack, dealerPlay, settleHand } from '../../engine/casino/blackjack'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
@@ -53,11 +53,11 @@ export default function BlackjackScreen() {
     const mult = settleHand(p, dealt, wasNatural)
     const win = Math.floor(totalStaked * mult)
     if (win > 0) settleBet(win, 'blackjack')
-    const label = mult === 2.5 ? `Blackjack! +${win.toLocaleString()} 🪙`
-      : mult === 2 ? `You win! +${win.toLocaleString()} 🪙`
-      : mult === 1 ? `Push — ${win.toLocaleString()} 🪙 back`
-      : handValue(p).total > 21 ? `Bust! Lost ${totalStaked.toLocaleString()} 🪙`
-      : `Dealer wins — lost ${totalStaked.toLocaleString()} 🪙`
+    const label = mult === 2.5 ? <>Blackjack! +{win.toLocaleString()} <CoinIcon /></>
+      : mult === 2 ? <>You win! +{win.toLocaleString()} <CoinIcon /></>
+      : mult === 1 ? <>Push — {win.toLocaleString()} <CoinIcon /> back</>
+      : handValue(p).total > 21 ? <>Bust! Lost {totalStaked.toLocaleString()} <CoinIcon /></>
+      : <>Dealer wins — lost {totalStaked.toLocaleString()} <CoinIcon /></>
     setDealer(dealt); setResult({ mult, label }); setPhase('done')
     // blackjack tops out at 2.5×, so keep it modest: 2× win small · 2.5× blackjack medium
     if (mult >= 2) { playWin(mult >= 2.5 ? 't2' : 't1'); playCoinDrop() }
@@ -101,7 +101,7 @@ export default function BlackjackScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🃏 Blackjack</h2>
@@ -134,7 +134,7 @@ export default function BlackjackScreen() {
             <KawaiiButton variant="secondary" size="lg" fullWidth onClick={stand}>✋ STAND</KawaiiButton>
           </div>
           <KawaiiButton variant="gold" size="md" fullWidth disabled={!canDouble} onClick={double}>
-            {canDouble ? `2× DOUBLE (${bet.toLocaleString()} 🪙 more)` : 'DOUBLE (first move only)'}
+            {canDouble ? <>2× DOUBLE ({bet.toLocaleString()} <CoinIcon /> more)</> : 'DOUBLE (first move only)'}
           </KawaiiButton>
         </div>
       )}
@@ -144,7 +144,7 @@ export default function BlackjackScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'betting' ? deal : reset}>
-              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : `🃏 DEAL FOR ${bet.toLocaleString()} 🪙`) : '↻ PLAY AGAIN'}
+              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : <>🃏 DEAL FOR {bet.toLocaleString()} <CoinIcon /></>) : '↻ PLAY AGAIN'}
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (

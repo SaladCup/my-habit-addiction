@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { MINES_PRESETS, MINES_TILES, minesMultiplier, placeMines } from '../../engine/casino/mines'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playCoinTick } from '../../engine/sounds'
@@ -65,7 +65,7 @@ export default function MinesScreen() {
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>💣 Mines</h2>
@@ -116,16 +116,16 @@ export default function MinesScreen() {
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {phase === 'playing' && k >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} 🪙 (×{curMult})</span>}
+        {phase === 'playing' && k >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
         {phase === 'playing' && k === 0 && <span style={{ color: '#7B5EA7' }}>First gem pays ×{nextMult}</span>}
-        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {outcome.win.toLocaleString()} 🪙 (×{outcome.mult})</span>}
-        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💥 Boom! Lost {bet.toLocaleString()} 🪙</span>}
+        {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {outcome.win.toLocaleString()} <CoinIcon /> (×{outcome.mult})</span>}
+        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💥 Boom! Lost {bet.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {phase === 'playing' && (
         <div style={{ width: '100%', maxWidth: 420 }}>
           <KawaiiButton variant="gold" size="lg" fullWidth disabled={k < 1} onClick={() => finishCash()}>
-            {k < 1 ? 'REVEAL A GEM FIRST' : `💰 CASH OUT ${Math.floor(bet * curMult).toLocaleString()} 🪙`}
+            {k < 1 ? 'REVEAL A GEM FIRST' : <>💰 CASH OUT {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#9B7EC8', textAlign: 'center', marginTop: 8 }}>
             {k} gem{k === 1 ? '' : 's'} · next gem → ×{nextMult}
@@ -138,7 +138,7 @@ export default function MinesScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'betting' ? start : reset}>
-              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : `💣 START FOR ${bet.toLocaleString()} 🪙`) : '↻ PLAY AGAIN'}
+              {phase === 'betting' ? (tooPoor ? 'NOT ENOUGH COINS' : <>💣 START FOR {bet.toLocaleString()} <CoinIcon /></>) : '↻ PLAY AGAIN'}
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (

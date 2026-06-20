@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton } from '../../components/ui'
+import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { flipCoin, COINFLIP_PAYOUT } from '../../engine/casino/coinflip'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
@@ -57,10 +57,10 @@ export default function CoinFlipScreen() {
 
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
-        <div style={balancePill}>{balance.toLocaleString()} 🪙</div>
+        <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
       </div>
 
-      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🪙 Coin Flip</h2>
+      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}><CoinIcon /> Coin Flip</h2>
       <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 12 }}>
         Win pays {COINFLIP_PAYOUT}× · let it ride to double up
       </div>
@@ -87,7 +87,7 @@ export default function CoinFlipScreen() {
 
       {/* result line */}
       <div style={{ height: 30, fontFamily: "'Fredoka', cursive", fontSize: 22, marginBottom: 6 }}>
-        {phase === 'won'  && <span style={{ color: '#5CBFA0' }}>{isHeads ? 'Heads!' : 'Tails!'} +{pot.toLocaleString()} 🪙{streak > 1 ? `  🔥×${streak}` : ''}</span>}
+        {phase === 'won'  && <span style={{ color: '#5CBFA0' }}>{isHeads ? 'Heads!' : 'Tails!'} +{pot.toLocaleString()} <CoinIcon />{streak > 1 ? `  🔥×${streak}` : ''}</span>}
         {phase === 'lost' && <span style={{ color: '#C44B6A' }}>{isHeads ? 'Heads' : 'Tails'} — you lost it 💔</span>}
       </div>
 
@@ -105,7 +105,7 @@ export default function CoinFlipScreen() {
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
           <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
             <KawaiiButton variant="primary" size="lg" fullWidth disabled={!canFlip} onClick={startFlip}>
-              {tooPoor ? 'NOT ENOUGH COINS' : !pick ? 'PICK A SIDE FIRST' : `FLIP FOR ${bet.toLocaleString()} 🪙`}
+              {tooPoor ? 'NOT ENOUGH COINS' : !pick ? 'PICK A SIDE FIRST' : <>FLIP FOR {bet.toLocaleString()} <CoinIcon /></>}
             </KawaiiButton>
           </div>
           {tooPoor && (
@@ -119,10 +119,10 @@ export default function CoinFlipScreen() {
       {phase === 'won' && (
         <div style={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <KawaiiButton variant="gold" size="lg" fullWidth onClick={bank}>
-            💰 BANK {pot.toLocaleString()} 🪙
+            💰 BANK {pot.toLocaleString()} <CoinIcon />
           </KawaiiButton>
           <KawaiiButton variant="secondary" size="md" fullWidth onClick={letItRide}>
-            🎲 LET IT RIDE → {Math.floor(pot * COINFLIP_PAYOUT).toLocaleString()} 🪙
+            🎲 LET IT RIDE → {Math.floor(pot * COINFLIP_PAYOUT).toLocaleString()} <CoinIcon />
           </KawaiiButton>
         </div>
       )}
