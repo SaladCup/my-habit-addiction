@@ -4,7 +4,7 @@
 // In dev it loads the Vite dev server (hot reload). When packaged it serves the
 // built dist/ through a custom `app://` protocol — NOT file:// — because Chromium
 // blocks ES-module loading over file://, which would leave a blank screen.
-const { app, BrowserWindow, shell, protocol } = require('electron')
+const { app, BrowserWindow, shell, protocol, ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
@@ -45,6 +45,43 @@ function registerAppProtocol() {
     } catch {
       const data = await fs.promises.readFile(path.join(DIST, 'index.html'))
       return new Response(data, { headers: { 'content-type': 'text/html' } })
+    }
+  })
+}
+
+// ── Blocker: foreground-app detection (the enforcer's eyes) ──────────────
+// get-windows is ESM-only, so load it lazily via dynamic import from this CJS
+// file. On macOS it needs the Accessibility permission; we surface that state
+// to the app instead of throwing, so onboarding can ask the user to grant it.
+let _activeWindow = null
+async function getActiveWindowFn() {
+  if (!_activeWindow) {
+    const mod = await import('get-windows')
+    _activeWindow = mod.activeWindow
+  }
+  return _activeWindow
+}
+
+function registerBlockerIpc() {
+  ipcMain.handle('blocker:active-app', async () => {
+    try {
+      const activeWindow = await getActiveWindowFn()
+      const w = await activeWindow()
+      if (!w) return { ok: true, app: null }
+      return {
+        ok: true,
+        app: {
+          name: w.owner?.name ?? null,
+          bundleId: w.owner?.bundleId ?? null,
+          path: w.owner?.path ?? null,
+          title: w.title ?? null,
+        },
+      }
+    } catch (e) {
+      const msg = String(e?.message || e)
+      // macOS surfaces the missing-permission case as a helper error.
+      const needsPermission = /accessibility permission|screen recording/i.test(msg)
+      return { ok: false, needsPermission, error: msg }
     }
   })
 }
@@ -99,6 +136,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerAppProtocol()
+  registerBlockerIpc()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

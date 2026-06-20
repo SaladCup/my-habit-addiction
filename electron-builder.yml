@@ -12,6 +12,10 @@ files:
   - dist/**
   - electron/**
   - package.json
+# get-windows ships a compiled helper binary that must live OUTSIDE the asar
+# archive to be executable at runtime.
+asarUnpack:
+  - "**/node_modules/get-windows/**"
 mac:
   category: public.app-category.lifestyle
   icon: build/icon.icns      # the rounded squircle icon
