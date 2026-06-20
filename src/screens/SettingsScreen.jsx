@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
@@ -75,10 +76,12 @@ const inputStyle = {
 }
 
 export default function SettingsScreen() {
+  const navigate = useNavigate()
   const {
     settings, updateSettings,
     categories, addCategory, updateCategory, deleteCategory,
     milestones, addMilestone, updateMilestone, deleteMilestone,
+    rotblock,
     resetEverything,
   } = useStore()
 
@@ -414,6 +417,19 @@ export default function SettingsScreen() {
             💾 SAVE MILESTONES
           </KawaiiButton>
         )}
+      </PixelPanel>
+
+      {/* RotBlock */}
+      <PixelPanel color="lavender" title="ROTBLOCK" style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#3D2B4F', marginBottom: 12, lineHeight: 1.5 }}>
+          Lock the apps & sites that eat your time behind your coins — using one spends your free time, and running out locks it.
+        </div>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#9B7EC8', marginBottom: 12 }}>
+          {rotblock?.enabled ? '🛡️ On' : '💤 Off'} · {rotblock?.targets?.length || 0} Brainrot{(rotblock?.targets?.length || 0) === 1 ? '' : 's'}
+        </div>
+        <KawaiiButton variant="secondary" size="md" fullWidth onClick={() => navigate('/rotblock')}>
+          🧠 Open RotBlock
+        </KawaiiButton>
       </PixelPanel>
 
       {/* Sound */}

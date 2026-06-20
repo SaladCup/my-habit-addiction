@@ -15,7 +15,7 @@ const COIN_LOG_MAX      = 500             // log is a recent-history view; total
 // Persisted-save schema version. Exported so the backup/restore UI can reject a save from a
 // NEWER app version (Zustand's persist skips migrate() when persistedVersion >= current, so a
 // future-shaped save would load unmigrated). Bump this AND add a migrate() branch together.
-export const PERSIST_VERSION = 18
+export const PERSIST_VERSION = 19
 
 const DEFAULT_SPIN_STATS = {
   totalSpins: 0,
@@ -155,6 +155,18 @@ const useStore = create(
         musicVolume:    0.2,   // background music — intentionally low by default (it sits UNDER everything)
       },
 
+      // ── RotBlock: gate "Brainrots" (apps/sites) behind your coins ──
+      // Using a Brainrot drains coins (your free-time currency); at 0 coins it's
+      // blocked until you earn more (do a habit) or finish the Break Glass tap-
+      // gauntlet. Real enforcement is desktop-only (needs the Electron shell +
+      // macOS Accessibility); the setup/override UI works everywhere.
+      rotblock: {
+        enabled:         false,
+        targets:         [],    // [{ id, label, kind:'app'|'site', match, addedAt }]
+        setupSeen:       false,
+        breakGlassUntil: null,  // ms timestamp; while > now, Brainrots are allowed despite 0 coins
+      },
+
       // ── Ephemeral session (not persisted) ──
       session: { ...DEFAULT_SESSION },
       // Running coin total across a bonus chain (each spin adds; the reward
@@ -259,6 +271,45 @@ const useStore = create(
             coinTotals: { earned: s.coinTotals?.earned ?? 0, spent: (s.coinTotals?.spent ?? 0) + amount },
           }
         })
+      },
+
+      // ── RotBlock actions ──
+      rbSetEnabled: (on) => set(s => ({ rotblock: { ...s.rotblock, enabled: !!on, setupSeen: true } })),
+      rbAddTarget: ({ label, kind, match }) => set(s => {
+        const cleanMatch = (match || '').trim()
+        if (!cleanMatch) return {}
+        const t = {
+          id: uuid(),
+          label: (label || cleanMatch).trim(),
+          kind: kind === 'site' ? 'site' : 'app',
+          match: cleanMatch,
+          addedAt: Date.now(),
+        }
+        // de-dupe by kind + match (case-insensitive)
+        if (s.rotblock.targets.some(x => x.kind === t.kind && x.match.toLowerCase() === t.match.toLowerCase())) return {}
+        return { rotblock: { ...s.rotblock, targets: [...s.rotblock.targets, t], setupSeen: true } }
+      }),
+      rbRemoveTarget: (id) => set(s => ({ rotblock: { ...s.rotblock, targets: s.rotblock.targets.filter(t => t.id !== id) } })),
+      rbMarkSetupSeen: () => set(s => ({ rotblock: { ...s.rotblock, setupSeen: true } })),
+      // Finishing the Break Glass gauntlet grants a fixed window of access despite 0 coins.
+      rbStartBreakGlass: (minutes = 20) => set(s => ({ rotblock: { ...s.rotblock, breakGlassUntil: Date.now() + minutes * 60000 } })),
+      rbClearBreakGlass: () => set(s => ({ rotblock: { ...s.rotblock, breakGlassUntil: null } })),
+      // Spend coins for time spent on a Brainrot — routes through spendCoins (a
+      // `spent` log event) so the balance rebuild stays correct. Caps at the
+      // available balance (never goes negative). Returns coins actually spent.
+      rbDrain: (coins, label = '') => {
+        const n = Math.min(Math.floor(coins), get().getCoinsAvailable())
+        if (!Number.isFinite(n) || n <= 0) return 0
+        get().spendCoins(n, `rotblock:${label}`.slice(0, 60))
+        return n
+      },
+      // True when a Brainrot should currently be blocked: enabled, out of coins,
+      // and not inside an active Break Glass window.
+      rbIsBlocked: () => {
+        const s = get()
+        if (!s.rotblock?.enabled) return false
+        if (s.rotblock.breakGlassUntil && s.rotblock.breakGlassUntil > Date.now()) return false
+        return s.getCoinsAvailable() <= 0
       },
 
       // ── Casino: bet / settle ──
@@ -612,6 +663,10 @@ const useStore = create(
           if (persisted.settings.musicEnabled === undefined) persisted.settings.musicEnabled = true
           if (persisted.settings.musicVolume === undefined) persisted.settings.musicVolume = 0.2
         }
+        if (version < 19 && !persisted.rotblock) {
+          // RotBlock added — seed the default (disabled, no Brainrots) on older saves.
+          persisted.rotblock = { enabled: false, targets: [], setupSeen: false, breakGlassUntil: null }
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -625,6 +680,7 @@ const useStore = create(
         coinTotals: state.coinTotals,
         coinLogComplete: state.coinLogComplete,
         gambling:   state.gambling,
+        rotblock:   state.rotblock,
         milestones: state.milestones,
         settings:   state.settings,
         jackpotPool: state.jackpotPool,

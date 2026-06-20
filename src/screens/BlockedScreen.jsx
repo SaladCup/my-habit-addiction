@@ -1,0 +1,64 @@
+import { useNavigate } from 'react-router-dom'
+import useStore from '../store/useStore'
+import useNow from '../hooks/useNow'
+import { KawaiiButton } from '../components/ui'
+
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60)
+  if (m < 1) return `${Math.max(0, Math.round(sec))} sec`
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60), r = m % 60
+  return r ? `${h}h ${r}m` : `${h}h`
+}
+
+// The lock screen — shown when a Brainrot is opened with no free time left.
+// Two honest ways back: earn more (do a habit) or the Break Glass override.
+export default function BlockedScreen() {
+  const navigate = useNavigate()
+  const coins = useStore(s => s.getCoinsAvailable())
+  const settings = useStore(s => s.settings)
+  const rotblock = useStore(s => s.rotblock)
+  const freeTimeSec = coins * (settings.secondsPerCoin || 2)
+
+  const now = useNow()
+  const bgActive = rotblock.breakGlassUntil && rotblock.breakGlassUntil > now
+  const hasTime = coins > 0 || bgActive
+
+  return (
+    <div style={{
+      minHeight: '100%', padding: '32px 22px', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 18,
+      background: 'linear-gradient(180deg,#2E2440,#4A2E54)',
+    }}>
+      <div style={{ fontSize: 84 }}>{hasTime ? '🔓' : '🔒'}</div>
+      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#FFE3F1', margin: 0 }}>
+        {hasTime ? 'You’re clear' : 'Brainrot locked'}
+      </h2>
+
+      {hasTime ? (
+        <>
+          <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#E9D6F5', maxWidth: 320, lineHeight: 1.5, margin: 0 }}>
+            {bgActive
+              ? 'Break Glass is active — you’re unlocked for now.'
+              : <>You’ve got <b>{fmtTime(freeTimeSec)}</b> of free time banked. Enjoy it — it’s yours.</>}
+          </p>
+          <KawaiiButton variant="primary" size="lg" onClick={() => navigate(-1)}>Let me in →</KawaiiButton>
+        </>
+      ) : (
+        <>
+          <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#E9D6F5', maxWidth: 320, lineHeight: 1.5, margin: 0 }}>
+            You’re out of free time. Earn more by doing a habit — or break the glass if you really need in.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6, width: '100%', maxWidth: 300 }}>
+            <KawaiiButton variant="mint" size="lg" fullWidth onClick={() => navigate('/')}>
+              ✅ Do a habit, earn time
+            </KawaiiButton>
+            <KawaiiButton variant="secondary" size="lg" fullWidth onClick={() => navigate('/break-glass')}>
+              🔨 Break Glass
+            </KawaiiButton>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
