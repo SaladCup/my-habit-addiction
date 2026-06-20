@@ -32,7 +32,7 @@ export default function RotBlockScreen() {
   const [text, setText] = useState('')
   const [capMsg, setCapMsg] = useState('')
 
-  const now = useNow()
+  const now = useNow(1000)   // keep the Break Glass countdown / lock banner fresh
   const secPerCoin = settings.secondsPerCoin || 2
   const freeTimeSec = coins * secPerCoin
   const coinsPerMin = Math.max(1, Math.round(60 / secPerCoin))

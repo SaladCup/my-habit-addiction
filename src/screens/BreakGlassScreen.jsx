@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { KawaiiButton } from '../components/ui'
@@ -16,16 +16,18 @@ export default function BreakGlassScreen() {
   const [round, setRound] = useState(0)          // index into ROUNDS
   const [tapsLeft, setTapsLeft] = useState(ROUNDS[0])
   const [phase, setPhase] = useState('tapping')  // 'tapping' | 'confirm' | 'done'
-  const [pulse, setPulse] = useState(false)
+  const circleRef = useRef(null)
 
   function tap() {
     if (phase !== 'tapping') return
-    setPulse(true)
-    setTapsLeft(n => {
-      const next = n - 1
-      if (next <= 0) { setPhase('confirm'); return 0 }
-      return next
-    })
+    const next = Math.max(0, tapsLeft - 1)        // pure update; never negative
+    setTapsLeft(next)
+    if (next <= 0) setPhase('confirm')            // phase change OUTSIDE the updater
+    // self-contained squish — always completes (no stuck-shrunk state)
+    circleRef.current?.animate(
+      [{ transform: 'scale(0.93)' }, { transform: 'scale(1)' }],
+      { duration: 130, easing: 'ease-out' },
+    )
   }
 
   function confirmRound() {
@@ -76,15 +78,14 @@ export default function BreakGlassScreen() {
 
           {/* the big tap target */}
           <button
+            ref={circleRef}
             onPointerDown={tap}
-            onTransitionEnd={() => setPulse(false)}
             disabled={phase !== 'tapping'}
             style={{
               width: 230, height: 230, borderRadius: '50%', border: 'none', marginTop: 8,
               background: phase === 'confirm' ? '#CDEFD8' : 'radial-gradient(circle at 38% 32%, #FFC7DE, #FF85A1)',
               boxShadow: phase === 'confirm' ? '0 6px 18px rgba(120,200,150,0.4)' : '0 8px 22px rgba(255,133,161,0.55)',
               color: '#fff', cursor: phase === 'tapping' ? 'pointer' : 'default',
-              transform: pulse ? 'scale(0.94)' : 'scale(1)', transition: 'transform 90ms ease',
               fontFamily: "'Fredoka', cursive", userSelect: 'none', touchAction: 'manipulation',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             }}

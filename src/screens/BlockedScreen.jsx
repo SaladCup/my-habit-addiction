@@ -20,7 +20,7 @@ export default function BlockedScreen() {
   const rotblock = useStore(s => s.rotblock)
   const freeTimeSec = coins * (settings.secondsPerCoin || 2)
 
-  const now = useNow()
+  const now = useNow(1000)   // lock/clear flip must feel immediate
   const bgActive = rotblock.breakGlassUntil && rotblock.breakGlassUntil > now
   const hasTime = coins > 0 || bgActive
 

@@ -525,6 +525,7 @@ const useStore = create(
         coinTotals: { earned: 0, spent: 0 },
         coinLogComplete: true,
         gambling:   { wagered: 0, won: 0 },
+        rotblock:   { enabled: false, targets: [], setupSeen: false, breakGlassUntil: null },
         milestones: [],
         jackpotPool: JACKPOT_SEED,
         spinStats:  { ...DEFAULT_SPIN_STATS },
