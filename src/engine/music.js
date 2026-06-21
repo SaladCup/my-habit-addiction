@@ -7,7 +7,12 @@
 // reject — we then arm a one-time gesture listener and start on the first tap.
 // The React side just pushes settings in via setMusicConfig(); this module owns
 // the element, the play/pause logic, and the autoplay-unlock dance.
-import { setupMusicAnalyser } from './audioReactive'
+//
+// NOTE: the music plays DIRECTLY through the element — we deliberately do NOT route
+// it through a Web Audio analyser. Doing so (createMediaElementSource) silenced the
+// music in the packaged app: the track is served over the custom app:// protocol,
+// which Web Audio treats as cross-origin and mutes. Reliable music > a beat-reactive
+// rainbow (the rainbow still glows/breathes on its own).
 
 const SRC = '/music/bg-kawaii-pop.mp3'
 // Master ceiling on music loudness: the actual element volume = musicVolume *
@@ -43,12 +48,7 @@ function tryPlay() {
   const a = getEl(); if (!a) return
   const p = a.play()
   // play() returns a promise in modern browsers; a rejection = autoplay blocked.
-  if (p && typeof p.then === 'function') {
-    p.then(() => setupMusicAnalyser(a))   // wire the rainbow's audio analyser once playing
-     .catch(() => armGesture())
-  } else {
-    setupMusicAnalyser(a)
-  }
+  if (p && typeof p.then === 'function') p.catch(() => armGesture())
 }
 
 // Remove the armed first-gesture listeners (if any). Safe to call any time.
@@ -65,10 +65,6 @@ function armGesture() {
   if (gestureHandler || typeof window === 'undefined') return
   gestureHandler = () => {
     disarmGesture()
-    // Set up/resume the analyser WITHIN the gesture so the AudioContext is allowed to
-    // run (a resume() in a later .then() is outside the gesture and autoplay policy can
-    // block it → the music, routed through the graph, stays silent).
-    try { setupMusicAnalyser(getEl()) } catch { /* */ }
     if (shouldPlay()) tryPlay()
   }
   window.addEventListener('pointerdown', gestureHandler)
