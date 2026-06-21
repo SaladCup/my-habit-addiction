@@ -120,9 +120,10 @@ export default function RotBlockEnforcer() {
 
       const app = res.app
       const rb = cur.rotblock
+      const testBlock = (cur.rbRuntime.testBlockUntil || 0) > Date.now()   // "Test a block" demo
       const isBrainrot = rb.targets.some(t => matchesTarget(app, t))
       const broke = cur.getCoinsAvailable() <= 0 && !(rb.breakGlassUntil && rb.breakGlassUntil > Date.now())
-      const blocked = isBrainrot && broke
+      const blocked = testBlock || (isBrainrot && broke)
 
       publish(app?.name || null, isBrainrot, isBrainrot && !blocked, 'ok')
 

@@ -27,7 +27,7 @@ export default function RotBlockScreen() {
   const settings = useStore(s => s.settings)
   const coins = useStore(s => s.getCoinsAvailable())
   const rbRuntime = useStore(s => s.rbRuntime)
-  const { rbSetEnabled, rbAddTarget, rbRemoveTarget, rbDrain } = useStore.getState()
+  const { rbSetEnabled, rbAddTarget, rbRemoveTarget, rbSetRuntime } = useStore.getState()
 
   const [kind, setKind] = useState('app')   // 'app' | 'site'
   const [text, setText] = useState('')
@@ -36,7 +36,6 @@ export default function RotBlockScreen() {
   const now = useNow(1000)   // keep the Break Glass countdown / lock banner fresh
   const secPerCoin = settings.secondsPerCoin || 2
   const freeTimeSec = coins * secPerCoin
-  const coinsPerMin = Math.max(1, Math.round(60 / secPerCoin))
   const bgActive = rotblock.breakGlassUntil && rotblock.breakGlassUntil > now
   const bgMinsLeft = bgActive ? Math.ceil((rotblock.breakGlassUntil - now) / 60000) : 0
   const blocked = rotblock.enabled && !bgActive && coins <= 0
@@ -117,9 +116,10 @@ export default function RotBlockScreen() {
             )}
           </div>
         )}
-        {/* ALWAYS available on macOS — granting/checking Accessibility is required
-            for any blocking and the detected state can be unreliable, so never hide it. */}
-        {desktop?.platform === 'darwin' && desktop.openAccessibilitySettings && (
+        {/* Only show the grant helper when the permission is actually missing — the
+            silent trust check makes 'needed' reliable now, so this no longer nags
+            once you're set up. */}
+        {desktop?.platform === 'darwin' && desktop.openAccessibilitySettings && rbRuntime.permission === 'needed' && (
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #BFE3D2' }}>
             <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openAccessibilitySettings()}>
               ⚙️ Open Accessibility Settings
@@ -183,23 +183,15 @@ export default function RotBlockScreen() {
         )}
       </PixelPanel>
 
-      {/* TRY IT */}
-      <PixelPanel color="sky" title="TRY IT" style={{ width: '100%', maxWidth: 380 }}>
+      {/* SEE IT IN ACTION — one honest demo: pop the real lock screen on demand. */}
+      <PixelPanel color="sky" title="SEE IT IN ACTION" style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F', marginBottom: 12, lineHeight: 1.5 }}>
-          See the loop without real blocking: spend a minute of free time, peek at the lock screen, or do the Break Glass override.
+          Curious what a block looks like? This pops the lock screen in front of you — exactly what happens when you run out of coins on a Brainrot. You can end it anytime.
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          <KawaiiButton variant="secondary" size="md" fullWidth disabled={coins <= 0}
-            onClick={() => rbDrain(coinsPerMin, rotblock.targets[0]?.label || 'brainrot')}>
-            ⏳ Spend 1 min of free time ({coinsPerMin} coins)
-          </KawaiiButton>
-          <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => navigate('/blocked')}>
-            👀 Preview the lock screen
-          </KawaiiButton>
-          <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => navigate('/break-glass')}>
-            🔨 Try Break Glass
-          </KawaiiButton>
-        </div>
+        <KawaiiButton variant="secondary" size="lg" fullWidth
+          onClick={() => { rbSetRuntime({ testBlockUntil: Date.now() + 120000 }); navigate('/blocked') }}>
+          🔒 Test a block
+        </KawaiiButton>
       </PixelPanel>
 
       <KawaiiButton variant="ghost" size="md" onClick={() => navigate('/spend')}>← Back to Spend</KawaiiButton>

@@ -168,7 +168,9 @@ const useStore = create(
       },
       // Live enforcer status (desktop only) — NOT persisted. The enforcer loop
       // publishes here so the RotBlock screen can show what it currently sees.
-      rbRuntime: { frontApp: null, isBrainrot: false, draining: false, permission: 'unknown' },
+      // testBlockUntil: ms timestamp; while > now, force a block so the user can
+      // SEE the lock screen / cover on demand (the "Test a block" button).
+      rbRuntime: { frontApp: null, isBrainrot: false, draining: false, permission: 'unknown', testBlockUntil: 0 },
 
       // ── Ephemeral session (not persisted) ──
       session: { ...DEFAULT_SESSION },

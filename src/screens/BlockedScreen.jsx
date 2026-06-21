@@ -13,16 +13,26 @@ function fmtTime(sec) {
 
 // The lock screen — shown when a Brainrot is opened with no free time left.
 // Two honest ways back: earn more (do a habit) or the Break Glass override.
+// Also shown on demand by the "Test a block" button (testBlock), so the user can
+// SEE what a block looks like even when they have coins.
 export default function BlockedScreen() {
   const navigate = useNavigate()
   const coins = useStore(s => s.getCoinsAvailable())
   const settings = useStore(s => s.settings)
   const rotblock = useStore(s => s.rotblock)
+  const rbRuntime = useStore(s => s.rbRuntime)
   const freeTimeSec = coins * (settings.secondsPerCoin || 2)
 
   const now = useNow(1000)   // lock/clear flip must feel immediate
   const bgActive = rotblock.breakGlassUntil && rotblock.breakGlassUntil > now
-  const hasTime = coins > 0 || bgActive
+  const testBlock = (rbRuntime.testBlockUntil || 0) > now
+  const hasTime = !testBlock && (coins > 0 || bgActive)
+
+  const endTest = () => {
+    useStore.getState().rbSetRuntime({ testBlockUntil: 0 })
+    try { if (window.desktop && window.desktop.setOnTop) window.desktop.setOnTop(false) } catch { /* */ }
+    navigate('/rotblock')
+  }
 
   return (
     <div style={{
@@ -35,7 +45,17 @@ export default function BlockedScreen() {
         {hasTime ? 'You’re clear' : 'Brainrot locked'}
       </h2>
 
-      {hasTime ? (
+      {testBlock ? (
+        <>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#FFD27A', letterSpacing: '0.08em', fontWeight: 700 }}>
+            👀 PREVIEW
+          </div>
+          <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#E9D6F5', maxWidth: 330, lineHeight: 1.5, margin: 0 }}>
+            This is what a block looks like. When you’re on a Brainrot with <b>0 coins</b>, this screen pops in front of it until you earn more time or Break Glass.
+          </p>
+          <KawaiiButton variant="primary" size="lg" onClick={endTest}>✓ End preview</KawaiiButton>
+        </>
+      ) : hasTime ? (
         <>
           <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#E9D6F5', maxWidth: 320, lineHeight: 1.5, margin: 0 }}>
             {bgActive
