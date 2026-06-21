@@ -31,6 +31,7 @@ import BreakGlassScreen   from './screens/BreakGlassScreen'
 import BlockedScreen      from './screens/BlockedScreen'
 import RotBlockEnforcer   from './components/RotBlockEnforcer'
 import AudioRainbow       from './components/AudioRainbow'
+import UpdatePrompt       from './components/UpdatePrompt'
 
 const ICON_V = '8'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
@@ -110,6 +111,7 @@ function AppShell() {
       <MusicController />
       <RotBlockEnforcer />
       <AudioRainbow />
+      <UpdatePrompt />
       <main className="screen">
         <Routes>
           <Route path="/"         element={<HomeScreen />} />

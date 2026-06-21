@@ -46,11 +46,17 @@ jobs:
             release/*.zip
           if-no-files-found: ignore
 
-      # On a version tag, also publish them to a shareable Release page.
-      - name: Publish to Releases
+      # On a version tag, publish the installers to the PUBLIC releases repo
+      # (the code repo stays private). That public release page is what people
+      # download from, and what the in-app auto-updater checks. Needs a token
+      # with write access to that repo, stored as the RELEASES_TOKEN secret.
+      - name: Publish to the public releases repo
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          repository: SaladCup/my-habit-addiction-releases
+          token: ${{ secrets.RELEASES_TOKEN }}
+          tag_name: ${{ github.ref_name }}
           files: |
             release/*.dmg
             release/*.exe

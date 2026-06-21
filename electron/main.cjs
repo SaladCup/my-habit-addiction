@@ -112,6 +112,59 @@ function registerBlockerIpc() {
   })
 }
 
+// ── Auto-update check ────────────────────────────────────────────────────
+// Installers are published to a PUBLIC "releases" repo (the code repo stays
+// private). The app reads that repo's latest release over the public GitHub API
+// — no token needed — compares versions, and (if newer) the renderer shows a
+// prompt whose button opens the right installer to download. Save data lives in
+// userData, untouched by installing a new version.
+const RELEASES_REPO = 'SaladCup/my-habit-addiction-releases'
+
+// Is `latest` a higher semver than `current`? (plain numeric x.y.z compare)
+function isNewerVersion(latest, current) {
+  const a = String(latest).replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0)
+  const b = String(current).replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = (a[i] || 0) - (b[i] || 0)
+    if (d !== 0) return d > 0
+  }
+  return false
+}
+
+async function checkForUpdate() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${RELEASES_REPO}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'my-habit-addiction' },
+    })
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` }
+    const data = await res.json()
+    const currentVersion = app.getVersion()
+    const latestVersion = String(data.tag_name || '').replace(/^v/, '')
+    const assets = Array.isArray(data.assets) ? data.assets : []
+    // Pick the installer for this OS: .dmg on Mac, .exe on Windows.
+    const wantExt = process.platform === 'darwin' ? '.dmg' : '.exe'
+    const asset = assets.find(a => String(a.name || '').toLowerCase().endsWith(wantExt))
+    return {
+      ok: true,
+      updateAvailable: !!latestVersion && isNewerVersion(latestVersion, currentVersion),
+      latestVersion,
+      currentVersion,
+      downloadUrl: asset ? asset.browser_download_url : data.html_url,
+      releaseUrl: data.html_url,
+    }
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) }
+  }
+}
+
+function registerUpdateIpc() {
+  ipcMain.handle('update:check', () => checkForUpdate())
+  ipcMain.handle('update:open', (_e, url) => {
+    if (typeof url === 'string' && /^https:\/\//.test(url)) shell.openExternal(url)
+    return { ok: true }
+  })
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 430,            // the UI is designed phone-portrait, so the window is narrow
@@ -166,6 +219,7 @@ function createWindow() {
 app.whenReady().then(() => {
   registerAppProtocol()
   registerBlockerIpc()
+  registerUpdateIpc()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
