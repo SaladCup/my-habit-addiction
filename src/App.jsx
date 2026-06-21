@@ -32,10 +32,10 @@ import BlockedScreen      from './screens/BlockedScreen'
 import RotBlockEnforcer   from './components/RotBlockEnforcer'
 import AudioRainbow       from './components/AudioRainbow'
 
-const ICON_V = '7'   // bump to force browsers to reload updated icon art
+const ICON_V = '8'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
   { to: '/',         label: 'Home',     icon: `/ui/icon_home.png?v=${ICON_V}` },
-  { to: '/casino',   label: 'Casino',   icon: `/ui/icon_spin.png?v=${ICON_V}` },
+  { to: '/casino',   label: 'Casino',   icon: `/ui/icon_casino.png?v=${ICON_V}` },
   { to: '/spend',    label: 'Spend',    icon: `/ui/icon_spend.png?v=${ICON_V}` },
   { to: '/stats',    label: 'Stats',    icon: `/ui/icon_stats.png?v=${ICON_V}` },
   { to: '/edit',     label: 'Habits',   icon: `/ui/icon_editor.png?v=${ICON_V}` },
