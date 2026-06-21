@@ -62,7 +62,6 @@ export default function RotBlockEnforcer() {
   const navigate = useNavigate()
   const accRef = useRef(0)         // accumulated seconds-on-brainrot, for fractional draining
   const blockingRef = useRef(false)
-  const permDeniedRef = useRef(false)   // latched once Accessibility is denied, to stop re-prompting
 
   useEffect(() => {
     let alive = true               // per-effect-run liveness token (own your own cancellation)
@@ -98,15 +97,10 @@ export default function RotBlockEnforcer() {
     const tick = async () => {
       if (!alive) return
       if (!useStore.getState().rotblock.enabled) {
-        accRef.current = 0; permDeniedRef.current = false; releaseBlock()
+        accRef.current = 0; releaseBlock()
         publish(null, false, false, 'ok')
         return
       }
-
-      // If a prior tick hit "permission needed", stop polling the front app so we
-      // don't re-trigger the macOS Accessibility prompt every 2s. Recovers on app
-      // relaunch, or after toggling RotBlock off then on (which clears the latch).
-      if (permDeniedRef.current) { publish(null, false, false, 'needed'); return }
 
       let res
       try { res = await desktop.getActiveApp() } catch { res = null }
@@ -115,7 +109,6 @@ export default function RotBlockEnforcer() {
       if (!cur.rotblock.enabled) { releaseBlock(); return }   // re-check after the await
 
       if (!res || res.ok === false) {
-        if (res?.needsPermission) permDeniedRef.current = true   // latch → stop re-prompting
         // Front app is unreadable (e.g. Accessibility revoked). Don't strand a held
         // block: re-evaluate broke independently so earning coins / finishing Break
         // Glass still lifts the always-on-top cover regardless of permission state.

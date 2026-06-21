@@ -4,7 +4,7 @@
 // In dev it loads the Vite dev server (hot reload). When packaged it serves the
 // built dist/ through a custom `app://` protocol — NOT file:// — because Chromium
 // blocks ES-module loading over file://, which would leave a blank screen.
-const { app, BrowserWindow, shell, protocol, ipcMain } = require('electron')
+const { app, BrowserWindow, shell, protocol, ipcMain, systemPreferences } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -77,9 +77,20 @@ async function getActiveWindowFn() {
 
 function registerBlockerIpc() {
   ipcMain.handle('blocker:active-app', async () => {
+    // macOS: check Accessibility trust SILENTLY first. If we're not trusted, return
+    // needsPermission WITHOUT calling get-windows — get-windows pops the system
+    // "control this computer" prompt on EVERY call when untrusted, which spams the
+    // user every poll. They grant via the in-app "Open Accessibility Settings" button.
+    if (process.platform === 'darwin'
+        && typeof systemPreferences.isTrustedAccessibilityClient === 'function'
+        && !systemPreferences.isTrustedAccessibilityClient(false)) {
+      return { ok: false, needsPermission: true }
+    }
     try {
       const activeWindow = await getActiveWindowFn()
-      const w = await activeWindow()
+      // screenRecordingPermission:false → never prompt for Screen Recording; we use
+      // name/bundleId/url, not the window title.
+      const w = await activeWindow({ screenRecordingPermission: false })
       if (!w) return { ok: true, app: null }
       return {
         ok: true,
