@@ -78,6 +78,15 @@ export default function RotBlockEnforcer() {
   const accRef = useRef(0)         // accumulated seconds-on-brainrot, for fractional draining
   const blockingRef = useRef(false)
 
+  // One-time cleanup: drop any "self" Brainrot (e.g. the habit app captured by
+  // mistake), which would otherwise let the app block/trap itself.
+  useEffect(() => {
+    const st = useStore.getState()
+    const bad = st.rotblock.targets.filter(t =>
+      /com\.lauren\.habitaddiction/i.test(t.match || '') || /habit addiction/i.test(t.label || ''))
+    bad.forEach(t => st.rbRemoveTarget(t.id))
+  }, [])
+
   useEffect(() => {
     let alive = true               // per-effect-run liveness token (own your own cancellation)
     const desktop = (typeof window !== 'undefined') ? window.desktop : null
@@ -136,7 +145,9 @@ export default function RotBlockEnforcer() {
       const app = res.app
       const rb = cur.rotblock
       const testBlock = (cur.rbRuntime.testBlockUntil || 0) > Date.now()   // "Test a block" demo
-      const isBrainrot = rb.targets.some(t => matchesTarget(app, t))
+      // HARD GUARD: the habit app can never be a Brainrot (so it can't block itself
+      // and trap the user — e.g. if it was accidentally added via Capture).
+      const isBrainrot = !isOwnApp(app) && rb.targets.some(t => matchesTarget(app, t))
       const broke = cur.getCoinsAvailable() <= 0 && !(rb.breakGlassUntil && rb.breakGlassUntil > Date.now())
       const blocked = testBlock || (isBrainrot && broke)
 

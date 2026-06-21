@@ -53,6 +53,10 @@ export default function RotBlockScreen() {
   function addManual() {
     const t = text.trim()
     if (!t) return
+    if (/com\.lauren\.habitaddiction/i.test(t) || /habit addiction/i.test(t)) {
+      setCapMsg('You can’t block this app itself 🙃')
+      return
+    }
     rbAddTarget({ label: t, kind, match: t })
     setText('')
   }
@@ -63,6 +67,8 @@ export default function RotBlockScreen() {
     try {
       const res = await desktop.getActiveApp()
       if (res?.ok && res.app?.name) {
+        const self = /com\.lauren\.habitaddiction/i.test(res.app.bundleId || '') || /habit addiction/i.test(res.app.name)
+        if (self) { setCapMsg('That’s this app 🙃 — switch to the app you want to block first, then capture.'); return }
         rbAddTarget({ label: res.app.name, kind: 'app', match: res.app.bundleId || res.app.name })
         setCapMsg(`Added “${res.app.name}”.`)
       } else if (res?.needsPermission) {
