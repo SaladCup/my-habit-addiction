@@ -87,6 +87,9 @@ function registerBlockerIpc() {
           path: w.owner?.path ?? null,
           pid: w.owner?.processId ?? null,
           title: w.title ?? null,
+          // Active browser-tab URL (Chrome/Safari/Edge/Brave/Opera/Vivaldi on
+          // macOS) so site Brainrots can be matched. null in other browsers/apps.
+          url: w.url ?? null,
         },
       }
     } catch (e) {
@@ -108,6 +111,15 @@ function registerBlockerIpc() {
   ipcMain.handle('blocker:on-top', (_e, on) => {
     if (!mainWin || mainWin.isDestroyed()) return { ok: false }
     mainWin.setAlwaysOnTop(!!on)
+    return { ok: true }
+  })
+
+  // Open the macOS Accessibility settings pane directly (so the user can grant the
+  // permission RotBlock needs to see the front app + browser URL).
+  ipcMain.handle('blocker:open-accessibility', () => {
+    if (process.platform === 'darwin') {
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
+    }
     return { ok: true }
   })
 }

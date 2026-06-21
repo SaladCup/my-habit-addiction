@@ -105,7 +105,17 @@ export default function RotBlockScreen() {
         {desktop && rotblock.enabled && (
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #BFE3D2', fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F' }}>
             {rbRuntime.permission === 'needed' ? (
-              <span style={{ color: '#C44B6A' }}>⚠️ Grant Accessibility in System Settings › Privacy &amp; Security › Accessibility so RotBlock can see the front app.</span>
+              <div>
+                <span style={{ color: '#C44B6A' }}>⚠️ RotBlock needs Accessibility to see the front app (and your browser tab for site blocking).</span>
+                {desktop?.openAccessibilitySettings && (
+                  <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openAccessibilitySettings()} style={{ marginTop: 10 }}>
+                    ⚙️ Open Accessibility Settings
+                  </KawaiiButton>
+                )}
+                <div style={{ fontSize: 14, color: '#9B7EC8', marginTop: 8 }}>
+                  Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen the app.
+                </div>
+              </div>
             ) : (
               <>👀 In front: <b>{rbRuntime.frontApp || '—'}</b>
                 {rbRuntime.isBrainrot
@@ -154,6 +164,11 @@ export default function RotBlockScreen() {
           onKeyDown={e => { if (e.key === 'Enter') addManual() }}
           placeholder={kind === 'site' ? 'e.g. youtube.com' : 'e.g. Steam, or a game name'}
         />
+        {kind === 'site' && (
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', margin: '0 0 10px', lineHeight: 1.4 }}>
+            Detected in Chrome, Safari, Edge, Brave, Opera &amp; Vivaldi. (Firefox tabs can’t be read, so block the Firefox <i>app</i> instead.)
+          </div>
+        )}
         <KawaiiButton variant="primary" size="md" fullWidth onClick={addManual}>+ Add Brainrot</KawaiiButton>
 
         {desktop && (

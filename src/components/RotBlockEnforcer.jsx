@@ -27,6 +27,29 @@ function matchesApp(app, target) {
   return m.length >= 4 && !!name && name.includes(m)
 }
 
+// Match a SITE Brainrot against the active browser tab's URL (provided by the
+// native shell via get-windows for supported browsers — Chrome/Safari/Edge/Brave/
+// Opera/Vivaldi). We compare hostnames so "youtube.com" catches www./m. subdomains
+// but a typed "youtube" still works via a longer-substring fallback.
+function matchesSite(app, target) {
+  if (!app || target.kind !== 'site' || !app.url) return false
+  const m = (target.match || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
+  if (m.length < 3) return false
+  let host
+  try { host = new URL(app.url).hostname.toLowerCase().replace(/^www\./, '') } catch { host = '' }
+  if (!host) return false
+  // Domain-like target ("youtube.com"): exact host or a subdomain of it — so
+  // "youtube.com" catches m./music.youtube.com but NOT notyoutube.com.
+  if (m.includes('.')) return host === m || host.endsWith('.' + m)
+  // Bare word ("youtube"): match only a whole label of the host.
+  return host.split('.').includes(m)
+}
+
+function matchesTarget(app, target) {
+  return target.kind === 'site' ? matchesSite(app, target) : matchesApp(app, target)
+}
+
 // Is the foreground app OUR app? (so covering ourselves doesn't read as "left the
 // Brainrot"). 'Electron' in dev; productName / bundleId when packaged.
 function isOwnApp(app) {
@@ -97,7 +120,7 @@ export default function RotBlockEnforcer() {
 
       const app = res.app
       const rb = cur.rotblock
-      const isBrainrot = rb.targets.some(t => matchesApp(app, t))
+      const isBrainrot = rb.targets.some(t => matchesTarget(app, t))
       const broke = cur.getCoinsAvailable() <= 0 && !(rb.breakGlassUntil && rb.breakGlassUntil > Date.now())
       const blocked = isBrainrot && broke
 

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('desktop', {
   // front and keep it on top of the Brainrot until unblocked.
   focusSelf: () => ipcRenderer.invoke('blocker:focus'),
   setOnTop: (on) => ipcRenderer.invoke('blocker:on-top', on),
+  openAccessibilitySettings: () => ipcRenderer.invoke('blocker:open-accessibility'),
 
   // Auto-update: ask the public releases repo whether a newer version exists,
   // and open the right installer to download. Resolves to:
