@@ -224,23 +224,31 @@ body {
    window/viewport edge, and sits BELOW the nav (z 100) and all overlays
    (modals 300/400, streak popup 500, warning splash 999) — never painting over them. */
 @property --rb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+/* Wrapper: carries the blur ONLY. A filter on the parent is applied AFTER the
+   child's mask, so it blurs the finished band — including its edges — giving the
+   soft/blurry look. (Blurring the masked element itself only softens the colors;
+   the mask re-sharpens the edges.) */
 .audio-rainbow {
   position: absolute;
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  padding: calc(7px + var(--audio-level, 0.13) * 15px);
+  filter: blur(calc(4px + var(--audio-level, 0.13) * 7px)) saturate(1.9) brightness(1.22);
+}
+/* Inner ring: the rainbow band itself (conic gradient masked to a WIDE edge band,
+   so once the wrapper blurs it the glow stays visibly rainbow, not washed out). */
+.audio-rainbow__ring {
+  position: absolute;
+  inset: 0;
+  padding: calc(16px + var(--audio-level, 0.13) * 22px);
   background: conic-gradient(from var(--rb-angle),
-    #ff4d8d, #ff9a3e, #ffe24e, #6cf578, #4fc9ff, #9b6bff, #ff4d8d);
+    #ff2d7e, #ff8a1e, #ffe24e, #46f06a, #2db8ff, #9b6bff, #ff2d7e);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
-  opacity: calc(0.55 + var(--audio-level, 0.13) * 0.45);
-  /* Heavy blur feathers the band's inner edge softly toward the middle; the card's
-     overflow:hidden clips the outer side, keeping it crisp at the very edge. */
-  filter: blur(calc(8px + var(--audio-level, 0.13) * 14px)) saturate(1.55) brightness(1.08);
+  opacity: calc(0.92 + var(--audio-level, 0.13) * 0.08);
   animation: rb-spin 8s linear infinite;
 }
 @keyframes rb-spin { to { --rb-angle: 360deg; } }
-@media (prefers-reduced-motion: reduce) { .audio-rainbow { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .audio-rainbow__ring { animation: none; } }

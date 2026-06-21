@@ -40,5 +40,13 @@ export default function AudioRainbow() {
     return () => { alive = false; cancelAnimationFrame(raf); root.style.setProperty('--audio-level', String(IDLE)) }
   }, [])
 
-  return <div className="audio-rainbow" aria-hidden="true" />
+  // Wrapper carries the blur; the inner ring carries the masked rainbow band.
+  // Blur on the PARENT applies AFTER the child's mask, so the band's EDGES go
+  // soft/blurry (a blur on the masked element itself would be re-sharpened by
+  // the mask and only soften the colors, not the edges).
+  return (
+    <div className="audio-rainbow" aria-hidden="true">
+      <div className="audio-rainbow__ring" />
+    </div>
+  )
 }
