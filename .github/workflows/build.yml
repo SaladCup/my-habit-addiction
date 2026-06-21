@@ -33,6 +33,32 @@ jobs:
 
       - run: npm ci
 
+      # Import the STABLE self-signed certificate (macOS) so every build shares one
+      # signing identity — that's what lets macOS keep the Accessibility (TCC) grant
+      # across updates. afterPack.cjs signs with SIGN_IDENTITY when it's set; if the
+      # secret is missing it falls back to ad-hoc (no worse than before).
+      - name: Set up signing certificate (macOS)
+        if: runner.os == 'macOS'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$CSC_LINK" ]; then echo "No CSC_LINK secret — building ad-hoc."; exit 0; fi
+          echo "$CSC_LINK" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          /usr/bin/openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -nokeys -clcerts -out "$RUNNER_TEMP/cert.pem" -passin "pass:$CSC_KEY_PASSWORD" 2>/dev/null \
+            || openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -nokeys -clcerts -out "$RUNNER_TEMP/cert.pem" -passin "pass:$CSC_KEY_PASSWORD" -legacy
+          KC="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p actions "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p actions "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CSC_KEY_PASSWORD" -A -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions "$KC" >/dev/null
+          security add-trusted-cert -p codeSign -k "$KC" "$RUNNER_TEMP/cert.pem"
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | sed 's/["]//g')
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/cert.pem"
+          echo "SIGN_IDENTITY=My Habit Addiction Self-Signed" >> "$GITHUB_ENV"
+
       - name: Build installer
         run: npm run electron:build
 

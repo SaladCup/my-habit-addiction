@@ -28,6 +28,10 @@ exports.default = async function afterPack(context) {
 
   const appPath = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
   const run = (cmd, args) => execFileSync(cmd, args, { stdio: ['ignore', 'ignore', 'inherit'] })
+  // Sign with the STABLE self-signed certificate when CI provides it (SIGN_IDENTITY),
+  // else ad-hoc ('-') for local builds. A stable identity is what lets macOS keep the
+  // Accessibility (TCC) grant across updates instead of re-asking every version.
+  const identity = process.env.SIGN_IDENTITY || '-'
   // Strip xattrs on the target (recursively) then sign — with a few retries, because
   // a local Finder can re-add the FinderInfo bit in the microsecond between the two.
   // Stripping right before each sign keeps that race window tiny; CI has no Finder.
@@ -35,7 +39,7 @@ exports.default = async function afterPack(context) {
     let lastErr
     for (let attempt = 0; attempt < 5; attempt++) {
       try { run('xattr', ['-cr', p]) } catch { /* ignore */ }
-      try { run('codesign', ['--force', '--sign', '-', p]); return } catch (e) { lastErr = e }
+      try { run('codesign', ['--force', '--sign', identity, p]); return } catch (e) { lastErr = e }
     }
     throw lastErr
   }
