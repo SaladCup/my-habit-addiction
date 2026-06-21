@@ -105,17 +105,7 @@ export default function RotBlockScreen() {
         {desktop && rotblock.enabled && (
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #BFE3D2', fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F' }}>
             {rbRuntime.permission === 'needed' ? (
-              <div>
-                <span style={{ color: '#C44B6A' }}>⚠️ RotBlock needs Accessibility to see the front app (and your browser tab for site blocking).</span>
-                {desktop?.openAccessibilitySettings && (
-                  <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openAccessibilitySettings()} style={{ marginTop: 10 }}>
-                    ⚙️ Open Accessibility Settings
-                  </KawaiiButton>
-                )}
-                <div style={{ fontSize: 14, color: '#9B7EC8', marginTop: 8 }}>
-                  Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen the app.
-                </div>
-              </div>
+              <span style={{ color: '#C44B6A' }}>⚠️ Can’t see the front app yet — grant Accessibility below.</span>
             ) : (
               <>👀 In front: <b>{rbRuntime.frontApp || '—'}</b>
                 {rbRuntime.isBrainrot
@@ -125,6 +115,18 @@ export default function RotBlockScreen() {
                   : <span style={{ color: '#5CBFA0' }}> · ✓ not a Brainrot</span>}
               </>
             )}
+          </div>
+        )}
+        {/* ALWAYS available on macOS — granting/checking Accessibility is required
+            for any blocking and the detected state can be unreliable, so never hide it. */}
+        {desktop?.platform === 'darwin' && desktop.openAccessibilitySettings && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #BFE3D2' }}>
+            <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openAccessibilitySettings()}>
+              ⚙️ Open Accessibility Settings
+            </KawaiiButton>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 8, lineHeight: 1.4 }}>
+              RotBlock needs this to see your front app &amp; browser tab. Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen.
+            </div>
           </div>
         )}
       </PixelPanel>
