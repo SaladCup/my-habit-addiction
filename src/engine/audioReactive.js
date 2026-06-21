@@ -30,6 +30,18 @@ export function setupMusicAnalyser(el) {
   ctx?.resume?.().catch(() => {})
 }
 
+// Resume the context if the OS suspended it. CRUCIAL: the music is routed through
+// this graph (createMediaElementSource), so a suspended context = silent music. The
+// OS suspends it when the window loses focus / is covered (e.g. the RotBlock cover),
+// and it doesn't auto-recover — so we nudge it back whenever we can.
+export function resumeAnalyser() {
+  if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {})
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', resumeAnalyser)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeAnalyser() })
+}
+
 // Dev-only probe for verifying the analyser + context state in the preview.
 if (import.meta.env?.DEV && typeof window !== 'undefined') {
   window.__audioReactive = { getLevel: () => getLevel(), state: () => ctx?.state, connected: () => connected }
@@ -37,6 +49,7 @@ if (import.meta.env?.DEV && typeof window !== 'undefined') {
 
 export function getLevel() {
   if (!analyser || !data) return 0
+  if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {})   // self-heal every frame
   try {
     analyser.getByteFrequencyData(data)
     let sum = 0

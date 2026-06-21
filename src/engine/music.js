@@ -65,6 +65,10 @@ function armGesture() {
   if (gestureHandler || typeof window === 'undefined') return
   gestureHandler = () => {
     disarmGesture()
+    // Set up/resume the analyser WITHIN the gesture so the AudioContext is allowed to
+    // run (a resume() in a later .then() is outside the gesture and autoplay policy can
+    // block it → the music, routed through the graph, stays silent).
+    try { setupMusicAnalyser(getEl()) } catch { /* */ }
     if (shouldPlay()) tryPlay()
   }
   window.addEventListener('pointerdown', gestureHandler)
