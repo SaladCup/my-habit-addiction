@@ -5,12 +5,15 @@ import { KawaiiButton } from './ui'
 // again for THAT version (a newer one will still prompt).
 const SNOOZE_KEY = 'habitAddict_updateSnoozed'
 
-// Auto-update prompt. On the desktop app it asks the public releases repo whether
-// a newer version exists (via window.desktop.checkForUpdate, no token needed) and,
-// if so, shows a kawaii card whose button opens the right installer to download.
-// In the browser (no window.desktop) it renders nothing.
+// Auto-update prompt. On the desktop app it asks the public releases repo whether a
+// newer version exists (via window.desktop.checkForUpdate, no token needed) and, if
+// so, shows a kawaii card. "Update now" does a ONE-CLICK self-install (download →
+// swap → relaunch); if that's unavailable or fails, it falls back to opening the
+// installer download. In the browser (no window.desktop) it renders nothing.
 export default function UpdatePrompt() {
   const [info, setInfo] = useState(null)
+  const [installing, setInstalling] = useState(false)
+  const [pct, setPct] = useState(0)
 
   useEffect(() => {
     let alive = true
@@ -24,7 +27,7 @@ export default function UpdatePrompt() {
     const check = test
       ? Promise.resolve({ ok: true, updateAvailable: true, currentVersion: '0.1.10', ...test })
       : (d && d.checkForUpdate ? d.checkForUpdate() : null)
-    if (!check) return   // browser / non-desktop: nothing to check
+    if (!check) return
     check.then(res => {
       if (!alive || !res || !res.ok || !res.updateAvailable) return
       try { if (localStorage.getItem(SNOOZE_KEY) === res.latestVersion) return } catch { /* ignore */ }
@@ -33,12 +36,42 @@ export default function UpdatePrompt() {
     return () => { alive = false }
   }, [])
 
+  // Live download progress from the main process during a self-install.
+  useEffect(() => {
+    const d = typeof window !== 'undefined' ? window.desktop : null
+    if (!d || !d.onUpdateProgress) return
+    return d.onUpdateProgress(frac => setPct(frac))
+  }, [])
+
   if (!info) return null
 
-  const onUpdate = () => {
-    if (window.desktop && window.desktop.openUpdateDownload) window.desktop.openUpdateDownload(info.downloadUrl)
+  const fallbackDownload = () => {
+    const d = window.desktop
+    if (d && d.openUpdateDownload) d.openUpdateDownload(info.downloadUrl)
     setInfo(null)
   }
+
+  const onUpdate = async () => {
+    const d = window.desktop
+    // Real one-click self-install (desktop app).
+    if (d && d.installUpdate && info.installUrl) {
+      setInstalling(true)
+      let res = null
+      try { res = await d.installUpdate(info.installUrl) } catch { /* fall through */ }
+      if (!res || !res.ok) { setInstalling(false); fallbackDownload() }
+      // On success the app downloads, quits, and relaunches into the new version.
+      return
+    }
+    // DEV/preview simulation so the installing UI is viewable without a desktop.
+    if (import.meta.env?.DEV && info.downloadUrl === '#') {
+      setInstalling(true)
+      let p = 0
+      const id = setInterval(() => { p = Math.min(1, p + 0.08); setPct(p); if (p >= 1) clearInterval(id) }, 120)
+      return
+    }
+    fallbackDownload()
+  }
+
   const onLater = () => {
     try { localStorage.setItem(SNOOZE_KEY, info.latestVersion) } catch { /* ignore */ }
     setInfo(null)
@@ -48,20 +81,36 @@ export default function UpdatePrompt() {
     <div style={backdrop} role="dialog" aria-modal="true" aria-label="Update available">
       <div style={card}>
         <div style={{ fontSize: 46, lineHeight: 1 }}>🎀</div>
-        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F' }}>Update available!</div>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.5 }}>
-          Version <b>v{info.latestVersion}</b> is ready
-          {info.currentVersion ? <> — you have v{info.currentVersion}</> : null}. ✨
-        </div>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B8AB5', lineHeight: 1.4 }}>
-          Your habits, coins &amp; streaks are kept safe.
-        </div>
-        <KawaiiButton variant="primary" size="lg" onClick={onUpdate} style={{ width: '100%', marginTop: 4 }}>
-          💖 Update now
-        </KawaiiButton>
-        <KawaiiButton variant="ghost" size="sm" onClick={onLater} style={{ width: '100%' }}>
-          Later
-        </KawaiiButton>
+        {installing ? (
+          <>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#3D2B4F' }}>
+              {pct >= 0.999 ? 'Installing…' : 'Downloading update…'}
+            </div>
+            <div style={{ width: '100%', height: 14, borderRadius: 99, background: '#F0E3F7', overflow: 'hidden', border: '2px solid #ECC0DE' }}>
+              <div style={{ width: `${Math.round(pct * 100)}%`, height: '100%', background: 'linear-gradient(90deg,#FF85A1,#C8A4E8)', transition: 'width 160ms ease' }} />
+            </div>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>
+              {Math.round(pct * 100)}% · the app will reopen automatically ✨
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F' }}>Update available!</div>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', lineHeight: 1.5 }}>
+              Version <b>v{info.latestVersion}</b> is ready
+              {info.currentVersion ? <> — you have v{info.currentVersion}</> : null}. ✨
+            </div>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B8AB5', lineHeight: 1.4 }}>
+              Your habits, coins &amp; streaks are kept safe.
+            </div>
+            <KawaiiButton variant="primary" size="lg" onClick={onUpdate} style={{ width: '100%', marginTop: 4 }}>
+              💖 Update now
+            </KawaiiButton>
+            <KawaiiButton variant="ghost" size="sm" onClick={onLater} style={{ width: '100%' }}>
+              Later
+            </KawaiiButton>
+          </>
+        )}
       </div>
     </div>
   )

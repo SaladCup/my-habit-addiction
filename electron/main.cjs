@@ -7,6 +7,8 @@
 const { app, BrowserWindow, shell, protocol, ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
+const os = require('node:os')
+const { spawn } = require('node:child_process')
 
 // Dev = loading the live Vite server. Packaged = loading the built files.
 // HABIT_FORCE_PROD lets us test the built (app://) path without packaging.
@@ -153,15 +155,21 @@ async function checkForUpdate() {
     const currentVersion = app.getVersion()
     const latestVersion = String(data.tag_name || '').replace(/^v/, '')
     const assets = Array.isArray(data.assets) ? data.assets : []
-    // Pick the installer for this OS: .dmg on Mac, .exe on Windows.
-    const wantExt = process.platform === 'darwin' ? '.dmg' : '.exe'
-    const asset = assets.find(a => String(a.name || '').toLowerCase().endsWith(wantExt))
+    const byExt = (suffix) => assets.find(a => String(a.name || '').toLowerCase().endsWith(suffix))
+    const isMac = process.platform === 'darwin'
+    const dmg = byExt('.dmg'), exe = byExt('.exe'), macZip = byExt('-mac.zip')
+    // downloadUrl = the human installer (dmg/exe, opened in the browser as a
+    // fallback). installUrl = what the one-click self-installer fetches: the .app
+    // zip on Mac, the .exe on Windows.
+    const installer = isMac ? dmg : exe
+    const selfInstall = isMac ? macZip : exe
     return {
       ok: true,
       updateAvailable: !!latestVersion && isNewerVersion(latestVersion, currentVersion),
       latestVersion,
       currentVersion,
-      downloadUrl: asset ? asset.browser_download_url : data.html_url,
+      downloadUrl: installer ? installer.browser_download_url : data.html_url,
+      installUrl: selfInstall ? selfInstall.browser_download_url : null,
       releaseUrl: data.html_url,
     }
   } catch (e) {
@@ -169,11 +177,92 @@ async function checkForUpdate() {
   }
 }
 
+// Stream a URL to a file, reporting fractional progress to the window.
+async function downloadFile(url, dest) {
+  const res = await fetch(url, { headers: { 'User-Agent': 'my-habit-addiction' } })
+  if (!res.ok || !res.body) throw new Error(`download HTTP ${res.status}`)
+  const total = Number(res.headers.get('content-length')) || 0
+  const out = fs.createWriteStream(dest)
+  const reader = res.body.getReader()
+  let received = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    out.write(Buffer.from(value))
+    received += value.length
+    if (total && mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('update:progress', Math.min(1, received / total))
+    }
+  }
+  await new Promise((resolve, reject) => out.end(err => (err ? reject(err) : resolve())))
+}
+
+// One-click update on macOS: download the .app zip, extract it, then hand off to a
+// DETACHED script that waits for us to quit, swaps the app in place (keeping a
+// backup so a mid-swap failure can't brick the install), clears quarantine, and
+// relaunches. No admin needed when the app lives in a user-writable /Applications.
+async function installMac(url) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'habit-update-'))
+  const zipPath = path.join(tmp, 'update.zip')
+  await downloadFile(url, zipPath)
+  const extractDir = path.join(tmp, 'x')
+  fs.mkdirSync(extractDir, { recursive: true })
+  await new Promise((resolve, reject) => {
+    const p = spawn('/usr/bin/ditto', ['-x', '-k', zipPath, extractDir], { stdio: 'ignore' })
+    p.on('exit', code => (code === 0 ? resolve() : reject(new Error('unzip failed'))))
+    p.on('error', reject)
+  })
+  const newApp = fs.readdirSync(extractDir).map(n => path.join(extractDir, n)).find(p => p.endsWith('.app'))
+  if (!newApp) throw new Error('no .app in update')
+  const dest = app.getPath('exe').split('/Contents/MacOS/')[0]   // /Applications/My Habit Addiction.app
+  const script = path.join(tmp, 'swap.sh')
+  fs.writeFileSync(script, [
+    '#!/bin/bash',
+    'PID="$1"; NEW="$2"; DEST="$3"',
+    'for i in $(seq 1 60); do kill -0 "$PID" 2>/dev/null || break; sleep 0.5; done',
+    'sleep 1',
+    'INCOMING="${DEST}.incoming"; BACKUP="${DEST}.bak"',
+    'rm -rf "$INCOMING" "$BACKUP"',
+    '/usr/bin/ditto "$NEW" "$INCOMING" || { /usr/bin/open "$DEST"; exit 1; }',
+    '/usr/bin/xattr -dr com.apple.quarantine "$INCOMING" 2>/dev/null',
+    '/bin/mv "$DEST" "$BACKUP" 2>/dev/null',
+    'if /bin/mv "$INCOMING" "$DEST"; then rm -rf "$BACKUP"; else /bin/mv "$BACKUP" "$DEST" 2>/dev/null; fi',
+    '/usr/bin/open "$DEST"',
+  ].join('\n') + '\n')
+  fs.chmodSync(script, 0o755)
+  spawn('/bin/bash', [script, String(process.pid), newApp, dest], { detached: true, stdio: 'ignore' }).unref()
+  setTimeout(() => app.quit(), 400)
+  return { ok: true, installing: true }
+}
+
+// One-click update on Windows: download the NSIS installer and run it silently;
+// it replaces the app in place and relaunches. We quit so files aren't locked.
+async function installWin(url) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'habit-update-'))
+  const exePath = path.join(tmp, 'Setup.exe')
+  await downloadFile(url, exePath)
+  spawn(exePath, ['/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref()
+  setTimeout(() => app.quit(), 400)
+  return { ok: true, installing: true }
+}
+
 function registerUpdateIpc() {
   ipcMain.handle('update:check', () => checkForUpdate())
   ipcMain.handle('update:open', (_e, url) => {
     if (typeof url === 'string' && /^https:\/\//.test(url)) shell.openExternal(url)
     return { ok: true }
+  })
+  // One-click self-install. On any failure the renderer falls back to opening the
+  // plain download, so the user is never left stuck.
+  ipcMain.handle('update:install', async (_e, url) => {
+    if (typeof url !== 'string' || !/^https:\/\//.test(url)) return { ok: false, error: 'bad url' }
+    try {
+      if (process.platform === 'darwin') return await installMac(url)
+      if (process.platform === 'win32') return await installWin(url)
+      return { ok: false, error: 'unsupported platform' }
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) }
+    }
   })
 }
 

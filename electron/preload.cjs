@@ -24,4 +24,13 @@ contextBridge.exposeInMainWorld('desktop', {
   //   { ok, updateAvailable, latestVersion, currentVersion, downloadUrl, releaseUrl }
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
   openUpdateDownload: (url) => ipcRenderer.invoke('update:open', url),
+  // One-click self-install: downloads + swaps the app + relaunches. Resolves
+  // { ok: true, installing: true } (the app then quits) or { ok: false } to fall back.
+  installUpdate: (url) => ipcRenderer.invoke('update:install', url),
+  // Subscribe to download progress (0..1). Returns an unsubscribe function.
+  onUpdateProgress: (cb) => {
+    const handler = (_e, frac) => cb(frac)
+    ipcRenderer.on('update:progress', handler)
+    return () => ipcRenderer.removeListener('update:progress', handler)
+  },
 })
