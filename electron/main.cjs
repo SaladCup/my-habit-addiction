@@ -14,6 +14,7 @@ const isDev = !app.isPackaged && !process.env.HABIT_FORCE_PROD
 const DEV_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173'
 const DIST = path.join(__dirname, '..', 'dist')
 const APP_URL = 'app://bundle/index.html'
+let mainWin = null   // the app window, so blocker IPC can raise/cover it
 
 // The custom scheme must be registered as privileged BEFORE the app is ready.
 protocol.registerSchemesAsPrivileged([
@@ -74,6 +75,7 @@ function registerBlockerIpc() {
           name: w.owner?.name ?? null,
           bundleId: w.owner?.bundleId ?? null,
           path: w.owner?.path ?? null,
+          pid: w.owner?.processId ?? null,
           title: w.title ?? null,
         },
       }
@@ -83,6 +85,20 @@ function registerBlockerIpc() {
       const needsPermission = /accessibility permission|screen recording/i.test(msg)
       return { ok: false, needsPermission, error: msg }
     }
+  })
+
+  // Block action (v1, non-destructive): bring OUR window to the front so the
+  // lock screen covers the Brainrot, and (while blocked) keep it on top.
+  ipcMain.handle('blocker:focus', () => {
+    if (!mainWin) return { ok: false }
+    if (mainWin.isMinimized()) mainWin.restore()
+    mainWin.show(); mainWin.focus()
+    return { ok: true }
+  })
+  ipcMain.handle('blocker:on-top', (_e, on) => {
+    if (!mainWin) return { ok: false }
+    mainWin.setAlwaysOnTop(!!on)
+    return { ok: true }
   })
 }
 
@@ -100,6 +116,8 @@ function createWindow() {
       nodeIntegration: false,
     },
   })
+
+  mainWin = win
 
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error('did-fail-load', code, desc, url)

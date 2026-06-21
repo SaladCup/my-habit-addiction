@@ -26,6 +26,7 @@ export default function RotBlockScreen() {
   const rotblock = useStore(s => s.rotblock)
   const settings = useStore(s => s.settings)
   const coins = useStore(s => s.getCoinsAvailable())
+  const rbRuntime = useStore(s => s.rbRuntime)
   const { rbSetEnabled, rbAddTarget, rbRemoveTarget, rbDrain } = useStore.getState()
 
   const [kind, setKind] = useState('app')   // 'app' | 'site'
@@ -99,6 +100,21 @@ export default function RotBlockScreen() {
         {blocked && !bgActive && (
           <div style={{ marginTop: 8, color: '#C44B6A', fontFamily: 'Mulish, sans-serif', fontSize: 17, fontWeight: 700 }}>
             🔒 Out of time — Brainrots are locked
+          </div>
+        )}
+        {desktop && rotblock.enabled && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #BFE3D2', fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F' }}>
+            {rbRuntime.permission === 'needed' ? (
+              <span style={{ color: '#C44B6A' }}>⚠️ Grant Accessibility in System Settings › Privacy &amp; Security › Accessibility so RotBlock can see the front app.</span>
+            ) : (
+              <>👀 In front: <b>{rbRuntime.frontApp || '—'}</b>
+                {rbRuntime.isBrainrot
+                  ? (rbRuntime.draining
+                      ? <span style={{ color: '#C9883C' }}> · ⏳ draining…</span>
+                      : <span style={{ color: '#C44B6A' }}> · 🔒 blocked</span>)
+                  : <span style={{ color: '#5CBFA0' }}> · ✓ not a Brainrot</span>}
+              </>
+            )}
           </div>
         )}
       </PixelPanel>

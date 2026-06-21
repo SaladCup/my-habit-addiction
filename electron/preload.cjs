@@ -9,7 +9,12 @@ contextBridge.exposeInMainWorld('desktop', {
   platform: process.platform, // 'darwin' (Mac) | 'win32' (Windows)
 
   // Which app is in the foreground right now. Resolves to:
-  //   { ok: true,  app: { name, bundleId, path, title } | null }
+  //   { ok: true,  app: { name, bundleId, path, pid, title } | null }
   //   { ok: false, needsPermission: true, error }   ← macOS Accessibility not granted yet
   getActiveApp: () => ipcRenderer.invoke('blocker:active-app'),
+
+  // Block actions (v1, non-destructive): pull our lock-screen window to the
+  // front and keep it on top of the Brainrot until unblocked.
+  focusSelf: () => ipcRenderer.invoke('blocker:focus'),
+  setOnTop: (on) => ipcRenderer.invoke('blocker:on-top', on),
 })

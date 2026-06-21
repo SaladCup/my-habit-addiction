@@ -29,6 +29,7 @@ import WheelBetScreen     from './screens/casino/WheelBetScreen'
 import RotBlockScreen     from './screens/RotBlockScreen'
 import BreakGlassScreen   from './screens/BreakGlassScreen'
 import BlockedScreen      from './screens/BlockedScreen'
+import RotBlockEnforcer   from './components/RotBlockEnforcer'
 
 const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
@@ -101,6 +102,7 @@ function AppShell() {
   return (
     <div className="app-shell">
       <MusicController />
+      <RotBlockEnforcer />
       <main className="screen">
         <Routes>
           <Route path="/"         element={<HomeScreen />} />

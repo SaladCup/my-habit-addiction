@@ -166,6 +166,9 @@ const useStore = create(
         setupSeen:       false,
         breakGlassUntil: null,  // ms timestamp; while > now, Brainrots are allowed despite 0 coins
       },
+      // Live enforcer status (desktop only) — NOT persisted. The enforcer loop
+      // publishes here so the RotBlock screen can show what it currently sees.
+      rbRuntime: { frontApp: null, isBrainrot: false, draining: false, permission: 'unknown' },
 
       // ── Ephemeral session (not persisted) ──
       session: { ...DEFAULT_SESSION },
@@ -291,6 +294,7 @@ const useStore = create(
       }),
       rbRemoveTarget: (id) => set(s => ({ rotblock: { ...s.rotblock, targets: s.rotblock.targets.filter(t => t.id !== id) } })),
       rbMarkSetupSeen: () => set(s => ({ rotblock: { ...s.rotblock, setupSeen: true } })),
+      rbSetRuntime: (patch) => set(s => ({ rbRuntime: { ...s.rbRuntime, ...patch } })),
       // Finishing the Break Glass gauntlet grants a fixed window of access despite 0 coins.
       rbStartBreakGlass: (minutes = 20) => set(s => ({ rotblock: { ...s.rotblock, breakGlassUntil: Date.now() + minutes * 60000 } })),
       rbClearBreakGlass: () => set(s => ({ rotblock: { ...s.rotblock, breakGlassUntil: null } })),
