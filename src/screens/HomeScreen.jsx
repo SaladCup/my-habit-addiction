@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { cashInGroupForBead } from '../engine/gameLogic'
-import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
+import { BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw, playCreateHabit } from '../engine/sounds'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
@@ -652,8 +652,6 @@ export default function HomeScreen() {
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <FloatingDecor />
-
       {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
       <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '14px 16px 2px' }}>
         <img

@@ -16,20 +16,6 @@ export default function WarningSplash({ onDismiss }) {
       overflowY: 'auto',
       animation: 'slide-up 0.4s ease',
     }}>
-      {/* Floating decor */}
-      {['✦','♡','⭐','✿','♡','✦'].map((s, i) => (
-        <span key={i} style={{
-          position: 'absolute',
-          fontSize: `${14 + i * 4}px`,
-          color: ['#FFB7C5','#C8B4E0','#FFE9A0','#B4E0C8','#FF85A1','#B4D4FF'][i],
-          opacity: 0.4,
-          left: `${10 + i * 15}%`,
-          top:  `${8 + (i % 3) * 12}%`,
-          animation: `float ${3 + i * 0.5}s ease-in-out ${-i * 0.4}s infinite`,
-          pointerEvents: 'none',
-        }}>{s}</span>
-      ))}
-
       <div style={{
         fontFamily: "'Fredoka', cursive",
         fontSize: '28px',

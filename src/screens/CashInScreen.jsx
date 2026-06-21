@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef, useLayoutEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { FloatingDecor, BeadDisplay, KawaiiButton } from '../components/ui'
+import { BeadDisplay, KawaiiButton } from '../components/ui'
 // Same 3D jar as Home — so the beads you drop here are the SAME beads waiting in
 // the jar when you come back from the game.
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
@@ -73,8 +73,6 @@ export default function CashInScreen() {
 
   return (
     <div ref={wrapRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-      <FloatingDecor />
-
       {/* Big jar, centred — the SAME jar/beads as Home */}
       {dims && (
         <div style={{ position: 'absolute', left: '50%', top: '55%', transform: 'translate(-50%, -50%)', zIndex: 5 }}>
