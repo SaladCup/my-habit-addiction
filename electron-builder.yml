@@ -16,13 +16,18 @@ files:
 # archive to be executable at runtime.
 asarUnpack:
   - "**/node_modules/get-windows/**"
+# Hook: after the .app is assembled, re-apply a valid AD-HOC signature (Mac only)
+# so the unsigned build isn't reported as "damaged" on Apple Silicon. See the file.
+afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.lifestyle
   icon: build/icon.icns      # the rounded squircle icon
   target:
     - dmg
     - zip
-  identity: null             # unsigned (no Apple Developer cert yet) — open via right-click → Open
+  identity: null             # no paid Apple cert: electron-builder skips signing,
+                             # then afterPack.cjs ad-hoc-signs → bypassable
+                             # "unverified developer" prompt (not the scary "damaged")
 win:
   icon: build/icon.png       # square art; electron-builder generates the .ico
   target:
