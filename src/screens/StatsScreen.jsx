@@ -68,15 +68,22 @@ function useStats(tab) {
       const d = new Date(b.earnedAt || b.cashedAt || 0)
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     }))
-    let streak = 0, best = 0, cur = 0
+    let best = 0, cur = 0
     const today = new Date()
     for (let i = 0; i < 365; i++) {
       const d = new Date(today); d.setDate(d.getDate() - i)
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
       if (daySet.has(key)) { cur++; best = Math.max(best, cur) }
-      else { if (i === 0) streak = cur; cur = 0 }
+      else { cur = 0 }
     }
-    if (streak === 0) streak = cur
+    let streak = 0
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today); d.setDate(d.getDate() - i)
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      if (daySet.has(key)) streak++
+      else if (i === 0) continue   // today empty is allowed; streak still counts through yesterday
+      else break
+    }
 
     // Per-habit counts
     const habitCounts = {}

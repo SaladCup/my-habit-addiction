@@ -9,7 +9,16 @@ import { playButtonTap, playWin, playNearMiss, playCoinDrop, playWheelTick } fro
 const MIN_BET = 10
 const N = WHEEL_SEGMENTS.length
 const SEG = 360 / N
-const R = 130, CX = 150, CY = 150
+// Box geometry so the gold rim/hub/pointer art (same as the habit-spin wheel) frames it.
+const BOX = 320
+const CX = BOX / 2, CY = BOX / 2
+const R = Math.round(BOX * 0.444)          // segments tuck just under the rim's inner lip
+const HUB = Math.round(BOX * 0.25)
+const POINTER_W = Math.round(BOX * 0.20)
+const POINTER_TOP = -Math.round(BOX * 0.045)
+// Long, suspenseful deceleration — whips up fast, then crawls to a near-stop.
+const SPIN_SECONDS = 5.6
+const SPIN_EASE = 'cubic-bezier(0.1, 0.78, 0.05, 1)'
 
 const segColor = m => m === 0 ? '#B6BECC' : m < 1 ? '#C8B4E0' : m < 2 ? '#9BD9B4' : m < 5 ? '#F2C94C' : '#FF6B6B'
 
@@ -53,7 +62,7 @@ export default function WheelBetScreen() {
       setResult({ mult, win })
       setPhase('done')
       if (mult >= 1) { playWin(mult >= 5 ? 't3' : mult >= 2 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
-    }, 3300)
+    }, SPIN_SECONDS * 1000 + 200)
   }
 
   function again() { setPhase('betting'); setResult(null) }
@@ -71,26 +80,38 @@ export default function WheelBetScreen() {
         Spin for a multiplier — but plenty of slices pay nothing.
       </div>
 
-      {/* wheel */}
-      <div style={{ position: 'relative', width: 300, height: 312, marginBottom: 10 }}>
-        <div style={{ position: 'absolute', top: 0, left: '50%', marginLeft: -12, fontSize: 26, zIndex: 2 }}>🔻</div>
-        <svg viewBox="0 0 300 300" width="300" height="300" style={{ position: 'absolute', top: 12, left: 0 }}>
-          <g style={{ transform: `rotate(${rotation}deg)`, transformOrigin: '150px 150px', transition: phase === 'spinning' ? 'transform 3.2s cubic-bezier(0.18,0.7,0.12,1)' : 'none' }}>
+      {/* wheel — gold rim/hub/pointer art (same as the habit-spin wheel) */}
+      <div style={{ position: 'relative', width: BOX, height: BOX, marginBottom: 12 }}>
+        {/* spinning value segments, under the rim */}
+        <svg viewBox={`0 0 ${BOX} ${BOX}`} width={BOX} height={BOX}
+          style={{ position: 'absolute', inset: 0, display: 'block', overflow: 'visible', zIndex: 1 }}>
+          <circle cx={CX} cy={CY} r={R} fill="#F3E3FA" />
+          <g style={{
+            transform: `rotate(${rotation}deg)`, transformOrigin: `${CX}px ${CY}px`,
+            transition: phase === 'spinning' ? `transform ${SPIN_SECONDS}s ${SPIN_EASE}` : 'none',
+          }}>
             {WHEEL_SEGMENTS.map((m, i) => {
               const [lx, ly] = pt(i * SEG + SEG / 2, R * 0.64)
               return (
                 <g key={i}>
                   <path d={wedgePath(i)} fill={segColor(m)} stroke="#fff" strokeWidth="2" />
-                  <text x={lx} y={ly} fill="#fff" fontFamily="'Fredoka', cursive" fontSize="16" fontWeight="700"
+                  <text x={lx} y={ly} fill="#fff" fontFamily="'Fredoka', cursive" fontSize="15" fontWeight="700"
                     textAnchor="middle" dominantBaseline="central" transform={`rotate(${i * SEG + SEG / 2} ${lx} ${ly})`}>
                     {m === 0 ? '✕' : `${m}×`}
                   </text>
                 </g>
               )
             })}
-            <circle cx={CX} cy={CY} r="20" fill="#FFF5F9" stroke="#E0A800" strokeWidth="3" />
           </g>
         </svg>
+        {/* static gold rim */}
+        <img src="/ui/wheel_rim.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 3, pointerEvents: 'none', filter: 'drop-shadow(0 10px 22px rgba(155,126,200,0.40))' }} />
+        {/* center hub */}
+        <img src="/ui/wheel_hub.png" alt="" style={{ position: 'absolute', left: '50%', top: '50%', width: HUB, height: HUB, transform: 'translate(-50%,-50%)', zIndex: 4, pointerEvents: 'none' }} />
+        {/* pointer at top */}
+        <div style={{ position: 'absolute', top: POINTER_TOP, left: '50%', transform: 'translateX(-50%)', width: POINTER_W, zIndex: 5, pointerEvents: 'none' }}>
+          <img src="/ui/wheel_pointer.png" alt="" style={{ width: '100%', display: 'block', transformOrigin: '50% 0%', filter: 'drop-shadow(0 3px 6px rgba(155,126,200,0.5))' }} />
+        </div>
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>

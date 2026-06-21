@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
-import { KawaiiButton, CoinIcon } from '../../components/ui'
+import { CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { SLOT_SYMBOLS, spinSlots } from '../../engine/casino/slots'
-import SlotsPixi from '../../components/SlotsPixi'
+import CasinoSlots from '../../components/CasinoSlots'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playReelStop } from '../../engine/sounds'
 
 const MIN_BET = 10
@@ -58,8 +58,6 @@ export default function SlotsBetScreen() {
     if (r.win3) { playWin(r.mult >= 600 ? 'jackpot' : r.mult >= 130 ? 't3' : r.mult >= 40 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
   }
 
-  function again() { setPhase('betting'); setResult(null) }
-
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -73,25 +71,33 @@ export default function SlotsBetScreen() {
         Match three to win. Rarer symbols pay way more.
       </div>
 
-      {/* PixiJS slot machine */}
-      <div style={{ width: 360, height: 300, marginBottom: 12 }}>
-        <SlotsPixi reels={reels} spinId={spinId} win3={result?.win3 ?? false} onSettled={doSettle} />
-      </div>
+      {/* Real-cabinet slot machine — tap its painted SPIN button to play */}
+      <CasinoSlots
+        reels={reels}
+        spinId={spinId}
+        win3={result?.win3 ?? false}
+        bet={bet}
+        lastWin={result?.win ?? 0}
+        canSpin={phase !== 'spinning' && !tooPoor}
+        onSpin={spin}
+        onSettled={doSettle}
+      />
 
-      <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {phase === 'done' && (result.win3
-          ? <span style={{ color: '#5CBFA0' }}>{SYM[reels[0]]}×3 — won {result.win.toLocaleString()} <CoinIcon /> (×{result.mult})</span>
-          : <span style={{ color: '#C44B6A' }}>No match — lost {bet.toLocaleString()} <CoinIcon /></span>)}
+      <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, margin: '8px 0' }}>
+        {phase === 'done'
+          ? (result.win3
+              ? <span style={{ color: '#5CBFA0' }}>{SYM[reels[0]]}×3 — won {result.win.toLocaleString()} <CoinIcon /> (×{result.mult})</span>
+              : <span style={{ color: '#C44B6A' }}>No match — lost {bet.toLocaleString()} <CoinIcon /></span>)
+          : phase === 'spinning'
+            ? <span style={{ color: '#9B7EC8' }}>Spinning…</span>
+            : tooPoor
+              ? <span style={{ color: '#C44B6A' }}>Not enough coins</span>
+              : <span style={{ color: '#9B7EC8', fontSize: 16 }}>Set your bet, then tap the machine's ▶ SPIN</span>}
       </div>
 
       {phase !== 'spinning' && (
         <>
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
-          <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
-            <KawaiiButton variant="primary" size="lg" fullWidth disabled={tooPoor} onClick={phase === 'done' ? again : spin}>
-              {phase === 'done' ? '↻ SPIN AGAIN' : (tooPoor ? 'NOT ENOUGH COINS' : <>🎰 SPIN FOR {bet.toLocaleString()} <CoinIcon /></>)}
-            </KawaiiButton>
-          </div>
           {/* paytable */}
           <div style={{ marginTop: 14, width: '100%', maxWidth: 420, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px' }}>
             {SLOT_SYMBOLS.map(s => (

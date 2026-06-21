@@ -75,7 +75,7 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
 
     const anim = el.animate(
       [{ transform: 'rotate(0deg)' }, { transform: `rotate(${stopAngle}deg)` }],
-      { duration: 6500, easing: 'cubic-bezier(0.18, 0.04, 0.05, 1.0)', fill: 'forwards' }
+      { duration: 9000, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
     )
     trackTicks()
     anim.onfinish = () => {

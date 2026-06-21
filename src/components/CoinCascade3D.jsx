@@ -28,7 +28,7 @@ function StudioEnv() {
 
 function useCoin() {
   const normal = useTexture('/ui/coin_normal.png')
-  return useMemo(() => {
+  const result = useMemo(() => {
     normal.colorSpace = THREE.NoColorSpace      // raw normal data, not sRGB
     normal.anisotropy = 4
     const geo = new THREE.CylinderGeometry(1, 1, 0.17, 64, 1)   // groups: 0 side, 1 top, 2 bottom
@@ -37,6 +37,14 @@ function useCoin() {
     const edge = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.34, envMapIntensity: 1.15 })
     return { geo, mats: [edge, cap, cap], radius: COIN_S, halfH: 0.085 * COIN_S }
   }, [normal])
+  // r3f doesn't auto-dispose geometry/materials attached by reference through props,
+  // so release them on unmount. mats is [edge, cap, cap] — cap is shared, dispose once.
+  useEffect(() => () => {
+    result.geo.dispose()
+    result.mats[0].dispose()   // edge
+    result.mats[1].dispose()   // cap (shared with index 2 — do not double-dispose)
+  }, [result])
+  return result
 }
 
 const WAVE_SPEED = 2.2   // cannon sweep speed (rad/s) — a left↔right↔left wave ~every 2.9s

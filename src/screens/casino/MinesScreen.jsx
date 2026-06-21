@@ -20,6 +20,7 @@ export default function MinesScreen() {
   const [revealed, setRevealed] = useState(() => new Set())
   const [hitTile, setHitTile]   = useState(-1)
   const [outcome, setOutcome]   = useState(null)
+  const [staked, setStaked] = useState(0)
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -32,6 +33,7 @@ export default function MinesScreen() {
   function start() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'mines')) return
+    setStaked(bet)
     setMines(placeMines(mineCount))
     setRevealed(new Set())
     setHitTile(-1); setOutcome(null); setPhase('playing')
@@ -53,7 +55,7 @@ export default function MinesScreen() {
   function finishCash(count) {
     const n = count ?? k
     const mult = minesMultiplier(mineCount, n)
-    const win = Math.floor(bet * mult)
+    const win = Math.floor(staked * mult)
     settleBet(win, 'mines')
     setOutcome({ win, mult }); setPhase('cashed')
     playWin(mult >= 10 ? 'jackpot' : mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1'); playCoinDrop()
@@ -116,16 +118,16 @@ export default function MinesScreen() {
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {phase === 'playing' && k >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
+        {phase === 'playing' && k >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(staked * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
         {phase === 'playing' && k === 0 && <span style={{ color: '#7B5EA7' }}>First gem pays ×{nextMult}</span>}
         {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {outcome.win.toLocaleString()} <CoinIcon /> (×{outcome.mult})</span>}
-        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💥 Boom! Lost {bet.toLocaleString()} <CoinIcon /></span>}
+        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💥 Boom! Lost {staked.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {phase === 'playing' && (
         <div style={{ width: '100%', maxWidth: 420 }}>
           <KawaiiButton variant="gold" size="lg" fullWidth disabled={k < 1} onClick={() => finishCash()}>
-            {k < 1 ? 'REVEAL A GEM FIRST' : <>💰 CASH OUT {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /></>}
+            {k < 1 ? 'REVEAL A GEM FIRST' : <>💰 CASH OUT {Math.floor(staked * curMult).toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#9B7EC8', textAlign: 'center', marginTop: 8 }}>
             {k} gem{k === 1 ? '' : 's'} · next gem → ×{nextMult}

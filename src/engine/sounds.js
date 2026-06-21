@@ -28,6 +28,7 @@ function getSettings() {
 
 function note(c, freq, startTime, duration, type = 'sine', peakGain = 0.28) {
   const { volume } = getSettings()
+  if (volume <= 0) return
   const osc = c.createOscillator()
   const gain = c.createGain()
   osc.connect(gain)
@@ -79,6 +80,7 @@ export function playSpinStart() {
   play(c => {
     const t = c.currentTime
     const { volume } = getSettings()
+    if (volume <= 0) return
     const osc = c.createOscillator()
     const gain = c.createGain()
     osc.connect(gain); gain.connect(c.destination)
@@ -112,6 +114,7 @@ export function playNearMiss() {
   play(c => {
     const t = c.currentTime
     const { volume } = getSettings()
+    if (volume <= 0) return
     const osc = c.createOscillator()
     const gain = c.createGain()
     osc.connect(gain); gain.connect(c.destination)
@@ -203,6 +206,7 @@ export function playStreakBreak() {
   play(c => {
     const t = c.currentTime
     const { volume } = getSettings()
+    if (volume <= 0) return
     ;[392, 349, 311, 247].forEach((f, i) => {     // G F Eb B — sad descending
       const osc = c.createOscillator(), g = c.createGain()
       osc.type = 'sawtooth'; osc.connect(g); g.connect(c.destination)

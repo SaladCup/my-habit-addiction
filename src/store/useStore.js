@@ -465,7 +465,7 @@ const useStore = create(
       checkInStreak: () => {
         const today = new Date().toDateString()
         const d = get().daily
-        if (d.streakShownDate === today || d.lastPlayDate === today) return null   // once per day
+        if (d.lastPlayDate === today) return null   // once per day
         const yesterday = new Date(Date.now() - 86400000).toDateString()
         const prevStreak = d.loginStreak || 0
         let newStreak, broken
@@ -475,7 +475,7 @@ const useStore = create(
         else                                   { newStreak = 1; broken = false }  // no streak to break → fresh start
         const bonus = newStreak > 0 ? Math.min(10 * newStreak, 200) : 0
         if (bonus > 0) get().awardCoins(bonus, 'daily-streak')
-        set({ daily: { lastPlayDate: today, loginStreak: newStreak, bonusClaimedDate: today, streakShownDate: today } })
+        set({ daily: { lastPlayDate: today, loginStreak: newStreak, bonusClaimedDate: today } })
         return { prevStreak, newStreak, broken, bonus }
       },
 

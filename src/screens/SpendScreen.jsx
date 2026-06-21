@@ -29,7 +29,7 @@ export default function SpendScreen() {
     setDollars(''); setNote('')
   }
 
-  const spends = coinLog.filter(e => e.type === 'spent').slice().reverse().slice(0, 8)
+  const spends = coinLog.filter(e => e.type === 'spent' && !/^(casino|rotblock):/.test(e.note || '')).slice().reverse().slice(0, 8)
 
   return (
     <div style={{ minHeight: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
@@ -125,7 +125,7 @@ export default function SpendScreen() {
                 </div>
               </div>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#D4607A' }}>
-                −{e.amount.toLocaleString()} <CoinIcon />
+                −{(e.amount || 0).toLocaleString()} <CoinIcon />
               </div>
             </div>
           ))}

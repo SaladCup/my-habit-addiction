@@ -37,12 +37,11 @@ function isOwnApp(app) {
 
 export default function RotBlockEnforcer() {
   const navigate = useNavigate()
-  const aliveRef = useRef(false)
   const accRef = useRef(0)         // accumulated seconds-on-brainrot, for fractional draining
   const blockingRef = useRef(false)
 
   useEffect(() => {
-    aliveRef.current = true        // MUST set true on setup (StrictMode double-mount safety)
+    let alive = true               // per-effect-run liveness token (own your own cancellation)
     const desktop = (typeof window !== 'undefined') ? window.desktop : null
     if (!desktop?.isDesktop || !desktop.getActiveApp) return   // off-desktop = inert
 
@@ -67,10 +66,13 @@ export default function RotBlockEnforcer() {
       if (!blockingRef.current) return
       blockingRef.current = false
       try { desktop.setOnTop?.(false) } catch { /* */ }
+      // Pop the lock route on the genuine block->release transition so the UI can't
+      // be left stranded on /blocked after the cover is dropped.
+      if (String(window.location.hash).startsWith('#/blocked')) navigate('/rotblock')
     }
 
     const tick = async () => {
-      if (!aliveRef.current) return
+      if (!alive) return
       if (!useStore.getState().rotblock.enabled) {
         accRef.current = 0; releaseBlock()
         publish(null, false, false, 'ok')
@@ -79,11 +81,16 @@ export default function RotBlockEnforcer() {
 
       let res
       try { res = await desktop.getActiveApp() } catch { res = null }
-      if (!aliveRef.current) return
+      if (!alive) return
       const cur = useStore.getState()
       if (!cur.rotblock.enabled) { releaseBlock(); return }   // re-check after the await
 
       if (!res || res.ok === false) {
+        // Front app is unreadable (e.g. Accessibility revoked). Don't strand a held
+        // block: re-evaluate broke independently so earning coins / finishing Break
+        // Glass still lifts the always-on-top cover regardless of permission state.
+        const stillBroke = cur.getCoinsAvailable() <= 0 && !(cur.rotblock.breakGlassUntil && cur.rotblock.breakGlassUntil > Date.now())
+        if (!stillBroke) releaseBlock()
         publish(cur.rbRuntime.frontApp, cur.rbRuntime.isBrainrot, false, res?.needsPermission ? 'needed' : 'unknown')
         return
       }
@@ -117,15 +124,15 @@ export default function RotBlockEnforcer() {
 
     // self-scheduling loop — next tick only AFTER the current one resolves (no overlap)
     const loop = async () => {
-      if (!aliveRef.current) return
+      if (!alive) return
       await tick()
-      if (!aliveRef.current) return
+      if (!alive) return
       timer = setTimeout(loop, POLL_MS)
     }
     loop()
 
     return () => {
-      aliveRef.current = false
+      alive = false
       if (timer) clearTimeout(timer)
       try { window.desktop?.setOnTop?.(false) } catch { /* */ }
     }

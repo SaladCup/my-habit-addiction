@@ -129,13 +129,15 @@ function Jar() {
     // collider: the INTERIOR surface (inset by glass wall), incl. bottom disc
     const inner = PROFILE.map(([r, y]) => new THREE.Vector2(Math.max(0.001, r - 0.06), Math.max(y, 0.05)))
     const collGeo = new THREE.LatheGeometry(inner, 24)
-    return {
-      glassGeo,
-      collVerts: collGeo.attributes.position.array,
-      // rapier wants Uint32 indices; three uses Uint16 for small geometries
-      collIndices: new Uint32Array(collGeo.index.array),
-    }
+    const collVerts = collGeo.attributes.position.array
+    // rapier wants Uint32 indices; three uses Uint16 for small geometries
+    const collIndices = new Uint32Array(collGeo.index.array)
+    collGeo.dispose()           // CPU-only geometry, done once verts/indices copied
+    return { glassGeo, collVerts, collIndices }
   }, [])
+  // glassGeo is attached imperatively (geometry={glassGeo}), so r3f won't
+  // auto-dispose it on unmount — free the GPU buffer ourselves per mount.
+  useEffect(() => () => glassGeo.dispose(), [glassGeo])
   return (
     <>
       {/* beads render first; glass draws over them with alpha (renderOrder) */}

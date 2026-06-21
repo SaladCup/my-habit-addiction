@@ -118,7 +118,7 @@ export default function BonusScreen() {
               </div>
               {collectedBead && (
                 <KawaiiButton variant="mint" size="lg" fullWidth
-                  onClick={() => { resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }}
+                  onClick={() => { resetRewardChain(); resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }}
                   style={{ animation: 'bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1)' }}
                 >
                   ✨ COLLECT YOUR BEAD →
@@ -172,7 +172,7 @@ export default function BonusScreen() {
           variant="mint"
           size="xl"
           fullWidth
-          onClick={() => { resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }}
+          onClick={() => { resetRewardChain(); resetSession(); navigate('/', { state: { freeBead: collectedBead } }) }}
           style={{ animation: 'bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1)', maxWidth: 380 }}
         >
           ✨ COLLECT YOUR BEAD →

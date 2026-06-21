@@ -132,7 +132,7 @@ const Wheel = forwardRef(function Wheel(
     if (isNearMiss && nearMissAngle != null) {
       const a1 = el.animate(
         [{ transform: `rotate(${start}deg)` }, { transform: `rotate(${nearMissAngle}deg)` }],
-        { duration: 8500, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
+        { duration: 11000, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
       )
       await a1.finished
       trackingRef.current = false // stop ticking before near-miss snap
@@ -151,7 +151,7 @@ const Wheel = forwardRef(function Wheel(
       const overshoot = stopAngle + 1.5
       const a1 = el.animate(
         [{ transform: `rotate(${start}deg)` }, { transform: `rotate(${overshoot}deg)` }],
-        { duration: 10000, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
+        { duration: 13500, easing: 'cubic-bezier(0.16, 0.8, 0.2, 1)', fill: 'forwards' }
       )
       await a1.finished
       trackingRef.current = false // stop ticking before spring settle

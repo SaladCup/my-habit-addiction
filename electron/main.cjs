@@ -39,13 +39,20 @@ function registerAppProtocol() {
     if (rel === '/' || rel === '') rel = '/index.html'
     const filePath = path.normalize(path.join(DIST, rel))
     if (!filePath.startsWith(DIST)) return new Response('forbidden', { status: 403 })
+    const CSP = "default-src 'self' app:; img-src 'self' app: data:; media-src 'self' app:; style-src 'self' 'unsafe-inline'; script-src 'self'"
     try {
       const data = await fs.promises.readFile(filePath)
       const ext = path.extname(filePath).toLowerCase()
-      return new Response(data, { headers: { 'content-type': MIME[ext] || 'application/octet-stream' } })
+      const headers = { 'content-type': MIME[ext] || 'application/octet-stream' }
+      if (ext === '.html') headers['content-security-policy'] = CSP
+      return new Response(data, { headers })
     } catch {
+      const reqExt = path.extname(rel).toLowerCase()
+      // Only fall back to index.html for navigation/SPA-route requests (no
+      // extension or .html). Genuinely missing assets surface as real 404s.
+      if (reqExt !== '' && reqExt !== '.html') return new Response('not found', { status: 404 })
       const data = await fs.promises.readFile(path.join(DIST, 'index.html'))
-      return new Response(data, { headers: { 'content-type': 'text/html' } })
+      return new Response(data, { headers: { 'content-type': 'text/html', 'content-security-policy': CSP } })
     }
   })
 }
@@ -90,13 +97,13 @@ function registerBlockerIpc() {
   // Block action (v1, non-destructive): bring OUR window to the front so the
   // lock screen covers the Brainrot, and (while blocked) keep it on top.
   ipcMain.handle('blocker:focus', () => {
-    if (!mainWin) return { ok: false }
+    if (!mainWin || mainWin.isDestroyed()) return { ok: false }
     if (mainWin.isMinimized()) mainWin.restore()
     mainWin.show(); mainWin.focus()
     return { ok: true }
   })
   ipcMain.handle('blocker:on-top', (_e, on) => {
-    if (!mainWin) return { ok: false }
+    if (!mainWin || mainWin.isDestroyed()) return { ok: false }
     mainWin.setAlwaysOnTop(!!on)
     return { ok: true }
   })
@@ -119,6 +126,8 @@ function createWindow() {
 
   mainWin = win
 
+  win.on('closed', () => { if (mainWin === win) mainWin = null })
+
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error('did-fail-load', code, desc, url)
   })
@@ -129,9 +138,8 @@ function createWindow() {
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       shell.openExternal(url)
-      return { action: 'deny' }
     }
-    return { action: 'allow' }
+    return { action: 'deny' }
   })
 
   // Headless verification hook: with HABIT_CAPTURE set to a file path, snapshot

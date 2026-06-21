@@ -21,6 +21,7 @@ export default function PenguinCrossScreen() {
   const [outcome, setOutcome] = useState(null)    // { win, mult }
   const trackRef = useRef(null)
   const penRef   = useRef(null)
+  const [staked, setStaked] = useState(0)
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -33,6 +34,7 @@ export default function PenguinCrossScreen() {
   function start() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'cross')) return
+    setStaked(bet)
     setLane(0); setDeathLane(-1); setOutcome(null); setPhase('crossing')
     playButtonTap()
   }
@@ -53,7 +55,7 @@ export default function PenguinCrossScreen() {
   function finishCash(atLane) {
     const l = atLane ?? lane
     const mult = crossMultiplier(mode, l)
-    const win = Math.floor(bet * mult)
+    const win = Math.floor(staked * mult)
     settleBet(win, 'cross')
     setOutcome({ win, mult })
     setPhase('cashed')
@@ -129,10 +131,10 @@ export default function PenguinCrossScreen() {
 
       {/* status line */}
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
-        {crossing && lane >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
+        {crossing && lane >= 1 && <span style={{ color: '#5CBFA0' }}>Cash out = {Math.floor(staked * curMult).toLocaleString()} <CoinIcon /> (×{curMult})</span>}
         {crossing && lane === 0 && <span style={{ color: '#7B5EA7' }}>Next lane pays ×{nextMult}</span>}
         {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Safe! Banked {outcome.win.toLocaleString()} <CoinIcon /> (×{outcome.mult})</span>}
-        {phase === 'hit' && <span style={{ color: '#C44B6A' }}>💥 Splat! Lost {bet.toLocaleString()} <CoinIcon /></span>}
+        {phase === 'hit' && <span style={{ color: '#C44B6A' }}>💥 Splat! Lost {staked.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {crossing && (
@@ -141,7 +143,7 @@ export default function PenguinCrossScreen() {
             🐧 CROSS → ×{nextMult}
           </KawaiiButton>
           <KawaiiButton variant="gold" size="md" fullWidth disabled={lane < 1} onClick={() => finishCash()}>
-            {lane < 1 ? 'CROSS AT LEAST ONE LANE' : <>💰 CASH OUT {Math.floor(bet * curMult).toLocaleString()} <CoinIcon /></>}
+            {lane < 1 ? 'CROSS AT LEAST ONE LANE' : <>💰 CASH OUT {Math.floor(staked * curMult).toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
         </div>
       )}

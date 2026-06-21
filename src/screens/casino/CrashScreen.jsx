@@ -23,6 +23,7 @@ export default function CrashScreen() {
   const startRef = useRef(0)
   const bustRef  = useRef(0)
   const autoRef  = useRef(0)
+  const [staked, setStaked] = useState(0)             // stake snapshot at launch (avoids re-clamped bet)
   const tickRef  = useRef(1)                          // last integer multiplier we ticked a sound for
   const aliveRef = useRef(true)
   useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; cancelAnimationFrame(rafRef.current) } }, [])
@@ -46,6 +47,7 @@ export default function CrashScreen() {
   function launch() {
     if (!canLaunch) return
     if (!placeBet(bet, 'crash')) return
+    setStaked(bet)
     bustRef.current = rollCrashPoint()
     autoRef.current = Number(auto) > 1 ? Number(auto) : 0
     startRef.current = performance.now()
@@ -59,7 +61,7 @@ export default function CrashScreen() {
     cancelAnimationFrame(rafRef.current)
     const t = (performance.now() - startRef.current) / 1000
     const at = Math.min(forcedAt || crashMultiplierAt(t), bustRef.current)
-    const win = Math.floor(bet * at)
+    const win = Math.floor(staked * at)
     settleBet(win, 'crash')
     setMult(at); setOutcome({ win, at }); setPhase('cashed')
     playWin(at >= 10 ? 'jackpot' : at >= 3 ? 't3' : at >= 1.8 ? 't2' : 't1')
@@ -99,16 +101,16 @@ export default function CrashScreen() {
           {(phase === 'betting' ? 1 : mult).toFixed(2)}×
         </div>
         {running && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#7B5EA7', marginTop: 6 }}>
-          cash out = {Math.floor(bet * mult).toLocaleString()} <CoinIcon />
+          cash out = {Math.floor(staked * mult).toLocaleString()} <CoinIcon />
         </div>}
-        {phase === 'busted' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C44B6A', marginTop: 4 }}>💥 CRASHED — lost {bet.toLocaleString()} <CoinIcon /></div>}
+        {phase === 'busted' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C44B6A', marginTop: 4 }}>💥 CRASHED — lost {staked.toLocaleString()} <CoinIcon /></div>}
         {phase === 'cashed' && <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#5CBFA0', marginTop: 4 }}>✅ Banked {outcome.win.toLocaleString()} <CoinIcon /></div>}
       </div>
 
       {running && (
         <div style={{ width: '100%', maxWidth: 420 }}>
           <KawaiiButton variant="gold" size="lg" fullWidth onClick={() => cashOut()}>
-            💰 CASH OUT {Math.floor(bet * mult).toLocaleString()} <CoinIcon />
+            💰 CASH OUT {Math.floor(staked * mult).toLocaleString()} <CoinIcon />
           </KawaiiButton>
         </div>
       )}

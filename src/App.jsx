@@ -22,7 +22,6 @@ import PenguinCrossScreen from './screens/casino/PenguinCrossScreen'
 import MinesScreen        from './screens/casino/MinesScreen'
 import PlinkoScreen       from './screens/casino/PlinkoScreen'
 import HiLoScreen         from './screens/casino/HiLoScreen'
-import LimboScreen        from './screens/casino/LimboScreen'
 import BlackjackScreen    from './screens/casino/BlackjackScreen'
 import SlotsBetScreen     from './screens/casino/SlotsBetScreen'
 import WheelBetScreen     from './screens/casino/WheelBetScreen'
@@ -41,7 +40,7 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
 ]
 
-const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/break-glass', '/blocked', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/limbo', '/casino/blackjack', '/casino/slots', '/casino/wheel']
+const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/break-glass', '/blocked', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/blackjack', '/casino/slots', '/casino/wheel']
 
 function BottomNav() {
   const { pathname } = useLocation()
@@ -119,7 +118,6 @@ function AppShell() {
           <Route path="/casino/mines"    element={<MinesScreen />} />
           <Route path="/casino/plinko"   element={<PlinkoScreen />} />
           <Route path="/casino/hilo"     element={<HiLoScreen />} />
-          <Route path="/casino/limbo"    element={<LimboScreen />} />
           <Route path="/casino/blackjack" element={<BlackjackScreen />} />
           <Route path="/casino/slots"    element={<SlotsBetScreen />} />
           <Route path="/casino/wheel"    element={<WheelBetScreen />} />
