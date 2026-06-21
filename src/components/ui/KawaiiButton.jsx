@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { playButtonTap } from '../../engine/sounds'
 
 const VARIANTS = {
   primary:   { bg: '#FF85A1', shadow: '#C44B6A', text: '#fff' },
@@ -35,6 +36,7 @@ export default function KawaiiButton({
 
   function handleClick(e) {
     if (disabled) return
+    playButtonTap()
     // Squish animation
     if (btnRef.current) {
       btnRef.current.animate(

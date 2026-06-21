@@ -7,6 +7,8 @@
 // reject — we then arm a one-time gesture listener and start on the first tap.
 // The React side just pushes settings in via setMusicConfig(); this module owns
 // the element, the play/pause logic, and the autoplay-unlock dance.
+import { setupMusicAnalyser } from './audioReactive'
+
 const SRC = '/music/bg-kawaii-pop.mp3'
 // Master ceiling on music loudness: the actual element volume = musicVolume *
 // MUSIC_GAIN. The track itself is hot, so we scale the whole slider range down
@@ -41,7 +43,12 @@ function tryPlay() {
   const a = getEl(); if (!a) return
   const p = a.play()
   // play() returns a promise in modern browsers; a rejection = autoplay blocked.
-  if (p && typeof p.catch === 'function') p.catch(() => armGesture())
+  if (p && typeof p.then === 'function') {
+    p.then(() => setupMusicAnalyser(a))   // wire the rainbow's audio analyser once playing
+     .catch(() => armGesture())
+  } else {
+    setupMusicAnalyser(a)
+  }
 }
 
 // Remove the armed first-gesture listeners (if any). Safe to call any time.

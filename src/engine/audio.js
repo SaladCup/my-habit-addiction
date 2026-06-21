@@ -22,6 +22,9 @@ const MANIFEST = {
   beadGold:        'bead-gold.mp3',     // gold-coin prize jingle — gold bead
   beadRainbow:     'bead-rainbow.mp3',  // magic-wand sparkle — the rainbow wild-card bead
   reelStop:        'reel-stop.mp3',     // crisp mechanical click — a slot reel landing
+  buttonTap:       'button-tap.wav',    // kawaii fairy-sparkle "ting" — every button press
+  uiHover:         'ui-hover.wav',      // soft magic blip — hovering a nav icon
+  uiSwoosh:        'ui-swoosh.wav',     // quick whoosh — screen / nav transitions
 }
 
 let ctx = null

@@ -201,3 +201,40 @@ body {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.14); }
 }
+
+/* Bottom-nav icons: grow + wiggle on hover (pointer devices only). The inline
+   `transition: transform` smoothly shrinks them back when the hover ends. */
+.nav-icon { transform-origin: center 72%; }
+@media (hover: hover) {
+  .nav-icon:hover { animation: nav-wiggle 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+}
+@keyframes nav-wiggle {
+  0%   { transform: scale(1)    rotate(0deg); }
+  30%  { transform: scale(1.22) rotate(-10deg); }
+  55%  { transform: scale(1.18) rotate(8deg); }
+  78%  { transform: scale(1.2)  rotate(-4deg); }
+  100% { transform: scale(1.2)  rotate(0deg); }
+}
+
+/* Audio-reactive rainbow edge glow ("audiolink"): a rotating rainbow ring framing
+   the app, its thickness/glow/opacity pulsing with the music via --audio-level
+   (set each frame by AudioRainbow.jsx). Breathes gently when there's no audio. */
+@property --rb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.audio-rainbow {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  padding: calc(5px + var(--audio-level, 0.13) * 12px);
+  background: conic-gradient(from var(--rb-angle),
+    #ff4d8d, #ff9a3e, #ffe24e, #6cf578, #4fc9ff, #9b6bff, #ff4d8d);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: calc(0.5 + var(--audio-level, 0.13) * 0.5);
+  filter: blur(calc(1.5px + var(--audio-level, 0.13) * 6px)) saturate(1.7) brightness(1.1);
+  animation: rb-spin 8s linear infinite;
+}
+@keyframes rb-spin { to { --rb-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .audio-rainbow { animation: none; } }

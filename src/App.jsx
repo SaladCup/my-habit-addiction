@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-do
 import './styles/global.css'
 import useStore from './store/useStore'
 import { setMusicConfig } from './engine/music'
+import { playHover, playSwoosh } from './engine/sounds'
 import { WarningSplash } from './components/ui'
 import StreakPopup from './components/StreakPopup'
 import HomeScreen     from './screens/HomeScreen'
@@ -29,6 +30,7 @@ import RotBlockScreen     from './screens/RotBlockScreen'
 import BreakGlassScreen   from './screens/BreakGlassScreen'
 import BlockedScreen      from './screens/BlockedScreen'
 import RotBlockEnforcer   from './components/RotBlockEnforcer'
+import AudioRainbow       from './components/AudioRainbow'
 
 const ICON_V = '7'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
@@ -54,9 +56,12 @@ function BottomNav() {
           end={item.to === '/'}
           style={navItemStyle}
           aria-label={item.label}
+          onMouseEnter={playHover}
+          onClick={playSwoosh}
         >
           {({ isActive }) => (
             <img
+              className="nav-icon"
               src={item.icon}
               alt={item.label}
               title={item.label}
@@ -69,9 +74,7 @@ function BottomNav() {
                 display: 'block',
                 margin: '0 auto',
                 transition: 'transform 200ms ease, filter 200ms ease',
-                // Every icon identical size AND position (no scale, no lift) so
-                // the active one never sits higher/bigger. Active = pink glow only.
-                transform: 'none',
+                // Active = pink glow. Hover grows + wiggles (see .nav-icon in global.css).
                 filter: isActive
                   ? 'drop-shadow(0 4px 10px rgba(255,133,161,0.95))'
                   : 'drop-shadow(0 3px 6px rgba(120,90,160,0.45))',
@@ -102,6 +105,7 @@ function AppShell() {
     <div className="app-shell">
       <MusicController />
       <RotBlockEnforcer />
+      <AudioRainbow />
       <main className="screen">
         <Routes>
           <Route path="/"         element={<HomeScreen />} />

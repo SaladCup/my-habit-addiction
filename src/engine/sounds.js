@@ -72,9 +72,23 @@ export function playBeadDraw(kind = null) {
   })
 }
 
+let _lastTapAt = 0
 export function playButtonTap() {
-  play(c => note(c, 660, c.currentTime, 0.07, 'sine', 0.13))
+  // collapse rapid double-calls (e.g. KawaiiButton's own tap + a screen's manual call)
+  const now = (typeof performance !== 'undefined') ? performance.now() : Date.now()
+  if (now - _lastTapAt < 70) return
+  _lastTapAt = now
+  if (playSfx('buttonTap', 0.7)) return           // kawaii sparkle "ting"
+  play(c => note(c, 660, c.currentTime, 0.07, 'sine', 0.13))   // synth fallback
 }
+let _lastHoverAt = 0
+export function playHover() {                                // soft blip on nav-icon hover
+  const now = (typeof performance !== 'undefined') ? performance.now() : Date.now()
+  if (now - _lastHoverAt < 110) return                      // don't machine-gun on a fast sweep
+  _lastHoverAt = now
+  playSfx('uiHover', 0.45)
+}
+export function playSwoosh()  { playSfx('uiSwoosh', 0.8) }   // whoosh on screen / nav transitions
 
 export function playSpinStart() {
   play(c => {
