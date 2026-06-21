@@ -1,7 +1,8 @@
 @import './tokens.css';
 
-/* Fonts: Fredoka (display/headings) + Mulish (body) loaded via Google Fonts
-   link in index.html. Fredoka replaced Bunny Snaps; Mulish replaced Nunito. */
+/* Fonts: Fredoka (display/headings) + Mulish (body) self-hosted via @fontsource
+   (imported in main.jsx) — NOT Google Fonts, which the Electron CSP blocks.
+   Fredoka replaced Bunny Snaps; Mulish replaced Nunito. */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -217,13 +218,16 @@ body {
 }
 
 /* Audio-reactive rainbow edge glow ("audiolink"): a rotating rainbow ring framing
-   the app, its thickness/glow/opacity pulsing with the music via --audio-level
-   (set each frame by AudioRainbow.jsx). Breathes gently when there's no audio. */
+   the app card, its thickness/glow/opacity pulsing with the music via --audio-level
+   (set each frame by AudioRainbow.jsx). Breathes gently when there's no audio.
+   Lives INSIDE .app-shell (position:absolute) so it hugs the card edge, not the
+   window/viewport edge, and sits BELOW the nav (z 100) and all overlays
+   (modals 300/400, streak popup 500, warning splash 999) — never painting over them. */
 @property --rb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .audio-rainbow {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 9999;
+  z-index: 50;
   pointer-events: none;
   padding: calc(5px + var(--audio-level, 0.13) * 12px);
   background: conic-gradient(from var(--rb-angle),

@@ -44,6 +44,10 @@ const NAV_ITEMS = [
 
 const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/break-glass', '/blocked', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/blackjack', '/casino/slots', '/casino/wheel']
 
+// Only chirp the hover sound for a real mouse. On touch, a tap synthesizes a
+// pointerenter right before the click, which would otherwise stack hover+swoosh.
+function handleNavHover(e) { if (e.pointerType === 'mouse') playHover() }
+
 function BottomNav() {
   const { pathname } = useLocation()
   if (HIDDEN_NAV_ROUTES.includes(pathname)) return null
@@ -56,7 +60,7 @@ function BottomNav() {
           end={item.to === '/'}
           style={navItemStyle}
           aria-label={item.label}
-          onMouseEnter={playHover}
+          onPointerEnter={handleNavHover}
           onClick={playSwoosh}
         >
           {({ isActive }) => (
