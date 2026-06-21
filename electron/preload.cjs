@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('desktop', {
   //   { ok: true,  app: { name, bundleId, path, pid, title } | null }
   //   { ok: false, needsPermission: true, error }   ← macOS Accessibility not granted yet
   getActiveApp: () => ipcRenderer.invoke('blocker:active-app'),
+  // List all open apps so the user can pick one to block from a menu.
+  listOpenApps: () => ipcRenderer.invoke('blocker:list-apps'),
 
   // Block actions (v1, non-destructive): pull our lock-screen window to the
   // front and keep it on top of the Brainrot until unblocked.

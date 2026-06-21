@@ -32,6 +32,7 @@ export default function RotBlockScreen() {
   const [kind, setKind] = useState('app')   // 'app' | 'site'
   const [text, setText] = useState('')
   const [capMsg, setCapMsg] = useState('')
+  const [appList, setAppList] = useState(null)   // null = not loaded; [] = loaded empty
   const [screenStatus, setScreenStatus] = useState('granted')   // Screen Recording (for Firefox titles)
 
   useEffect(() => {
@@ -61,24 +62,25 @@ export default function RotBlockScreen() {
     setText('')
   }
 
-  async function captureApp() {
-    setCapMsg('Looking at the front app…')
-    if (!desktop?.getActiveApp) { setCapMsg('Capture only works in the desktop app.'); return }
+  // Pick the app to block from a MENU of open apps (clearer than "capture the front
+  // app", which always grabbed this app since you're using it).
+  async function loadApps() {
+    setCapMsg('Looking at your open apps…')
+    if (!desktop?.listOpenApps) { setCapMsg('Only available in the desktop app.'); return }
     try {
-      const res = await desktop.getActiveApp()
-      if (res?.ok && res.app?.name) {
-        const self = /com\.lauren\.habitaddiction/i.test(res.app.bundleId || '') || /habit addiction/i.test(res.app.name)
-        if (self) { setCapMsg('That’s this app 🙃 — switch to the app you want to block first, then capture.'); return }
-        rbAddTarget({ label: res.app.name, kind: 'app', match: res.app.bundleId || res.app.name })
-        setCapMsg(`Added “${res.app.name}”.`)
-      } else if (res?.needsPermission) {
-        setCapMsg('Grant Accessibility (System Settings › Privacy & Security › Accessibility), then try again.')
-      } else {
-        setCapMsg('Couldn’t read the front app. Add it by name instead.')
-      }
+      const res = await desktop.listOpenApps()
+      if (res?.ok) { setAppList(res.apps); setCapMsg('') }
+      else if (res?.needsPermission) { setAppList(null); setCapMsg('Grant Accessibility first (button above).') }
+      else { setAppList(null); setCapMsg('Couldn’t list your apps.') }
     } catch {
-      setCapMsg('Couldn’t read the front app. Add it by name instead.')
+      setAppList(null); setCapMsg('Couldn’t list your apps.')
     }
+  }
+
+  function pickApp(a) {
+    rbAddTarget({ label: a.name, kind: 'app', match: a.bundleId || a.name })
+    setAppList(null)
+    setCapMsg(`Added “${a.name}” ✓`)
   }
 
   return (
@@ -205,14 +207,28 @@ export default function RotBlockScreen() {
           </div>
         )}
 
-        {desktop && (
+        {desktop && kind === 'app' && (
           <>
-            <KawaiiButton variant="mint" size="md" fullWidth onClick={captureApp} style={{ marginTop: 10 }}>
-              🎯 Capture the app in front
+            <KawaiiButton variant="mint" size="md" fullWidth onClick={loadApps} style={{ marginTop: 10 }}>
+              📋 Choose from your open apps
             </KawaiiButton>
-            {capMsg && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>{capMsg}</div>}
+            {appList && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, maxHeight: 260, overflowY: 'auto' }}>
+                {appList.length === 0 ? (
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#9B7EC8', padding: '4px 0', textAlign: 'center' }}>
+                    No other apps found — open the app you want to block, then tap again.
+                  </div>
+                ) : appList.map(a => (
+                  <button key={a.bundleId || a.name} onClick={() => pickApp(a)}
+                    style={{ textAlign: 'left', background: '#FFF5FB', border: '2px solid #ECC0DE', borderRadius: 12, padding: '10px 14px', fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#3D2B4F', cursor: 'pointer' }}>
+                    📦 {a.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
+        {capMsg && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>{capMsg}</div>}
       </PixelPanel>
 
       {/* SEE IT IN ACTION — one honest demo: pop the real lock screen on demand. */}

@@ -75,7 +75,43 @@ async function getActiveWindowFn() {
   return _activeWindow
 }
 
+let _openWindows = null
+async function getOpenWindowsFn() {
+  if (!_openWindows) {
+    const mod = await import('get-windows')
+    _openWindows = mod.openWindows
+  }
+  return _openWindows
+}
+
 function registerBlockerIpc() {
+  // List all currently-open apps (deduped), so the user can PICK the one to block
+  // from a menu instead of the confusing "capture the front app" flow.
+  ipcMain.handle('blocker:list-apps', async () => {
+    if (process.platform === 'darwin'
+        && typeof systemPreferences.isTrustedAccessibilityClient === 'function'
+        && !systemPreferences.isTrustedAccessibilityClient(false)) {
+      return { ok: false, needsPermission: true }
+    }
+    try {
+      const openWindows = await getOpenWindowsFn()
+      const wins = await openWindows({ screenRecordingPermission: false })
+      const seen = new Map()
+      for (const w of (wins || [])) {
+        const name = w.owner && w.owner.name
+        const bundleId = (w.owner && w.owner.bundleId) || null
+        if (!name) continue
+        if (bundleId === 'com.lauren.habitaddiction' || /habit addiction/i.test(name)) continue   // never self
+        const key = bundleId || name
+        if (!seen.has(key)) seen.set(key, { name, bundleId })
+      }
+      const apps = [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
+      return { ok: true, apps }
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) }
+    }
+  })
+
   ipcMain.handle('blocker:active-app', async () => {
     // macOS: check Accessibility trust SILENTLY first. If we're not trusted, return
     // needsPermission WITHOUT calling get-windows — get-windows pops the system
