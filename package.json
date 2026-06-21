@@ -1,7 +1,7 @@
 {
   "name": "my-habit-addiction",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -15,6 +15,8 @@
     "dist:win": "vite build && electron-builder --win"
   },
   "dependencies": {
+    "@fontsource/fredoka": "^5.2.10",
+    "@fontsource/mulish": "^5.2.8",
     "@pixi/react": "^8.0.5",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",

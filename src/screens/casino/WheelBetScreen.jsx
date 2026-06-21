@@ -59,7 +59,7 @@ export default function WheelBetScreen() {
     timerRef.current = setTimeout(() => {
       if (!aliveRef.current) return
       settleBet(win, 'wheel'); playWheelTick()
-      setResult({ mult, win })
+      setResult({ mult, win, stake: bet })   // bet is still the pre-debit wager in this closure
       setPhase('done')
       if (mult >= 1) { playWin(mult >= 5 ? 't3' : mult >= 2 ? 't2' : 't1'); playCoinDrop() } else playNearMiss()
     }, SPIN_SECONDS * 1000 + 200)
@@ -119,7 +119,7 @@ export default function WheelBetScreen() {
           ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} <CoinIcon /></span>
           : result.mult > 0
             ? <span style={{ color: '#F2933C' }}>×{result.mult} — got {result.win.toLocaleString()} <CoinIcon /> back</span>
-            : <span style={{ color: '#C44B6A' }}>✕ — lost {bet.toLocaleString()} <CoinIcon /></span>)}
+            : <span style={{ color: '#C44B6A' }}>✕ — lost {result.stake.toLocaleString()} <CoinIcon /></span>)}
       </div>
 
       {phase !== 'spinning' && (

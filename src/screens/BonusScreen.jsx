@@ -134,7 +134,7 @@ export default function BonusScreen() {
                 {challengeText}
               </div>
 
-              {bonusTimerEnd && !timedOut && (
+              {bonusTimerEnd && !timedOut && !beadEarned && (
                 <TimerDisplay endTime={bonusTimerEnd} onExpire={() => setTimedOut(true)} style={{ marginBottom: 12 }} />
               )}
 

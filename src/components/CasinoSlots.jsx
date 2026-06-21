@@ -40,6 +40,11 @@ const reelSpinTime = (i, isLast, brewing) =>
          : SPIN_BASE_MS + i * STOP_GAP_MS
 const reelFill = (ms) => Math.min(REEL_MAX_FILL, Math.max(18, Math.round((ms / 1000) * REEL_SPEED)))
 
+// Worst-case visible spin time (last reel + brewing + the settle bounce). The
+// screen's safety-net settle must wait at LEAST this long so it never pre-empts
+// the reels actually landing.
+export const SLOT_MAX_SPIN_MS = SPIN_BASE_MS + STOP_GAP_MS + LAST_GAP_MS + BREW_EXTRA_MS + SNAP_MS + 60 + 300
+
 const EMOJI = SLOT_SYMBOLS.map(s => s.e)
 const randEmoji = () => EMOJI[Math.floor(Math.random() * EMOJI.length)]
 

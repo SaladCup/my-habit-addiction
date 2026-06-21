@@ -4,7 +4,7 @@ import useStore from '../../store/useStore'
 import { CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
 import { SLOT_SYMBOLS, spinSlots } from '../../engine/casino/slots'
-import CasinoSlots from '../../components/CasinoSlots'
+import CasinoSlots, { SLOT_MAX_SPIN_MS } from '../../components/CasinoSlots'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playReelStop } from '../../engine/sounds'
 
 const MIN_BET = 10
@@ -20,6 +20,7 @@ export default function SlotsBetScreen() {
   const [reels, setReels] = useState([0, 1, 2])
   const [spinId, setSpinId] = useState(0)
   const [result, setResult] = useState(null)      // { mult, win, win3 }
+  const [staked, setStaked] = useState(0)         // the amount actually wagered (not the re-clamped live bet)
   const timerRef = useRef(0)
   const aliveRef = useRef(true)
   const pendingRef = useRef(null)     // the spin's result, settled when the reels stop
@@ -32,16 +33,17 @@ export default function SlotsBetScreen() {
   function spin() {
     if (tooPoor || bet < MIN_BET || bet > balance || phase === 'spinning') return
     if (!placeBet(bet, 'slots')) return
+    setStaked(bet)
     const r = spinSlots()
     const win = Math.floor(bet * r.mult)
     pendingRef.current = { r, win }
     settledRef.current = false
-    setReels(r.reels)                 // the Pixi reels spin and land on these
-    setSpinId(id => id + 1)           // trigger the Pixi spin
+    setReels(r.reels)                 // the reels spin and land on these
+    setSpinId(id => id + 1)           // trigger the cabinet spin
     setResult(null); setPhase('spinning'); playButtonTap()
-    // settle on the reels' onSettled; safety net if it never fires
+    // settle on the reels' onSettled; safety net (just past the worst-case spin) if it never fires
     clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(doSettle, 2400)
+    timerRef.current = setTimeout(doSettle, SLOT_MAX_SPIN_MS)
   }
 
   // ref-guarded so onSettled + the safety timeout can't double-settle
@@ -76,7 +78,7 @@ export default function SlotsBetScreen() {
         reels={reels}
         spinId={spinId}
         win3={result?.win3 ?? false}
-        bet={bet}
+        bet={phase === 'betting' ? bet : staked}
         lastWin={result?.win ?? 0}
         canSpin={phase !== 'spinning' && !tooPoor}
         onSpin={spin}
@@ -87,7 +89,7 @@ export default function SlotsBetScreen() {
         {phase === 'done'
           ? (result.win3
               ? <span style={{ color: '#5CBFA0' }}>{SYM[reels[0]]}×3 — won {result.win.toLocaleString()} <CoinIcon /> (×{result.mult})</span>
-              : <span style={{ color: '#C44B6A' }}>No match — lost {bet.toLocaleString()} <CoinIcon /></span>)
+              : <span style={{ color: '#C44B6A' }}>No match — lost {staked.toLocaleString()} <CoinIcon /></span>)
           : phase === 'spinning'
             ? <span style={{ color: '#9B7EC8' }}>Spinning…</span>
             : tooPoor

@@ -39,7 +39,10 @@ function registerAppProtocol() {
     if (rel === '/' || rel === '') rel = '/index.html'
     const filePath = path.normalize(path.join(DIST, rel))
     if (!filePath.startsWith(DIST)) return new Response('forbidden', { status: 403 })
-    const CSP = "default-src 'self' app:; img-src 'self' app: data:; media-src 'self' app:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    // 'wasm-unsafe-eval' is REQUIRED: the 3D physics (rapier) compiles a WebAssembly
+    // module, which a bare script-src 'self' blocks → blank screen. This flag allows
+    // WASM compilation only, NOT general JS eval.
+    const CSP = "default-src 'self' app:; img-src 'self' app: data:; media-src 'self' app:; font-src 'self' app: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'"
     try {
       const data = await fs.promises.readFile(filePath)
       const ext = path.extname(filePath).toLowerCase()

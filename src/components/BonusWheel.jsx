@@ -86,6 +86,8 @@ export default function BonusWheel({ stopAngle, result, onDone }) {
       if (pointerRef.current) pointerRef.current.style.animation = 'none'
       onDone?.()
     }
+    // stop the rAF tick loop + detach the finish callback if we unmount mid-spin
+    return () => { trackingRef.current = false; anim.onfinish = null; try { anim.cancel() } catch { /* */ } }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per stopAngle; spun/onDone/trackTicks must not retrigger the spin
   }, [stopAngle])
 

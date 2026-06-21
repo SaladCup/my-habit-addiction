@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { buildWheelSegments, getWheelStopAngle } from '../engine/gameLogic'
 import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/sounds'
 
@@ -58,8 +58,12 @@ const Wheel = forwardRef(function Wheel(
   const pointerRef = useRef(null)
   const rotRef = useRef(0)
   const trackingRef = useRef(false)
+  const aliveRef = useRef(false)
   const [spinning, setSpinning] = useState(false)
   const [done, setDone] = useState(false)
+
+  // Stop the rAF tick loop + guard async post-spin setState if we unmount mid-spin.
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; trackingRef.current = false } }, [])
 
   useImperativeHandle(ref, () => ({ spin: doSpin }))
 
@@ -164,6 +168,8 @@ const Wheel = forwardRef(function Wheel(
       )
       await a2.finished
     }
+
+    if (!aliveRef.current) return   // unmounted mid-spin — don't setState/onDone on a dead component
 
     const final = stopAngle % 360
     el.getAnimations().forEach(a => a.cancel())

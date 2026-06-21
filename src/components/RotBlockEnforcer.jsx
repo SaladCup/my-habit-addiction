@@ -134,6 +134,7 @@ export default function RotBlockEnforcer() {
     return () => {
       alive = false
       if (timer) clearTimeout(timer)
+      blockingRef.current = false   // drop the latch too, so a fresh run re-asserts the cover when still blocked
       try { window.desktop?.setOnTop?.(false) } catch { /* */ }
     }
   }, [navigate])
