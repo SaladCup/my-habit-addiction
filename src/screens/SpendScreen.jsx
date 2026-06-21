@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { KawaiiButton, PixelPanel, CoinIcon } from '../components/ui'
 
@@ -11,8 +12,12 @@ function fmtTime(sec) {
 }
 
 export default function SpendScreen() {
-  const { coinLog, settings, spendCoins, getCoinsAvailable } = useStore()
+  const navigate = useNavigate()
+  const { coinLog, settings, spendCoins, getCoinsAvailable, rotblock } = useStore()
   const coins = getCoinsAvailable()
+  const rbOn = !!rotblock?.enabled
+  const rbCount = rotblock?.targets?.length || 0
+  const rbBlocked = rbOn && coins <= 0   // out of coins (the RotBlock screen shows live Break-Glass status)
   const { moneyPerCoin, secondsPerCoin, timeActivity } = settings
   const coinName = 'coins'
 
@@ -132,9 +137,22 @@ export default function SpendScreen() {
         </PixelPanel>
       )}
 
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#9B8AB5', textAlign: 'center', maxWidth: 360 }}>
-        Coming later: block distracting apps when you run low on {coinName}. ✨
-      </div>
+      {/* RotBlock — gate distracting apps/sites behind your coins. Lives here under Spend. */}
+      <PixelPanel color="lavender" style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#3D2B4F' }}>🧠 RotBlock</div>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: rbBlocked ? '#C44B6A' : '#7B5EA7', marginTop: 2, lineHeight: 1.45 }}>
+            {rbOn
+              ? (rbBlocked
+                  ? `🔒 Out of coins — ${rbCount} ${rbCount === 1 ? 'Brainrot' : 'Brainrots'} locked`
+                  : `🛡️ On · ${rbCount} ${rbCount === 1 ? 'Brainrot' : 'Brainrots'} guarded`)
+              : <>Block distracting apps &amp; sites when you run low on {coinName}.</>}
+          </div>
+        </div>
+        <KawaiiButton variant="primary" size="md" onClick={() => navigate('/rotblock')} style={{ width: '100%', marginTop: 12 }}>
+          {rbOn ? 'Manage RotBlock →' : 'Set up RotBlock →'}
+        </KawaiiButton>
+      </PixelPanel>
     </div>
   )
 }

@@ -185,7 +185,7 @@ export default function RotBlockScreen() {
         </div>
       </PixelPanel>
 
-      <KawaiiButton variant="ghost" size="md" onClick={() => navigate('/settings')}>← Back to settings</KawaiiButton>
+      <KawaiiButton variant="ghost" size="md" onClick={() => navigate('/spend')}>← Back to Spend</KawaiiButton>
     </div>
   )
 }

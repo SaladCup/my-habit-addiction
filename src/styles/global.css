@@ -229,15 +229,17 @@ body {
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  padding: calc(5px + var(--audio-level, 0.13) * 12px);
+  padding: calc(7px + var(--audio-level, 0.13) * 15px);
   background: conic-gradient(from var(--rb-angle),
     #ff4d8d, #ff9a3e, #ffe24e, #6cf578, #4fc9ff, #9b6bff, #ff4d8d);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
-  opacity: calc(0.5 + var(--audio-level, 0.13) * 0.5);
-  filter: blur(calc(1.5px + var(--audio-level, 0.13) * 6px)) saturate(1.7) brightness(1.1);
+  opacity: calc(0.55 + var(--audio-level, 0.13) * 0.45);
+  /* Heavy blur feathers the band's inner edge softly toward the middle; the card's
+     overflow:hidden clips the outer side, keeping it crisp at the very edge. */
+  filter: blur(calc(8px + var(--audio-level, 0.13) * 14px)) saturate(1.55) brightness(1.08);
   animation: rb-spin 8s linear infinite;
 }
 @keyframes rb-spin { to { --rb-angle: 360deg; } }
