@@ -27,23 +27,38 @@ function matchesApp(app, target) {
   return m.length >= 4 && !!name && name.includes(m)
 }
 
-// Match a SITE Brainrot against the active browser tab's URL (provided by the
-// native shell via get-windows for supported browsers — Chrome/Safari/Edge/Brave/
-// Opera/Vivaldi). We compare hostnames so "youtube.com" catches www./m. subdomains
-// but a typed "youtube" still works via a longer-substring fallback.
+// Browsers whose WINDOW TITLE we'll keyword-match (a fallback for Firefox, which
+// doesn't expose the tab URL like Chrome/Safari/Edge/Brave/Opera/Vivaldi do).
+const BROWSER_RE = /firefox|mozilla|chrome|chromium|safari|edge|brave|opera|vivaldi|tor browser|\barc\b|browser/i
+
+// Match a SITE Brainrot two ways (both, so it's added capability, not a swap):
+//   1) by the active tab URL (browsers that expose it) — precise hostname match.
+//   2) by the window TITLE keyword (Firefox & any browser) — the page title almost
+//      always contains the site name, e.g. "… - YouTube". Gated to browser windows
+//      so a random app titled "youtube notes" can't trip it.
 function matchesSite(app, target) {
-  if (!app || target.kind !== 'site' || !app.url) return false
+  if (!app || target.kind !== 'site') return false
   const m = (target.match || '').trim().toLowerCase()
     .replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
   if (m.length < 3) return false
-  let host
-  try { host = new URL(app.url).hostname.toLowerCase().replace(/^www\./, '') } catch { host = '' }
-  if (!host) return false
-  // Domain-like target ("youtube.com"): exact host or a subdomain of it — so
-  // "youtube.com" catches m./music.youtube.com but NOT notyoutube.com.
-  if (m.includes('.')) return host === m || host.endsWith('.' + m)
-  // Bare word ("youtube"): match only a whole label of the host.
-  return host.split('.').includes(m)
+
+  // 1) URL hostname match
+  if (app.url) {
+    let host
+    try { host = new URL(app.url).hostname.toLowerCase().replace(/^www\./, '') } catch { host = '' }
+    if (host) {
+      if (m.includes('.')) { if (host === m || host.endsWith('.' + m)) return true }
+      else if (host.split('.').includes(m)) return true
+    }
+  }
+
+  // 2) Title keyword match (e.g. target "youtube.com" → keyword "youtube")
+  if (app.title && BROWSER_RE.test(app.name || '')) {
+    const keyword = m.includes('.') ? m.split('.')[0] : m
+    if (keyword.length >= 3 && app.title.toLowerCase().includes(keyword)) return true
+  }
+
+  return false
 }
 
 function matchesTarget(app, target) {

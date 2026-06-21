@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import useNow from '../hooks/useNow'
@@ -32,6 +32,16 @@ export default function RotBlockScreen() {
   const [kind, setKind] = useState('app')   // 'app' | 'site'
   const [text, setText] = useState('')
   const [capMsg, setCapMsg] = useState('')
+  const [screenStatus, setScreenStatus] = useState('granted')   // Screen Recording (for Firefox titles)
+
+  useEffect(() => {
+    if (!desktop?.getScreenStatus) return
+    let alive = true
+    desktop.getScreenStatus().then(s => { if (alive) setScreenStatus(s) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
+  const hasSiteTargets = rotblock.targets.some(t => t.kind === 'site')
 
   const now = useNow(1000)   // keep the Break Glass countdown / lock banner fresh
   const secPerCoin = settings.secondsPerCoin || 2
@@ -168,10 +178,26 @@ export default function RotBlockScreen() {
         />
         {kind === 'site' && (
           <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', margin: '0 0 10px', lineHeight: 1.4 }}>
-            Detected in Chrome, Safari, Edge, Brave, Opera &amp; Vivaldi. (Firefox tabs can’t be read, so block the Firefox <i>app</i> instead.)
+            Matched by URL in Chrome, Safari, Edge, Brave, Opera &amp; Vivaldi — and by tab title in <b>Firefox</b> (enable Screen Recording below).
           </div>
         )}
         <KawaiiButton variant="primary" size="md" fullWidth onClick={addManual}>+ Add Brainrot</KawaiiButton>
+
+        {/* Firefox & title matching needs Screen Recording (macOS). Only nudge when
+            it'd actually help: a site Brainrot exists and the permission isn't granted. */}
+        {desktop?.platform === 'darwin' && hasSiteTargets && screenStatus !== 'granted' && desktop.openScreenRecordingSettings && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #ECC0DE' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 8, lineHeight: 1.45 }}>
+              🦊 To block sites in <b>Firefox</b>, RotBlock reads the tab title — which needs <b>Screen Recording</b>. (Other browsers already work via the URL.)
+            </div>
+            <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openScreenRecordingSettings()}>
+              🎬 Enable Firefox blocking
+            </KawaiiButton>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#B79DD6', marginTop: 6, lineHeight: 1.4 }}>
+              Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen.
+            </div>
+          </div>
+        )}
 
         {desktop && (
           <>

@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('desktop', {
   focusSelf: () => ipcRenderer.invoke('blocker:focus'),
   setOnTop: (on) => ipcRenderer.invoke('blocker:on-top', on),
   openAccessibilitySettings: () => ipcRenderer.invoke('blocker:open-accessibility'),
+  // Screen Recording = needed to read the window title (how we match Firefox sites).
+  getScreenStatus: () => ipcRenderer.invoke('blocker:screen-status'),
+  openScreenRecordingSettings: () => ipcRenderer.invoke('blocker:open-screen-recording'),
 
   // Auto-update: ask the public releases repo whether a newer version exists,
   // and open the right installer to download. Resolves to:

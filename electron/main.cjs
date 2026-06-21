@@ -88,9 +88,12 @@ function registerBlockerIpc() {
     }
     try {
       const activeWindow = await getActiveWindowFn()
-      // screenRecordingPermission:false → never prompt for Screen Recording; we use
-      // name/bundleId/url, not the window title.
-      const w = await activeWindow({ screenRecordingPermission: false })
+      // Read the window TITLE only when Screen Recording is ALREADY granted (checked
+      // silently) — otherwise get-windows would pop the Screen Recording prompt every
+      // poll. The title is what lets us match sites in Firefox (no URL exposed there).
+      const screenOk = process.platform !== 'darwin'
+        || systemPreferences.getMediaAccessStatus('screen') === 'granted'
+      const w = await activeWindow({ screenRecordingPermission: screenOk })
       if (!w) return { ok: true, app: null }
       return {
         ok: true,
@@ -132,6 +135,19 @@ function registerBlockerIpc() {
   ipcMain.handle('blocker:open-accessibility', () => {
     if (process.platform === 'darwin') {
       shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
+    }
+    return { ok: true }
+  })
+
+  // Screen Recording: needed (macOS only) to read a window's TITLE, which is how we
+  // match sites in Firefox. Report status silently + open its settings pane.
+  ipcMain.handle('blocker:screen-status', () => {
+    if (process.platform !== 'darwin') return 'granted'
+    try { return systemPreferences.getMediaAccessStatus('screen') } catch { return 'unknown' }
+  })
+  ipcMain.handle('blocker:open-screen-recording', () => {
+    if (process.platform === 'darwin') {
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
     }
     return { ok: true }
   })
