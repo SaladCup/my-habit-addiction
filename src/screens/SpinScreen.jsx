@@ -57,6 +57,10 @@ export default function SpinScreen() {
   const [pendingNav, setPendingNav] = useState(null)  // route to navigate on continue tap
 
   const wheelRef = useRef(null)
+  // pickMode (slots) and the wheel spin both BANK coins up front; their `shouldSpin`/
+  // state guards are async, so a double-tap before re-render double-banks. Sync latches:
+  const modeLock = useRef(false)
+  const spinLock = useRef(false)
 
   useEffect(() => {
     if (!validEntry) {
@@ -66,6 +70,8 @@ export default function SpinScreen() {
   }, [validEntry, navigate, resetSession])
 
   function pickMode(m) {
+    if (modeLock.current) return
+    modeLock.current = true
     slotGuard.current = false
     setMode(m)
     setSession({ chosenMode: m, phase: 'spinning' })
@@ -73,7 +79,8 @@ export default function SpinScreen() {
   }
 
   function handleWheelSpin() {
-    if (shouldSpin) return
+    if (spinLock.current || shouldSpin) return
+    spinLock.current = true
     const outcome = spinWheel(activeTier)   // luck-adjusted + jackpot handled
     setWheelOutcome(outcome)
     setShouldSpin(true)

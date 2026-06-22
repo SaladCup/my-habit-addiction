@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
@@ -21,6 +21,7 @@ export default function MinesScreen() {
   const [hitTile, setHitTile]   = useState(-1)
   const [outcome, setOutcome]   = useState(null)
   const [staked, setStaked] = useState(0)
+  const settledRef = useRef(false)               // cash out a board exactly once (manual tap or auto-on-clear)
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -34,6 +35,7 @@ export default function MinesScreen() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'mines')) return
     setStaked(bet)
+    settledRef.current = false
     setMines(placeMines(mineCount))
     setRevealed(new Set())
     setHitTile(-1); setOutcome(null); setPhase('playing')
@@ -53,6 +55,8 @@ export default function MinesScreen() {
   }
 
   function finishCash(count) {
+    if (settledRef.current) return
+    settledRef.current = true
     const n = count ?? k
     const mult = minesMultiplier(mineCount, n)
     const win = Math.floor(staked * mult)

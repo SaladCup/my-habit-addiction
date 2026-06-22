@@ -254,6 +254,8 @@ const useStore = create(
       // totals). Totals are read with ?? so a missing/half-migrated coinTotals can
       // never crash a spin (that was the v13 regression's blast radius).
       awardCoins: (amount, source, habitId = null) => {
+        amount = Math.floor(Number(amount) || 0)
+        if (!Number.isFinite(amount) || amount <= 0) return   // reject NaN / negative at the chokepoint
         const event = { id: uuid(), type: 'earned', amount, source, habitId, note: '', timestamp: Date.now() }
         set(s => {
           const log = [...s.coinLog, event]
@@ -267,14 +269,19 @@ const useStore = create(
         })
       },
       spendCoins: (amount, note = '') => {
-        const event = { id: uuid(), type: 'spent', amount, source: 'manual', habitId: null, note, timestamp: Date.now() }
+        // Clamp to the available balance so the balance can never go negative, and reject
+        // bad inputs. This is the single chokepoint every spend funnels through, so the
+        // guard here also closes the rapid-double-click overspend class at the source.
+        const spend = Math.min(Math.floor(Number(amount) || 0), get().getCoinsAvailable())
+        if (!Number.isFinite(spend) || spend <= 0) return
+        const event = { id: uuid(), type: 'spent', amount: spend, source: 'manual', habitId: null, note, timestamp: Date.now() }
         set(s => {
           const log = [...s.coinLog, event]
           const overflow = log.length > COIN_LOG_MAX
           return {
             coinLog: overflow ? log.slice(-COIN_LOG_MAX) : log,
             coinLogComplete: s.coinLogComplete && !overflow,
-            coinTotals: { earned: s.coinTotals?.earned ?? 0, spent: (s.coinTotals?.spent ?? 0) + amount },
+            coinTotals: { earned: s.coinTotals?.earned ?? 0, spent: (s.coinTotals?.spent ?? 0) + spend },
           }
         })
       },

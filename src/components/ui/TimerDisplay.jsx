@@ -3,6 +3,10 @@ import { useState, useEffect, useRef } from 'react'
 export default function TimerDisplay({ endTime, onExpire, style = {} }) {
   const [remaining, setRemaining] = useState(0)
   const intervalRef = useRef(null)
+  // Keep the latest onExpire in a ref so an inline callback (the common case) doesn't
+  // tear down + recreate the interval on every parent render (which drifted the timer).
+  const onExpireRef = useRef(onExpire)
+  useEffect(() => { onExpireRef.current = onExpire }, [onExpire])
 
   useEffect(() => {
     function tick() {
@@ -11,13 +15,13 @@ export default function TimerDisplay({ endTime, onExpire, style = {} }) {
       setRemaining(left)
       if (left === 0) {
         clearInterval(intervalRef.current)
-        onExpire?.()
+        onExpireRef.current?.()
       }
     }
     tick()
     intervalRef.current = setInterval(tick, 500)
     return () => clearInterval(intervalRef.current)
-  }, [endTime, onExpire])
+  }, [endTime])
 
   const totalSecs = Math.ceil(remaining / 1000)
   const mins = Math.floor(totalSecs / 60)

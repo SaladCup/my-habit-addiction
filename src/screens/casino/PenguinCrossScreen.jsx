@@ -22,6 +22,7 @@ export default function PenguinCrossScreen() {
   const trackRef = useRef(null)
   const penRef   = useRef(null)
   const [staked, setStaked] = useState(0)
+  const settledRef = useRef(false)               // cash a run out exactly once (manual tap or auto-at-top)
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -35,6 +36,7 @@ export default function PenguinCrossScreen() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'cross')) return
     setStaked(bet)
+    settledRef.current = false
     setLane(0); setDeathLane(-1); setOutcome(null); setPhase('crossing')
     playButtonTap()
   }
@@ -53,6 +55,8 @@ export default function PenguinCrossScreen() {
   }
 
   function finishCash(atLane) {
+    if (settledRef.current) return
+    settledRef.current = true
     const l = atLane ?? lane
     const mult = crossMultiplier(mode, l)
     const win = Math.floor(staked * mult)

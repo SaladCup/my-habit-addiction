@@ -26,6 +26,7 @@ export default function CrashScreen() {
   const [staked, setStaked] = useState(0)             // stake snapshot at launch (avoids re-clamped bet)
   const tickRef  = useRef(1)                          // last integer multiplier we ticked a sound for
   const aliveRef = useRef(true)
+  const resolvedRef = useRef(false)                   // cash-out OR bust resolves a round exactly once
   useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; cancelAnimationFrame(rafRef.current) } }, [])
 
   // Effective bet, derived (not an effect) so it stays affordable as the balance moves.
@@ -48,6 +49,7 @@ export default function CrashScreen() {
     if (!canLaunch) return
     if (!placeBet(bet, 'crash')) return
     setStaked(bet)
+    resolvedRef.current = false
     bustRef.current = rollCrashPoint()
     autoRef.current = Number(auto) > 1 ? Number(auto) : 0
     startRef.current = performance.now()
@@ -58,6 +60,8 @@ export default function CrashScreen() {
   }
 
   function cashOut(forcedAt) {
+    if (resolvedRef.current) return
+    resolvedRef.current = true
     cancelAnimationFrame(rafRef.current)
     const t = (performance.now() - startRef.current) / 1000
     const at = Math.min(forcedAt || crashMultiplierAt(t), bustRef.current)
@@ -68,6 +72,8 @@ export default function CrashScreen() {
   }
 
   function endBust() {
+    if (resolvedRef.current) return
+    resolvedRef.current = true
     cancelAnimationFrame(rafRef.current)
     setOutcome({ win: 0, at: bustRef.current }); setPhase('busted')
     playNearMiss()

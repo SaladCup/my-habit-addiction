@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
@@ -21,6 +21,12 @@ export default function CoinFlipScreen() {
   const [streak, setStreak] = useState(0)
   const [flipKey, setFlipKey] = useState(0)        // bump → re-trigger the coin's CSS flip
 
+  // Synchronous one-shot latch: flip/bank/let-it-ride all stake or settle coins, and
+  // React state (phase/pot) updates async — so a double-tap before the re-render would
+  // bet/settle twice. The latch blocks the second tap; it re-opens after each commit.
+  const actingRef = useRef(false)
+  useEffect(() => { actingRef.current = false }, [phase, pot])
+
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
   const canFlip = (phase === 'betting' || phase === 'lost') && !!pick && !tooPoor && bet >= MIN_BET && bet <= balance
@@ -40,11 +46,18 @@ export default function CoinFlipScreen() {
   }
 
   function startFlip() {
-    if (!canFlip || !placeBet(bet, 'coinflip')) return
+    if (actingRef.current || !canFlip || !placeBet(bet, 'coinflip')) return
+    actingRef.current = true
     playButtonTap(); doFlip(bet)
   }
-  function letItRide() { playButtonTap(); doFlip(pot) }
+  function letItRide() {
+    if (actingRef.current) return
+    actingRef.current = true
+    playButtonTap(); doFlip(pot)
+  }
   function bank() {
+    if (actingRef.current) return
+    actingRef.current = true
     settleBet(pot, 'coinflip'); playCoinDrop()
     setPot(0); setStreak(0); setPhase('betting')
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
@@ -42,13 +42,19 @@ export default function BlackjackScreen() {
   const [staked, setStaked] = useState(0)
   const [natural, setNatural] = useState(false)
   const [result, setResult] = useState(null)      // { mult, label, win }
+  const resolvedRef = useRef(false)               // settle a hand exactly once (guards double-tapped stand/double)
+  const dealLock = useRef(false)                  // deal a hand exactly once per round
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
   const pVal = handValue(player).total
-  const canDouble = phase === 'player' && player.length === 2 && balance >= bet
+  // Doubling stakes the ORIGINAL amount again, so afford-check against `staked`, not the
+  // live (possibly re-clamped-smaller) `bet`.
+  const canDouble = phase === 'player' && player.length === 2 && balance >= staked
 
   function resolve(p, d, wasNatural, totalStaked) {
+    if (resolvedRef.current) return
+    resolvedRef.current = true
     const dealt = dealerPlay(d)
     const mult = settleHand(p, dealt, wasNatural)
     const win = Math.floor(totalStaked * mult)
@@ -66,8 +72,11 @@ export default function BlackjackScreen() {
   }
 
   function deal() {
+    if (dealLock.current) return
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'blackjack')) return
+    dealLock.current = true
+    resolvedRef.current = false
     const p = [drawCard(), drawCard()]
     const d = [drawCard(), drawCard()]
     setPlayer(p); setDealer(d); setStaked(bet); setResult(null); playButtonTap()
@@ -85,14 +94,15 @@ export default function BlackjackScreen() {
   function stand() { playButtonTap(); resolve(player, dealer, natural, staked) }
 
   function double() {
-    if (!canDouble || !placeBet(bet, 'blackjack')) return
-    const total = staked + bet
+    if (!canDouble || resolvedRef.current) return
+    if (!placeBet(staked, 'blackjack')) return       // double = stake the ORIGINAL amount again
+    const total = staked * 2
     const p = [...player, drawCard()]
     setPlayer(p); setStaked(total); playButtonTap()
     resolve(p, dealer, false, total)
   }
 
-  function reset() { setPhase('betting'); setPlayer([]); setDealer([]); setResult(null) }
+  function reset() { dealLock.current = false; setPhase('betting'); setPlayer([]); setDealer([]); setResult(null) }
 
   const playing = phase === 'player'
   const showAll = phase === 'done'
