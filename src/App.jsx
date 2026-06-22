@@ -33,6 +33,8 @@ import RotBlockEnforcer   from './components/RotBlockEnforcer'
 import AudioRainbow       from './components/AudioRainbow'
 import UpdatePrompt       from './components/UpdatePrompt'
 
+/* global __APP_VERSION__ -- replaced at build time by Vite's define (see vite.config) */
+
 const ICON_V = '8'   // bump to force browsers to reload updated icon art
 const NAV_ITEMS = [
   { to: '/',         label: 'Home',     icon: `/ui/icon_home.png?v=${ICON_V}` },
@@ -151,6 +153,12 @@ export default function App() {
   // Daily streak check-in popup, once per app open (self-dismisses if already
   // done today). Held until the first-run warning is gone so they don't stack.
   const [streakDone, setStreakDone] = useState(false)
+
+  // Show the version in the window title bar (baked in by Vite — see vite.config).
+  useEffect(() => {
+    const v = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : ''
+    document.title = `My Habit Addiction ✨${v ? ` · v${v}` : ''}`
+  }, [])
 
   function dismissWarning() {
     localStorage.setItem('habitAddict_seenWarning', '1')

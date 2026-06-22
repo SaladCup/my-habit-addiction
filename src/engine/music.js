@@ -1,68 +1,73 @@
-// Background music — a single looping HTMLAudioElement (streamed, NOT decoded
-// into a Web Audio buffer like the SFX in audio.js; a multi-minute song would
-// be wasteful to hold as a decoded buffer). Lives entirely separate from the
-// SFX system, so music volume and SFX volume are independent.
+// Background music — played through Web Audio as a looping decoded buffer, the SAME
+// path the SFX use (fetch → decodeAudioData → AudioBufferSourceNode → gain →
+// destination). We do NOT use an <audio> element: in the packaged app it can't load
+// the track over the custom app:// protocol (MediaError 4 — not even from a blob:
+// URL), while fetch()+decodeAudioData works (the SFX prove it). Plays straight to
+// destination (no createMediaElementSource, which would mute it cross-origin).
 //
-// Browsers block autoplay until the user interacts, so the first play() may
-// reject — we then arm a one-time gesture listener and start on the first tap.
-// The React side just pushes settings in via setMusicConfig(); this module owns
-// the element, the play/pause logic, and the autoplay-unlock dance.
-//
-// NOTE: the music plays DIRECTLY through the element — we deliberately do NOT route
-// it through a Web Audio analyser. Doing so (createMediaElementSource) silenced the
-// music in the packaged app: the track is served over the custom app:// protocol,
-// which Web Audio treats as cross-origin and mutes. Reliable music > a beat-reactive
-// rainbow (the rainbow still glows/breathes on its own).
-
+// Cost: the decoded track is held in memory (a few tens of MB). Worth it for music
+// that actually plays. Browsers block audio until a gesture, so we resume + start on
+// the first tap. The React side just pushes settings via setMusicConfig().
 const SRC = '/music/bg-kawaii-pop.mp3'
-// Master ceiling on music loudness: the actual element volume = musicVolume *
-// MUSIC_GAIN. The track itself is hot, so we scale the whole slider range down
-// (e.g. the 0.2 default plays at ~0.12) — keeps the 0–100% UI but softer overall.
+// Master ceiling on loudness: actual gain = musicVolume * MUSIC_GAIN. The track is
+// hot, so we scale the whole slider down (0.2 default → ~0.11) — keeps the 0–100% UI.
 const MUSIC_GAIN = 0.55
 
-let el = null
 let cfg = { muted: false, musicEnabled: true, musicVolume: 0.2 }
-let gestureHandler = null   // the armed first-gesture unlock listener, if any
-
-let objUrl = null
-function getEl() {
-  if (typeof window === 'undefined' || typeof Audio === 'undefined') return null
-  if (!el) {
-    el = new Audio()
-    el.loop = true
-    el.preload = 'auto'
-    el.volume = clamp(cfg.musicVolume * MUSIC_GAIN)
-    // Load via a BLOB, not the app:// src directly. An <audio> element can't stream
-    // from the custom app:// protocol (no Range-request support → it silently fails),
-    // but fetch() works (same path the SFX use). So fetch the file → blob: URL the
-    // media element CAN load. Falls back to the raw src if the fetch ever fails.
-    fetch(SRC)
-      .then(r => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
-      .then(b => { objUrl = URL.createObjectURL(b); el.src = objUrl; if (shouldPlay()) tryPlay() })
-      .catch(() => { el.src = SRC })
-    // Exposed (not dev-only) so a headless capture can confirm the element loaded.
-    window.__musicEl = el
-    window.__musicErr = null
-    el.addEventListener('error', () => { window.__musicErr = el.error ? el.error.code : 'err' })
-  }
-  return el
-}
+let ctx = null
+let gainNode = null
+let buffer = null
+let bufferPromise = null
+let source = null            // the currently-playing looping source, or null
+let gestureHandler = null
 
 function clamp(v) { return Math.max(0, Math.min(1, v)) }
+function shouldPlay() { return cfg.musicEnabled && !cfg.muted && cfg.musicVolume > 0 }
+function targetGain() { return shouldPlay() ? clamp(cfg.musicVolume * MUSIC_GAIN) : 0 }
 
-// Should music be audibly playing right now?
-function shouldPlay() {
-  return cfg.musicEnabled && !cfg.muted && cfg.musicVolume > 0
+function getCtx() {
+  if (typeof window === 'undefined') return null
+  if (!ctx) {
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)() } catch { return null }
+    gainNode = ctx.createGain()
+    gainNode.gain.value = targetGain()
+    gainNode.connect(ctx.destination)
+  }
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+  return ctx
 }
 
-function tryPlay() {
-  const a = getEl(); if (!a) return
-  const p = a.play()
-  // play() returns a promise in modern browsers; a rejection = autoplay blocked.
-  if (p && typeof p.then === 'function') p.catch(() => armGesture())
+// Decode the track once (cached). Resolves to the AudioBuffer or null.
+function ensureBuffer() {
+  if (buffer) return Promise.resolve(buffer)
+  if (bufferPromise) return bufferPromise
+  const c = getCtx(); if (!c) return Promise.resolve(null)
+  bufferPromise = fetch(SRC)
+    .then(r => r.arrayBuffer())
+    .then(a => c.decodeAudioData(a))
+    .then(buf => { buffer = buf; return buf })
+    .catch(() => { bufferPromise = null; return null })
+  return bufferPromise
 }
 
-// Remove the armed first-gesture listeners (if any). Safe to call any time.
+function startSource() {
+  const c = getCtx()
+  if (!c || !buffer || source) return
+  source = c.createBufferSource()
+  source.buffer = buffer
+  source.loop = true
+  source.connect(gainNode)
+  source.start(0)
+}
+
+function stopSource() {
+  if (source) {
+    try { source.stop() } catch { /* */ }
+    try { source.disconnect() } catch { /* */ }
+    source = null
+  }
+}
+
 function disarmGesture() {
   if (!gestureHandler) return
   window.removeEventListener('pointerdown', gestureHandler)
@@ -71,31 +76,43 @@ function disarmGesture() {
   gestureHandler = null
 }
 
-// Start playback on the first user gesture (one shot), if we still want music.
+// Start on the first user gesture (the AudioContext can't run until then).
 function armGesture() {
   if (gestureHandler || typeof window === 'undefined') return
   gestureHandler = () => {
     disarmGesture()
-    if (shouldPlay()) tryPlay()
+    const c = getCtx(); if (!c) return
+    c.resume().catch(() => {})
+    ensureBuffer().then(buf => { if (buf && shouldPlay()) startSource() })
   }
   window.addEventListener('pointerdown', gestureHandler)
   window.addEventListener('keydown', gestureHandler)
   window.addEventListener('touchstart', gestureHandler)
 }
 
-// The single entry point the app calls (on mount and on every settings change).
-// Applies volume + play/pause to match the desired state, arming the autoplay
-// unlock if the browser refuses to start until a gesture.
+// Exposed so a headless capture can confirm the music is loaded/playing.
+if (typeof window !== 'undefined') {
+  window.__musicState = () => ({
+    ctx: ctx ? ctx.state : 'none', hasBuffer: !!buffer, playing: !!source,
+    gain: gainNode ? +gainNode.gain.value.toFixed(3) : null,
+  })
+}
+
+// The single entry point the app calls (on mount + on every settings change).
 export function setMusicConfig(next) {
   cfg = { ...cfg, ...next }
-  const a = getEl(); if (!a) return
-  a.volume = clamp(cfg.musicVolume * MUSIC_GAIN)
+  const c = getCtx()
+  if (gainNode) gainNode.gain.value = targetGain()
+  if (!c) return
   if (shouldPlay()) {
-    if (a.paused) tryPlay()
+    if (c.state === 'running') {
+      ensureBuffer().then(buf => { if (buf && shouldPlay()) startSource() })
+    } else {
+      ensureBuffer()      // pre-decode now; the gesture will resume + start
+      armGesture()
+    }
   } else {
-    // No longer want music — pause and tear down any pending autoplay-unlock so
-    // the listeners don't linger and a later re-enable can arm a fresh attempt.
+    stopSource()
     disarmGesture()
-    if (!a.paused) a.pause()
   }
 }
