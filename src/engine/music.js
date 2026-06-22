@@ -24,15 +24,26 @@ let el = null
 let cfg = { muted: false, musicEnabled: true, musicVolume: 0.2 }
 let gestureHandler = null   // the armed first-gesture unlock listener, if any
 
+let objUrl = null
 function getEl() {
   if (typeof window === 'undefined' || typeof Audio === 'undefined') return null
   if (!el) {
-    el = new Audio(SRC)
+    el = new Audio()
     el.loop = true
     el.preload = 'auto'
     el.volume = clamp(cfg.musicVolume * MUSIC_GAIN)
-    // Dev-only: expose the element for quick manual audio debugging in the preview.
-    if (import.meta.env?.DEV && typeof window !== 'undefined') window.__musicEl = el
+    // Load via a BLOB, not the app:// src directly. An <audio> element can't stream
+    // from the custom app:// protocol (no Range-request support → it silently fails),
+    // but fetch() works (same path the SFX use). So fetch the file → blob: URL the
+    // media element CAN load. Falls back to the raw src if the fetch ever fails.
+    fetch(SRC)
+      .then(r => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
+      .then(b => { objUrl = URL.createObjectURL(b); el.src = objUrl; if (shouldPlay()) tryPlay() })
+      .catch(() => { el.src = SRC })
+    // Exposed (not dev-only) so a headless capture can confirm the element loaded.
+    window.__musicEl = el
+    window.__musicErr = null
+    el.addEventListener('error', () => { window.__musicErr = el.error ? el.error.code : 'err' })
   }
   return el
 }

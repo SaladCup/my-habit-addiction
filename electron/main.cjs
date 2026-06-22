@@ -373,6 +373,12 @@ function createWindow() {
           fs.writeFileSync(process.env.HABIT_CAPTURE, img.toPNG())
           const len = await win.webContents.executeJavaScript('document.getElementById("root")?.innerHTML.length || 0')
           console.log('CAPTURE rootHtmlLength=' + len)
+          // Music diagnostic: did the <audio> element actually load the track?
+          const music = await win.webContents.executeJavaScript(`(() => {
+            const e = window.__musicEl; if (!e) return 'no-el';
+            return JSON.stringify({ src:(e.currentSrc||e.src||'').slice(0,28), readyState:e.readyState, networkState:e.networkState, err:window.__musicErr, dur:e.duration });
+          })()`)
+          console.log('CAPTURE music=' + music)
         } catch (e) { console.error('capture failed', e) }
         app.quit()
       }, 2800)
