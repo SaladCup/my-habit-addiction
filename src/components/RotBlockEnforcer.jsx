@@ -144,19 +144,22 @@ export default function RotBlockEnforcer() {
 
       const app = res.app
       const rb = cur.rotblock
-      const testBlock = (cur.rbRuntime.testBlockUntil || 0) > Date.now()   // "Test a block" demo
+      // "Test a block" arms this for ~30s: it just PRETENDS you're out of coins, so
+      // switching to a real Brainrot (e.g. YouTube) covers it — demonstrating the
+      // actual behavior, instead of covering the habit app you clicked from.
+      const testBlock = (cur.rbRuntime.testBlockUntil || 0) > Date.now()
       // HARD GUARD: the habit app can never be a Brainrot (so it can't block itself
       // and trap the user — e.g. if it was accidentally added via Capture).
       const isBrainrot = !isOwnApp(app) && rb.targets.some(t => matchesTarget(app, t))
       const broke = cur.getCoinsAvailable() <= 0 && !(rb.breakGlassUntil && rb.breakGlassUntil > Date.now())
-      const blocked = testBlock || (isBrainrot && broke)
+      const blocked = isBrainrot && (broke || testBlock)
 
       publish(app?.name || null, isBrainrot, isBrainrot && !blocked, 'ok')
 
       if (blocked) {
         accRef.current = 0
         enterBlock()
-      } else if (isOwnApp(app) && broke && blockingRef.current) {
+      } else if (isOwnApp(app) && (broke || testBlock) && blockingRef.current) {
         // We covered the Brainrot, so WE are now in front — hold the block (don't
         // release, don't re-focus) until they earn coins / Break Glass / disable.
       } else {

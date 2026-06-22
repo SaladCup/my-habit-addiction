@@ -50,6 +50,8 @@ export default function RotBlockScreen() {
   const bgActive = rotblock.breakGlassUntil && rotblock.breakGlassUntil > now
   const bgMinsLeft = bgActive ? Math.ceil((rotblock.breakGlassUntil - now) / 60000) : 0
   const blocked = rotblock.enabled && !bgActive && coins <= 0
+  const testArmed = (rbRuntime.testBlockUntil || 0) > now
+  const testSecs = testArmed ? Math.max(0, Math.ceil((rbRuntime.testBlockUntil - now) / 1000)) : 0
 
   function addManual() {
     const t = text.trim()
@@ -231,15 +233,27 @@ export default function RotBlockScreen() {
         {capMsg && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>{capMsg}</div>}
       </PixelPanel>
 
-      {/* SEE IT IN ACTION — one honest demo: pop the real lock screen on demand. */}
+      {/* SEE IT IN ACTION — arm a pretend-broke window, then the user switches to a
+          Brainrot to watch the lock screen actually cover it (the real behavior). */}
       <PixelPanel color="sky" title="SEE IT IN ACTION" style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F', marginBottom: 12, lineHeight: 1.5 }}>
-          Curious what a block looks like? This pops the lock screen in front of you — exactly what happens when you run out of coins on a Brainrot. You can end it anytime.
+          RotBlock blocks by popping this lock screen <b>in front of</b> a Brainrot when you’re on it &amp; out of coins. To see it for real:
+          tap below, then <b>switch to YouTube</b> (or any Brainrot) — the lock screen jumps over it. (Pretends you’re broke for 30s; no coins spent.)
         </div>
-        <KawaiiButton variant="secondary" size="lg" fullWidth
-          onClick={() => { rbSetRuntime({ testBlockUntil: Date.now() + 120000 }); navigate('/blocked') }}>
-          🔒 Test a block
-        </KawaiiButton>
+        {testArmed ? (
+          <>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#C9883C', fontWeight: 700, marginBottom: 10, lineHeight: 1.45 }}>
+              🔒 Armed! Now switch to a Brainrot — it’ll get covered. ({testSecs}s)
+            </div>
+            <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => rbSetRuntime({ testBlockUntil: 0 })}>
+              End test
+            </KawaiiButton>
+          </>
+        ) : (
+          <KawaiiButton variant="secondary" size="lg" fullWidth onClick={() => rbSetRuntime({ testBlockUntil: Date.now() + 30000 })}>
+            🔒 Test a block
+          </KawaiiButton>
+        )}
       </PixelPanel>
 
       <KawaiiButton variant="ghost" size="md" onClick={() => navigate('/spend')}>← Back to Spend</KawaiiButton>
