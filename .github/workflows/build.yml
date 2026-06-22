@@ -28,7 +28,7 @@ jobs:
       # whoever controls a tag could repoint it at malicious code, and these jobs hold
       # the signing cert + RELEASES_TOKEN. The trailing `# vX.Y.Z` keeps it readable and
       # lets Dependabot bump the SHA. (Verified against GitHub's API on 2026-06-22.)
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
