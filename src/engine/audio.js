@@ -24,7 +24,7 @@ const MANIFEST = {
   reelStop:        'reel-stop.mp3',     // crisp mechanical click — a slot reel landing
   buttonTap:       'button-tap.wav',    // kawaii fairy-sparkle "ting" — every button press
   uiHover:         'ui-hover.wav',      // soft magic blip — hovering a nav icon
-  uiSwoosh:        'ui-swoosh.wav',     // quick whoosh — screen / nav transitions
+  uiSwoosh:        'ui-pop.mp3',        // soft "pop" — clicking a nav icon (the pop Lauren liked)
 }
 
 let ctx = null

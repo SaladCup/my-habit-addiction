@@ -233,22 +233,47 @@ body {
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  filter: blur(calc(4px + var(--audio-level, 0.13) * 7px)) saturate(1.9) brightness(1.22);
+  filter: blur(calc(4px + var(--audio-level, 0.13) * 7px)) saturate(1.0) brightness(1.03);
 }
 /* Inner ring: the rainbow band itself (conic gradient masked to a WIDE edge band,
    so once the wrapper blurs it the glow stays visibly rainbow, not washed out). */
 .audio-rainbow__ring {
   position: absolute;
   inset: 0;
-  padding: calc(16px + var(--audio-level, 0.13) * 22px);
+  /* Narrower band than before (was 16–38px) so the frame is a slimmer ribbon. */
+  padding: calc(6px + var(--audio-level, 0.13) * 9px);
+  /* Pastel rainbow (was fully-saturated neon) — soft candy tones. */
   background: conic-gradient(from var(--rb-angle),
-    #ff2d7e, #ff8a1e, #ffe24e, #46f06a, #2db8ff, #9b6bff, #ff2d7e);
+    #ffc4dd, #ffe0bd, #fff6c2, #c8f5d2, #c2e6ff, #ddc8ff, #ffc4dd);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
-  opacity: calc(0.92 + var(--audio-level, 0.13) * 0.08);
+  /* More translucent / faded (was ~0.92). */
+  opacity: calc(0.38 + var(--audio-level, 0.13) * 0.14);
   animation: rb-spin 8s linear infinite;
+}
+
+/* Lock-screen edge: a faint red whisper-glow hugging the screen perimeter,
+   replacing the rainbow on the block screen. Same blur-wrapper + masked-band
+   trick so the thin red sliver blurs into a soft, translucent glow. */
+.block-red-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(11px);
+}
+.block-red-edge__ring {
+  position: absolute;
+  inset: 0;
+  padding: 3px;                 /* a very small sliver */
+  background: #ff4040;          /* soft red */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.42;                /* whisper-translucent, but still perceptible */
 }
 @keyframes rb-spin { to { --rb-angle: 360deg; } }
 @media (prefers-reduced-motion: reduce) { .audio-rainbow__ring { animation: none; } }

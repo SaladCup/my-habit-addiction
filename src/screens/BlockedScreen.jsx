@@ -39,10 +39,21 @@ export default function BlockedScreen() {
 
   return (
     <div style={{
-      minHeight: '100%', padding: '32px 22px', display: 'flex', flexDirection: 'column',
+      // Full-viewport cover: fills the whole screen with the same purple (no
+      // lavender margins / no card framing), sitting above everything.
+      position: 'fixed', inset: 0, zIndex: 1000,
+      padding: '32px 22px', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 18,
       background: 'linear-gradient(180deg,#2E2440,#4A2E54)',
     }}>
+      {/* Soft red whisper-glow hugging the screen edge — replaces the rainbow on the
+          lock screen (a faint, blurry, translucent sliver). Only when actually
+          locked/blocked (not on the "you're clear" state). Styles in global.css. */}
+      {!hasTime && <div className="block-red-edge" aria-hidden="true"><div className="block-red-edge__ring" /></div>}
+      <div style={{
+        position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', textAlign: 'center', gap: 18, width: '100%', maxWidth: 360,
+      }}>
       <div style={{ fontSize: 84 }}>{hasTime ? '🔓' : '🔒'}</div>
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#FFE3F1', margin: 0 }}>
         {hasTime ? 'You’re clear' : 'Brainrot locked'}
@@ -82,6 +93,7 @@ export default function BlockedScreen() {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }

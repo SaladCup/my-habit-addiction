@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { getLevel } from '../engine/audioReactive'
 
 const IDLE = 0.12   // resting level: a soft, always-present rainbow frame
@@ -8,6 +9,7 @@ const IDLE = 0.12   // resting level: a soft, always-present rainbow frame
 // (--audio-level, set here each frame). With no audio it breathes gently, so
 // there's always a soft rainbow frame.
 export default function AudioRainbow() {
+  const { pathname } = useLocation()
   useEffect(() => {
     const root = document.documentElement
 
@@ -39,6 +41,9 @@ export default function AudioRainbow() {
     // component is mounted for the app's lifetime.
     return () => { alive = false; cancelAnimationFrame(raf); root.style.setProperty('--audio-level', String(IDLE)) }
   }, [])
+
+  // No rainbow on the lock screen — it gets a soft red edge glow instead.
+  if (pathname.startsWith('/blocked')) return null
 
   // Wrapper carries the blur; the inner ring carries the masked rainbow band.
   // Blur on the PARENT applies AFTER the child's mask, so the band's EDGES go
