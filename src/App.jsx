@@ -113,7 +113,12 @@ function MusicController() {
 function UiScaleController() {
   const uiScale = useStore(s => s.settings.uiScale ?? 0.9)
   useEffect(() => {
-    try { window.desktop?.setUiZoom?.(uiScale) } catch { /* */ }
+    try {
+      // Native app: real browser-zoom (gap-free, handles the full-screen cover).
+      if (window.desktop?.setUiZoom) window.desktop.setUiZoom(uiScale)
+      // Web / launcher: CSS zoom fallback (no native shell to zoom).
+      else document.documentElement.style.zoom = String(uiScale)
+    } catch { /* */ }
   }, [uiScale])
   return null
 }

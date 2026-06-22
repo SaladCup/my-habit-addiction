@@ -432,22 +432,20 @@ export default function SettingsScreen() {
         </KawaiiButton>
       </PixelPanel>
 
-      {/* Display — scales the whole UI (desktop app only; the window stays the
-          same size, just the contents shrink/grow). Helps on smaller screens. */}
-      {typeof window !== 'undefined' && window.desktop?.isDesktop && (
-        <PixelPanel color="cream" title="DISPLAY" style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>APP SIZE — {Math.round((settings.uiScale ?? 0.9) * 100)}%</label>
-          <input
-            type="range" min={0.7} max={1} step={0.05}
-            value={settings.uiScale ?? 0.9}
-            onChange={e => updateSettings({ uiScale: parseFloat(e.target.value) })}
-            style={{ width: '100%', accentColor: '#9B7EC8', marginBottom: 8 }}
-          />
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', textAlign: 'center' }}>
-            Smaller fits more on screen · bigger is easier to read
-          </div>
-        </PixelPanel>
-      )}
+      {/* Display — scales the whole UI (the window stays the same size, just the
+          contents shrink/grow). Helps on smaller screens. */}
+      <PixelPanel color="cream" title="DISPLAY" style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>APP SIZE — {Math.round((settings.uiScale ?? 0.9) * 100)}%</label>
+        <input
+          type="range" min={0.7} max={1} step={0.05}
+          value={settings.uiScale ?? 0.9}
+          onChange={e => updateSettings({ uiScale: parseFloat(e.target.value) })}
+          style={{ width: '100%', accentColor: '#9B7EC8', marginBottom: 8 }}
+        />
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', textAlign: 'center' }}>
+          Smaller fits more on screen · bigger is easier to read
+        </div>
+      </PixelPanel>
 
       {/* Sound */}
       <PixelPanel color="cream" title="SOUND" style={{ marginBottom: 14 }}>
