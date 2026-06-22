@@ -103,7 +103,10 @@ function MusicController() {
   const musicVolume  = useStore(s => s.settings.musicVolume ?? 0.2)
   const muted        = useStore(s => s.settings.muted)
   useEffect(() => {
-    setMusicConfig({ musicEnabled, musicVolume, muted })
+    // Force music OFF in dev/preview (the loop got grating during rapid reload-
+    // testing); the packaged production app respects the user's setting.
+    const enabled = import.meta.env.DEV ? false : musicEnabled
+    setMusicConfig({ musicEnabled: enabled, musicVolume, muted })
   }, [musicEnabled, musicVolume, muted])
   return null
 }
