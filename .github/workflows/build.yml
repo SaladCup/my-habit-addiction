@@ -110,6 +110,8 @@ jobs:
           repository: SaladCup/my-habit-addiction-releases
           token: ${{ secrets.RELEASES_TOKEN }}
           tag_name: ${{ github.ref_name }}
+          # Friend-facing "how to open it" + RotBlock setup note shown on every release.
+          body_path: .github/RELEASE_BODY.md
           files: |
             release/*.dmg
             release/*.exe

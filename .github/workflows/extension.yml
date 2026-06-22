@@ -89,6 +89,9 @@ jobs:
           repository: SaladCup/my-habit-addiction-releases
           token: ${{ secrets.RELEASES_TOKEN }}
           tag_name: ${{ github.ref_name }}
+          # Same friend-facing note as build.yml, so the body is set no matter which
+          # job creates the release first (the other preserves it).
+          body_path: .github/RELEASE_BODY.md
           fail_on_unmatched_files: false
           files: |
             extension/dist/rotblock-chrome.zip
