@@ -142,25 +142,25 @@ function HabitButton({ habit, color, onTap }) {
       onClick={onTap}
       style={{
         width: '100%',
-        minHeight: 58,
+        minHeight: 40,
         background: `linear-gradient(180deg, ${lighten(color, 16)} 0%, ${color} 100%)`,
-        border: `2.5px solid ${lighten(color, 38)}`,
-        borderRadius: 20,
-        boxShadow: `0 4px 0 ${darken(color, 34)}, 0 6px 14px ${color}66`,
+        border: `2px solid ${lighten(color, 38)}`,
+        borderRadius: 15,
+        boxShadow: `0 3px 0 ${darken(color, 34)}, 0 4px 10px ${color}66`,
         cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '12px 18px',
+        padding: '6px 16px',
         transition: 'transform 110ms ease, box-shadow 110ms ease',
         userSelect: 'none',
       }}
-      onPointerDown={e => { e.currentTarget.style.transform = 'translateY(3px)'; e.currentTarget.style.boxShadow = `0 1px 0 ${darken(color, 34)}, 0 3px 8px ${color}55` }}
+      onPointerDown={e => { e.currentTarget.style.transform = 'translateY(2px)'; e.currentTarget.style.boxShadow = `0 1px 0 ${darken(color, 34)}, 0 2px 6px ${color}55` }}
       onPointerUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
       onPointerLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
     >
       <div style={{ minWidth: 0, textAlign: 'center' }}>
         <div style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: 21, color: text, lineHeight: 1.15,
+          fontSize: 17, color: text, lineHeight: 1.1,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           textShadow: text === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,0.25)' : '0 1px 0 rgba(255,255,255,0.45)',
         }}>
@@ -168,7 +168,7 @@ function HabitButton({ habit, color, onTap }) {
         </div>
         {habit.description && (
           <div style={{
-            fontFamily: 'Mulish, sans-serif', fontSize: 13, color: soft, marginTop: 1,
+            fontFamily: 'Mulish, sans-serif', fontSize: 11.5, color: soft, marginTop: 1,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {habit.description}
@@ -675,7 +675,7 @@ export default function HomeScreen() {
       {/* ── Scrolling habit list ── */}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', position: 'relative', zIndex: 10, padding: '8px 16px 14px' }}>
         {habits.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 440, width: '100%', margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, maxWidth: 440, width: '100%', margin: '0 auto' }}>
             {habits.map(habit => (
               <HabitButton
                 key={habit.id}
