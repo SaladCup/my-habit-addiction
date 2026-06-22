@@ -4,7 +4,7 @@
 // In dev it loads the Vite dev server (hot reload). When packaged it serves the
 // built dist/ through a custom `app://` protocol — NOT file:// — because Chromium
 // blocks ES-module loading over file://, which would leave a blank screen.
-const { app, BrowserWindow, shell, protocol, ipcMain, systemPreferences } = require('electron')
+const { app, BrowserWindow, shell, protocol, ipcMain, systemPreferences, screen } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -17,6 +17,7 @@ const DEV_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173'
 const DIST = path.join(__dirname, '..', 'dist')
 const APP_URL = 'app://bundle/index.html'
 let mainWin = null   // the app window, so blocker IPC can raise/cover it
+let coverSavedBounds = null   // phone-size bounds saved while the window is grown to cover a Brainrot
 
 // The custom scheme must be registered as privileged BEFORE the app is ready.
 protocol.registerSchemesAsPrivileged([
@@ -163,6 +164,34 @@ function registerBlockerIpc() {
   ipcMain.handle('blocker:on-top', (_e, on) => {
     if (!mainWin || mainWin.isDestroyed()) return { ok: false }
     mainWin.setAlwaysOnTop(!!on)
+    return { ok: true }
+  })
+
+  // COVER (the real block): the app window is normally phone-narrow, so just
+  // pulling it on top left the Brainrot visible — and CLICKABLE — around the
+  // edges. Covering means filling the whole screen with our opaque window so the
+  // Brainrot is fully hidden and every click lands on the lock screen, not the
+  // video behind it. We grow the window to the display's work area + pin it at
+  // screen-saver level (above normal + Cmd-Tabbed windows), and restore the
+  // saved phone-size bounds when the block lifts. One window, one store — so
+  // "do a habit / Break Glass" all keep working in place.
+  ipcMain.handle('blocker:cover', (_e, on) => {
+    if (!mainWin || mainWin.isDestroyed()) return { ok: false }
+    if (on) {
+      if (!coverSavedBounds) coverSavedBounds = mainWin.getBounds()   // remember phone size ONCE
+      if (mainWin.isMinimized()) mainWin.restore()
+      try {
+        const disp = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+        mainWin.setBounds(disp.workArea)   // fill the screen the user is looking at
+      } catch { mainWin.maximize() }
+      mainWin.setAlwaysOnTop(true, 'screen-saver')
+      try { mainWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }) } catch { /* */ }
+      mainWin.show(); mainWin.focus()
+    } else {
+      mainWin.setAlwaysOnTop(false)
+      try { mainWin.setVisibleOnAllWorkspaces(false) } catch { /* */ }
+      if (coverSavedBounds) { mainWin.setBounds(coverSavedBounds); coverSavedBounds = null }
+    }
     return { ok: true }
   })
 

@@ -30,7 +30,10 @@ export default function BlockedScreen() {
 
   const endTest = () => {
     useStore.getState().rbSetRuntime({ testBlockUntil: 0 })
-    try { if (window.desktop && window.desktop.setOnTop) window.desktop.setOnTop(false) } catch { /* */ }
+    try {
+      if (window.desktop?.cover) window.desktop.cover(false)
+      else if (window.desktop?.setOnTop) window.desktop.setOnTop(false)
+    } catch { /* */ }
     navigate('/rotblock')
   }
 

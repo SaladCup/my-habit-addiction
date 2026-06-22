@@ -105,14 +105,16 @@ export default function RotBlockEnforcer() {
     const enterBlock = () => {
       if (blockingRef.current) return        // act ONCE on the transition
       blockingRef.current = true
-      try { desktop.setOnTop?.(true) } catch { /* */ }
-      try { desktop.focusSelf?.() } catch { /* */ }
+      // Grow the (phone-narrow) window to FILL the screen so the Brainrot is fully
+      // covered and unclickable — not just stacked in front with the video showing
+      // around the edges. Falls back to plain on-top+focus if cover isn't available.
+      try { if (desktop.cover) desktop.cover(true); else { desktop.setOnTop?.(true); desktop.focusSelf?.() } } catch { /* */ }
       if (!String(window.location.hash).startsWith('#/blocked')) navigate('/blocked')
     }
     const releaseBlock = () => {
       if (!blockingRef.current) return
       blockingRef.current = false
-      try { desktop.setOnTop?.(false) } catch { /* */ }
+      try { if (desktop.cover) desktop.cover(false); else desktop.setOnTop?.(false) } catch { /* */ }
       // Pop the lock route on the genuine block->release transition so the UI can't
       // be left stranded on /blocked after the cover is dropped.
       if (String(window.location.hash).startsWith('#/blocked')) navigate('/rotblock')
@@ -188,7 +190,7 @@ export default function RotBlockEnforcer() {
       alive = false
       if (timer) clearTimeout(timer)
       blockingRef.current = false   // drop the latch too, so a fresh run re-asserts the cover when still blocked
-      try { window.desktop?.setOnTop?.(false) } catch { /* */ }
+      try { if (window.desktop?.cover) window.desktop.cover(false); else window.desktop?.setOnTop?.(false) } catch { /* */ }
     }
   }, [navigate])
 

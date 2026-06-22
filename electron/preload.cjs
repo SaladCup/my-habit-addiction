@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('desktop', {
   // front and keep it on top of the Brainrot until unblocked.
   focusSelf: () => ipcRenderer.invoke('blocker:focus'),
   setOnTop: (on) => ipcRenderer.invoke('blocker:on-top', on),
+  // The real block: grow our window to fill the screen (opaque, click-blocking)
+  // so the Brainrot is fully covered, and restore phone size when unblocked.
+  cover: (on) => ipcRenderer.invoke('blocker:cover', on),
   openAccessibilitySettings: () => ipcRenderer.invoke('blocker:open-accessibility'),
   // Screen Recording = needed to read the window title (how we match Firefox sites).
   getScreenStatus: () => ipcRenderer.invoke('blocker:screen-status'),
