@@ -108,10 +108,21 @@ function MusicController() {
   return null
 }
 
+// Pushes the saved "App size" (uiScale) to the native shell, which zooms the page
+// content while leaving the window size alone. Desktop-only; a no-op in a browser.
+function UiScaleController() {
+  const uiScale = useStore(s => s.settings.uiScale ?? 0.9)
+  useEffect(() => {
+    try { window.desktop?.setUiZoom?.(uiScale) } catch { /* */ }
+  }, [uiScale])
+  return null
+}
+
 function AppShell() {
   return (
     <div className="app-shell">
       <MusicController />
+      <UiScaleController />
       <RotBlockEnforcer />
       <RotBlockBridge />
       <AudioRainbow />

@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('desktop', {
   // The real block: grow our window to fill the screen (opaque, click-blocking)
   // so the Brainrot is fully covered, and restore phone size when unblocked.
   cover: (on) => ipcRenderer.invoke('blocker:cover', on),
+
+  // UI scale ("App size") — scales the page content; window size is unchanged.
+  setUiZoom: (z) => ipcRenderer.invoke('ui:zoom', z),
   openAccessibilitySettings: () => ipcRenderer.invoke('blocker:open-accessibility'),
   // Screen Recording = needed to read the window title (how we match Firefox sites).
   getScreenStatus: () => ipcRenderer.invoke('blocker:screen-status'),

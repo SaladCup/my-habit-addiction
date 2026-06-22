@@ -226,6 +226,14 @@ function registerBlockerIpc() {
   // extension are forwarded back here → the renderer spends the coins.
   ipcMain.handle('rb:publish-state', (_e, st) => { rotblockBridge.setState(st); return { ok: true } })
   ipcMain.handle('rb:extension-active', () => rotblockBridge.isExtensionActive())
+
+  // UI scale: the renderer pushes the user's "App size" setting; we apply it as a
+  // page zoom (window size unchanged — only the content scales).
+  ipcMain.handle('ui:zoom', (_e, z) => {
+    const f = Math.max(0.5, Math.min(1.2, Number(z) || 0.9))
+    if (mainWin && !mainWin.isDestroyed()) { try { mainWin.webContents.setZoomFactor(f) } catch { /* */ } }
+    return { ok: true }
+  })
 }
 
 // ── Auto-update check ────────────────────────────────────────────────────
@@ -369,13 +377,12 @@ function registerUpdateIpc() {
 }
 
 function createWindow() {
-  // Fit the window to the screen so it never overflows a short display (a smaller
-  // laptop was forcing the UI to scroll). workArea already excludes the menu bar +
-  // dock, so its height is what's actually usable.
+  // Keep the normal window size; only cap it if the screen genuinely can't fit it
+  // (so it never opens off-screen on a small display). The CONTENT is what scales
+  // down — see the zoom below — not the window.
   let winH = 880
   try {
-    const wa = screen.getPrimaryDisplay().workAreaSize
-    winH = Math.max(560, Math.min(880, wa.height - 10))
+    winH = Math.min(880, screen.getPrimaryDisplay().workAreaSize.height)
   } catch { /* */ }
   const win = new BrowserWindow({
     width: 430,            // the UI is designed phone-portrait, so the window is narrow
@@ -399,20 +406,13 @@ function createWindow() {
     console.error('did-fail-load', code, desc, url)
   })
 
-  // Scale the whole UI with real browser-zoom (everything reflows cleanly — fonts
-  // are hardcoded px, so this is the only sane global knob). ~10% smaller on a
-  // normal screen (the fonts ran a touch big), and progressively smaller on a short
-  // screen so the habit list fits without scrolling.
-  const DESIGN_H = 880
-  const applyZoom = () => {
-    if (!win || win.isDestroyed()) return
-    try {
-      const h = win.getContentSize()[1]
-      win.webContents.setZoomFactor(Math.max(0.72, Math.min(0.9, h / DESIGN_H)))
-    } catch { /* */ }
-  }
-  win.webContents.on('did-finish-load', applyZoom)
-  win.on('resize', applyZoom)
+  // Content zoom: real browser-zoom, so the jar / wheels / slot / text / buttons
+  // all scale while the WINDOW stays its normal size (fonts are hardcoded px, so
+  // this is the only sane global knob). ~10% smaller by default; the renderer
+  // pushes the saved "App size" setting (Settings → Display) right after load.
+  win.webContents.on('did-finish-load', () => {
+    if (!win.isDestroyed()) { try { win.webContents.setZoomFactor(0.9) } catch { /* */ } }
+  })
 
   win.loadURL(isDev ? DEV_URL : APP_URL)
 
