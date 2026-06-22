@@ -637,9 +637,13 @@ export default function HomeScreen() {
   }
 
   // Keep the beads in your wallet and just play Tier 1 — nothing enters the jar.
+  // Set phase too: Keep ALWAYS earns a Tier 1 spin, so it must guarantee a valid
+  // spin entry. (A BONUS bead reaches here after BonusScreen's resetSession(),
+  // which clears the 'habitDone' phase drawBead normally sets — without this the
+  // spin guard bounced you home.)
   function handleRevealKeep() {
     setReveal(null)
-    setSession({ activeTier: 1 })
+    setSession({ activeTier: 1, phase: 'habitDone' })
     navigate('/spin')
   }
 
