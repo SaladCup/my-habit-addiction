@@ -369,11 +369,19 @@ function registerUpdateIpc() {
 }
 
 function createWindow() {
+  // Fit the window to the screen so it never overflows a short display (a smaller
+  // laptop was forcing the UI to scroll). workArea already excludes the menu bar +
+  // dock, so its height is what's actually usable.
+  let winH = 880
+  try {
+    const wa = screen.getPrimaryDisplay().workAreaSize
+    winH = Math.max(560, Math.min(880, wa.height - 10))
+  } catch { /* */ }
   const win = new BrowserWindow({
     width: 430,            // the UI is designed phone-portrait, so the window is narrow
-    height: 880,
+    height: winH,
     minWidth: 360,
-    minHeight: 600,
+    minHeight: 480,
     backgroundColor: '#FBEAF3',   // kawaii pink, shown before the app paints
     title: 'My Habit Addiction',
     webPreferences: {
@@ -390,6 +398,21 @@ function createWindow() {
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error('did-fail-load', code, desc, url)
   })
+
+  // Scale the whole UI with real browser-zoom (everything reflows cleanly — fonts
+  // are hardcoded px, so this is the only sane global knob). ~10% smaller on a
+  // normal screen (the fonts ran a touch big), and progressively smaller on a short
+  // screen so the habit list fits without scrolling.
+  const DESIGN_H = 880
+  const applyZoom = () => {
+    if (!win || win.isDestroyed()) return
+    try {
+      const h = win.getContentSize()[1]
+      win.webContents.setZoomFactor(Math.max(0.72, Math.min(0.9, h / DESIGN_H)))
+    } catch { /* */ }
+  }
+  win.webContents.on('did-finish-load', applyZoom)
+  win.on('resize', applyZoom)
 
   win.loadURL(isDev ? DEV_URL : APP_URL)
 
