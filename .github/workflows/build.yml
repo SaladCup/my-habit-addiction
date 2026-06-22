@@ -81,8 +81,15 @@ jobs:
             -----END PUBLIC KEY-----
         run: node scripts/sign-artifacts.cjs release
 
-      # Always keep the installers as downloadable artifacts on the run.
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      # Keep installers as run artifacts ONLY for manual test builds (workflow_dispatch).
+      # On a version tag the Release below is the real deliverable, so we SKIP this —
+      # otherwise the GitHub Actions artifact-storage quota (a separate, easily-exhausted
+      # limit) can fail the job and block the release publish, which is exactly what hit
+      # v0.1.38. continue-on-error means even a test build's quota hit never fails the job.
+      - name: Upload run artifacts (test builds only)
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: installers-${{ matrix.os }}
           path: |
