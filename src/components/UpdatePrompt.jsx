@@ -53,11 +53,13 @@ export default function UpdatePrompt() {
 
   const onUpdate = async () => {
     const d = window.desktop
-    // Real one-click self-install (desktop app).
+    // Real one-click self-install (desktop app). Pass the signature URL too — main
+    // verifies it before touching anything; if it's missing or fails, installUpdate
+    // resolves { ok:false } and we fall back to the plain browser download.
     if (d && d.installUpdate && info.installUrl) {
       setInstalling(true)
       let res = null
-      try { res = await d.installUpdate(info.installUrl) } catch { /* fall through */ }
+      try { res = await d.installUpdate(info.installUrl, info.signatureUrl) } catch { /* fall through */ }
       if (!res || !res.ok) { setInstalling(false); fallbackDownload() }
       // On success the app downloads, quits, and relaunches into the new version.
       return

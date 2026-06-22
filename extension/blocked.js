@@ -1,7 +1,28 @@
 // Block page logic: show which site was blocked, poll the app's bridge for your
 // coin balance, and let you back in once you've earned time (or Break Glass'd).
 const BRIDGE = 'http://127.0.0.1:7691'
+const EXT_HEADER = { 'X-RotBlock-Ext': '1' }
 const params = new URLSearchParams(location.search)
+
+// Token handshake (same scheme as the background worker). blocked.html is a
+// web_accessible_resource on the extension origin, so it has host_permissions →
+// bypasses CORS, can read /token, and can carry the auth headers.
+let token = ''
+try { chrome.storage.local.get(['token'], (r) => { if (r && typeof r.token === 'string') token = r.token }) } catch (e) { /* */ }
+async function fetchToken() {
+  try {
+    const d = await (await fetch(BRIDGE + '/token', { cache: 'no-store', headers: EXT_HEADER })).json()
+    if (d && d.ok && d.token) { token = d.token; try { chrome.storage.local.set({ token }) } catch (e) { /* */ } }
+  } catch (e) { /* */ }
+  return token
+}
+async function bridgeState() {
+  const hdrs = () => Object.assign({}, EXT_HEADER, token ? { 'X-RotBlock-Token': token } : {})
+  if (!token) await fetchToken()
+  let res = await fetch(BRIDGE + '/state', { cache: 'no-store', headers: hdrs() })
+  if (res.status === 403) { await fetchToken(); res = await fetch(BRIDGE + '/state', { cache: 'no-store', headers: hdrs() }) }
+  return res.json()
+}
 const from = params.get('from') || ''
 const site = params.get('site') || 'this site'
 
@@ -24,7 +45,7 @@ $('openapp').addEventListener('click', () => {
 
 async function poll() {
   let cfg = null
-  try { cfg = await (await fetch(BRIDGE + '/state', { cache: 'no-store' })).json() } catch (e) { /* */ }
+  try { cfg = await bridgeState() } catch (e) { /* */ }
 
   if (!cfg || !cfg.ok) {
     $('coins').textContent = 'My Habit Addiction isn’t running'

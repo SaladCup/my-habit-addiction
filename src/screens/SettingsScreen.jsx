@@ -8,6 +8,86 @@ import { KawaiiButton, PixelPanel } from '../components/ui'
 // The localStorage key Zustand persists under (see useStore persist config).
 const STORE_KEY = 'my-habit-addiction'
 
+// ── Hardened import: NEVER trust the file. An imported save is fully attacker-
+// controlled JSON written into our own persistence and reloaded, so it's a stored-
+// data trust boundary. Instead of writing the raw text, we rebuild a clean blob from
+// an ALLOWLIST of the real persisted slices (must mirror useStore partialize), strip
+// __proto__/constructor/prototype at every level, cap sizes, and recompute the coin
+// balance from the log so a tampered coinTotals can't forge coins. Honest files round-
+// trip unchanged (the allowlist IS the partialize set; caps sit far above real data). ──
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype']
+const COIN_LOG_CAP = 500          // mirrors COIN_LOG_MAX in useStore
+const ARRAY_CAP    = 100000       // generous upper bound; real saves are far smaller
+const STR_CAP      = 2000         // cap any string field (labels, notes, names…)
+
+// Recursively copy ONLY own, safe, JSON-ish values. Drops dangerous keys at every
+// object level, caps array + string length, rejects functions/symbols.
+function sanitizeValue(v, depth = 0) {
+  if (depth > 12) return null                       // guard pathological nesting
+  if (v === null) return null
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+  if (typeof v === 'boolean') return v
+  if (typeof v === 'string') return v.length > STR_CAP ? v.slice(0, STR_CAP) : v
+  if (Array.isArray(v)) return v.slice(0, ARRAY_CAP).map(x => sanitizeValue(x, depth + 1))
+  if (typeof v === 'object') {
+    const out = {}
+    for (const k of Object.keys(v)) {               // own enumerable keys only
+      if (DANGEROUS_KEYS.includes(k)) continue       // strip prototype-pollution keys
+      out[k] = sanitizeValue(v[k], depth + 1)
+    }
+    return out
+  }
+  return null                                        // functions, symbols, undefined → drop
+}
+
+// The exact persisted slices (useStore partialize). Anything else in the file is dropped.
+const PERSISTED_KEYS = [
+  'habits', 'categories', 'wallet', 'jarBeads', 'jarSeenCount',
+  'coinLog', 'coinTotals', 'coinLogComplete', 'gambling', 'rotblock',
+  'milestones', 'settings', 'jackpotPool', 'spinStats', 'engagement', 'daily',
+]
+
+// parsed = JSON.parse(file). Returns a clean { state, version } blob to persist, or
+// null if it isn't a usable save. Does NOT trust coinTotals from the file.
+function sanitizeImport(parsed) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+  const rawState = parsed.state
+  if (!rawState || typeof rawState !== 'object' || Array.isArray(rawState)) return null
+  if (typeof parsed.version !== 'number' || !Number.isFinite(parsed.version)) return null
+
+  const state = {}
+  for (const key of PERSISTED_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(rawState, key)) {
+      state[key] = sanitizeValue(rawState[key])
+    }
+  }
+
+  // Cap the coin log to the same bound the store keeps (recent history only).
+  if (Array.isArray(state.coinLog) && state.coinLog.length > COIN_LOG_CAP) {
+    state.coinLog = state.coinLog.slice(-COIN_LOG_CAP)
+    state.coinLogComplete = false   // we just dropped entries → log no longer complete
+  }
+
+  // CORRECT a tampered balance: while the log is the complete history it's the source
+  // of truth (same rule as useStore onRehydrateStorage / migrate v13-v14). Recompute
+  // coinTotals from coinLog so a forged coinTotals in the file is ignored.
+  if (state.coinLogComplete === true && Array.isArray(state.coinLog)) {
+    const log = state.coinLog
+    state.coinTotals = {
+      earned: log.filter(e => e && e.type === 'earned').reduce((s, e) => s + (Number(e.amount) || 0), 0),
+      spent:  log.filter(e => e && e.type === 'spent').reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    }
+  } else if (state.coinTotals && typeof state.coinTotals === 'object') {
+    // Log is incomplete (overflowed): trust the carried totals, but force them numeric.
+    state.coinTotals = {
+      earned: Math.max(0, Number(state.coinTotals.earned) || 0),
+      spent:  Math.max(0, Number(state.coinTotals.spent)  || 0),
+    }
+  }
+
+  return { state, version: parsed.version }
+}
+
 function ColorSwatches({ selected, onSelect }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -94,7 +174,7 @@ export default function SettingsScreen() {
   const [confirmReset, setConfirmReset] = useState(false)
 
   const fileRef = useRef(null)
-  const [pendingImport, setPendingImport] = useState(null)  // { text, summary } awaiting confirm
+  const [pendingImport, setPendingImport] = useState(null)  // { payload, summary } awaiting confirm
   const [backupMsg, setBackupMsg]         = useState(null)  // { ok, text } feedback line
 
   const [draftMilestones, setDraftMilestones] = useState(() => milestones)
@@ -129,32 +209,37 @@ export default function SettingsScreen() {
     const reader = new FileReader()
     reader.onload = () => {
       try {
-        const text = String(reader.result)
-        const parsed = JSON.parse(text)
-        const s = parsed?.state
-        const looksValid = s && typeof s === 'object' && typeof parsed.version === 'number'
-          && ('habits' in s || 'wallet' in s || 'coinTotals' in s)
+        const parsed = JSON.parse(String(reader.result))
+        const clean = sanitizeImport(parsed)
+        if (!clean) {
+          setPendingImport(null)
+          setBackupMsg({ ok: false, text: "That isn't a Habit Addiction save file." })
+          return
+        }
+        if (clean.version > PERSIST_VERSION) {
+          // Newer save than this app — persist would SKIP migrate() and load an
+          // unmigrated, future-shaped state the current code may mishandle.
+          setPendingImport(null)
+          setBackupMsg({ ok: false, text: `That save is from a newer version (v${clean.version}) than this app (v${PERSIST_VERSION}). Update the app first, then import.` })
+          return
+        }
+        const s = clean.state
+        const looksValid = ('habits' in s) || ('wallet' in s) || ('coinTotals' in s)
         if (!looksValid) {
           setPendingImport(null)
           setBackupMsg({ ok: false, text: "That isn't a Habit Addiction save file." })
           return
         }
-        if (parsed.version > PERSIST_VERSION) {
-          // Newer save than this app — persist would SKIP migrate() and load an
-          // unmigrated, future-shaped state the current code may mishandle.
-          setPendingImport(null)
-          setBackupMsg({ ok: false, text: `That save is from a newer version (v${parsed.version}) than this app (v${PERSIST_VERSION}). Update the app first, then import.` })
-          return
-        }
-        const beads = (s.wallet?.length || 0) + (s.jarBeads?.length || 0)
+        const beads = ((Array.isArray(s.wallet) && s.wallet.length) || 0) + ((Array.isArray(s.jarBeads) && s.jarBeads.length) || 0)
         setBackupMsg(null)
         setPendingImport({
-          text,
+          // Stash the CLEAN, re-serialized blob — never the raw file text.
+          payload: JSON.stringify(clean),
           summary: {
-            habits: s.habits?.length || 0,
-            categories: s.categories?.length || 0,
+            habits: (Array.isArray(s.habits) && s.habits.length) || 0,
+            categories: (Array.isArray(s.categories) && s.categories.length) || 0,
             beads,
-            version: parsed.version,
+            version: clean.version,
           },
         })
       } catch {
@@ -167,7 +252,8 @@ export default function SettingsScreen() {
 
   function applyImport() {
     try {
-      localStorage.setItem(STORE_KEY, pendingImport.text)
+      // Write the SANITIZED, re-serialized blob — never the raw file text.
+      localStorage.setItem(STORE_KEY, pendingImport.payload)
       setPendingImport(null)
       setBackupMsg({ ok: true, text: 'Save loaded! Reloading…' })
       setTimeout(() => window.location.reload(), 600)

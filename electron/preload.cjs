@@ -45,9 +45,11 @@ contextBridge.exposeInMainWorld('desktop', {
   //   { ok, updateAvailable, latestVersion, currentVersion, downloadUrl, releaseUrl }
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
   openUpdateDownload: (url) => ipcRenderer.invoke('update:open', url),
-  // One-click self-install: downloads + swaps the app + relaunches. Resolves
+  // One-click self-install: downloads + verifies the Ed25519 signature + swaps the
+  // app + relaunches. `sigUrl` is the detached signature published next to the
+  // installer; main refuses to install if it's absent or doesn't verify. Resolves
   // { ok: true, installing: true } (the app then quits) or { ok: false } to fall back.
-  installUpdate: (url) => ipcRenderer.invoke('update:install', url),
+  installUpdate: (url, sigUrl) => ipcRenderer.invoke('update:install', url, sigUrl),
   // Subscribe to download progress (0..1). Returns an unsubscribe function.
   onUpdateProgress: (cb) => {
     const handler = (_e, frac) => cb(frac)

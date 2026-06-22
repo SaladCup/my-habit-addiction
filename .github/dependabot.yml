@@ -1,0 +1,28 @@
+# Keeps dependencies + pinned Action SHAs current via automatic PRs.
+# - npm: bumps package.json / package-lock.json deps (minor+patch grouped to cut noise).
+# - github-actions: bumps the commit-SHA pins in the workflows. This works ONLY because
+#   each pinned `uses:` line carries a `# vX.Y.Z` comment mapping the SHA to a version.
+# NOTE: web-ext@10.4.0 and chrome-webstore-upload-cli@3.3.2 in extension.yml are npx
+# args, not deps — Dependabot does NOT see them. Bump those by hand.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"

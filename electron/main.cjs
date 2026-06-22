@@ -8,6 +8,7 @@ const { app, BrowserWindow, shell, protocol, ipcMain, systemPreferences, screen 
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
+const crypto = require('node:crypto')
 const { spawn } = require('node:child_process')
 const rotblockBridge = require('./rotblockBridge.cjs')
 
@@ -44,7 +45,14 @@ function registerAppProtocol() {
     let rel = decodeURIComponent(pathname)
     if (rel === '/' || rel === '') rel = '/index.html'
     const filePath = path.normalize(path.join(DIST, rel))
-    if (!filePath.startsWith(DIST)) return new Response('forbidden', { status: 403 })
+    // Path-traversal guard. A bare `startsWith(DIST)` is too loose: it also passes
+    // sibling dirs that merely share the prefix (e.g. DIST="/app/dist" would let
+    // "/app/dist-secrets/…" through). Require either the DIST root itself OR a path
+    // that begins with DIST + the OS separator, so only files genuinely INSIDE dist/
+    // are served.
+    if (filePath !== DIST && !filePath.startsWith(DIST + path.sep)) {
+      return new Response('forbidden', { status: 403 })
+    }
     // 'wasm-unsafe-eval' is REQUIRED: the 3D physics (rapier) compiles a WebAssembly
     // module, which a bare script-src 'self' blocks → blank screen. This flag allows
     // WASM compilation only, NOT general JS eval.
@@ -244,6 +252,44 @@ function registerBlockerIpc() {
 // userData, untouched by installing a new version.
 const RELEASES_REPO = 'SaladCup/my-habit-addiction-releases'
 
+// ── Update signing: independent Ed25519 integrity layer ───────────────────
+// This is SEPARATE from the macOS code-signing cert (which only governs Gatekeeper
+// + TCC/Accessibility persistence). The updater downloads attacker-influenceable
+// bytes from a public URL; THIS Ed25519 check is what makes the app REFUSE to
+// install anything not signed by Lauren's private key (held only as the CI secret
+// UPDATE_SIGNING_KEY, never in the cert chain or the repo). The matching PUBLIC key
+// is safe to hardcode here — it can only verify, never sign.
+const UPDATE_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEADaUVjYMYxlN5HDJGdewWMSwlzm3JS9scLJtfExB3iL4=
+-----END PUBLIC KEY-----
+`
+let _updatePubKey = null
+function getUpdatePublicKey() {
+  if (!_updatePubKey) _updatePubKey = crypto.createPublicKey(UPDATE_PUBLIC_KEY_PEM)
+  return _updatePubKey
+}
+// Download <artifact>.sig (base64 of the raw 64-byte Ed25519 signature), and verify
+// it over the bytes of the already-downloaded artifact at `filePath`. Ed25519 hashes
+// internally, so we sign/verify the RAW file bytes with the null algorithm — NOT a
+// pre-computed digest. Returns true ONLY on a valid signature from our key; ANY error
+// (missing sig, bad base64, wrong length, mismatch) returns false and the caller MUST
+// abort the install — the renderer then falls back to the plain browser download.
+async function verifyArtifactSignature(filePath, sigUrl) {
+  try {
+    const res = await fetch(sigUrl, { headers: { 'User-Agent': 'my-habit-addiction' } })
+    if (!res.ok) { console.error('[update] sig download failed', res.status); return false }
+    const sig = Buffer.from((await res.text()).trim(), 'base64')
+    if (sig.length !== 64) { console.error('[update] sig wrong length', sig.length); return false }
+    const bytes = await fs.promises.readFile(filePath)
+    const ok = crypto.verify(null, bytes, getUpdatePublicKey(), sig)   // null algo == Ed25519
+    if (!ok) console.error('[update] SIGNATURE MISMATCH — refusing to install', path.basename(filePath))
+    return ok
+  } catch (e) {
+    console.error('[update] verify error', e)
+    return false
+  }
+}
+
 // Is `latest` a higher semver than `current`? (plain numeric x.y.z compare)
 function isNewerVersion(latest, current) {
   const a = String(latest).replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0)
@@ -280,6 +326,10 @@ async function checkForUpdate() {
       currentVersion,
       downloadUrl: installer ? installer.browser_download_url : data.html_url,
       installUrl: selfInstall ? selfInstall.browser_download_url : null,
+      // The detached Ed25519 signature published next to the self-install artifact.
+      // GitHub serves release assets at a stable .../releases/download/<tag>/<name>
+      // URL, so appending '.sig' resolves to the uploaded <name>.sig asset.
+      signatureUrl: selfInstall ? selfInstall.browser_download_url + '.sig' : null,
       releaseUrl: data.html_url,
     }
   } catch (e) {
@@ -311,10 +361,17 @@ async function downloadFile(url, dest) {
 // DETACHED script that waits for us to quit, swaps the app in place (keeping a
 // backup so a mid-swap failure can't brick the install), clears quarantine, and
 // relaunches. No admin needed when the app lives in a user-writable /Applications.
-async function installMac(url) {
+async function installMac(url, sigUrl) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'habit-update-'))
   const zipPath = path.join(tmp, 'update.zip')
   await downloadFile(url, zipPath)
+  // INTEGRITY GATE: verify the Ed25519 signature over the downloaded zip BEFORE we
+  // extract / ditto / spawn anything. Fail closed — if it doesn't verify, abort and
+  // let the renderer fall back to the plain browser download. Nothing runs unsigned.
+  if (!sigUrl || !(await verifyArtifactSignature(zipPath, sigUrl))) {
+    try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* */ }
+    return { ok: false, error: 'signature verification failed' }
+  }
   const extractDir = path.join(tmp, 'x')
   fs.mkdirSync(extractDir, { recursive: true })
   await new Promise((resolve, reject) => {
@@ -347,28 +404,59 @@ async function installMac(url) {
 
 // One-click update on Windows: download the NSIS installer and run it silently;
 // it replaces the app in place and relaunches. We quit so files aren't locked.
-async function installWin(url) {
+async function installWin(url, sigUrl) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'habit-update-'))
   const exePath = path.join(tmp, 'Setup.exe')
   await downloadFile(url, exePath)
+  // INTEGRITY GATE: verify before we run the installer (fail closed).
+  if (!sigUrl || !(await verifyArtifactSignature(exePath, sigUrl))) {
+    try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* */ }
+    return { ok: false, error: 'signature verification failed' }
+  }
   spawn(exePath, ['/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref()
   setTimeout(() => app.quit(), 400)
   return { ok: true, installing: true }
 }
 
+// Only ever fetch/open update URLs from GitHub's own hosts. The renderer hands us a
+// URL it read from the releases API, but we re-validate here (the trust boundary is
+// main, not the renderer): require HTTPS and a hostname of exactly github.com or a
+// *.githubusercontent.com subdomain (where release assets are actually served).
+// Anything else (other host, http, embedded credentials, IP) is rejected — this stops
+// a compromised/spoofed renderer from turning the auto-installer into "download and
+// run an arbitrary .exe / swap in an arbitrary .app".
+function isAllowedUpdateUrl(url) {
+  if (typeof url !== 'string') return false
+  let u
+  try { u = new URL(url) } catch { return false }
+  if (u.protocol !== 'https:') return false
+  if (u.username || u.password) return false           // no user:pass@evil.com tricks
+  const h = u.hostname.toLowerCase()
+  return h === 'github.com'
+    || h === 'githubusercontent.com'
+    || h.endsWith('.githubusercontent.com')
+}
+
 function registerUpdateIpc() {
   ipcMain.handle('update:check', () => checkForUpdate())
   ipcMain.handle('update:open', (_e, url) => {
-    if (typeof url === 'string' && /^https:\/\//.test(url)) shell.openExternal(url)
+    if (!isAllowedUpdateUrl(url)) return { ok: false, error: 'bad url' }
+    shell.openExternal(url)
     return { ok: true }
   })
   // One-click self-install. On any failure the renderer falls back to opening the
   // plain download, so the user is never left stuck.
-  ipcMain.handle('update:install', async (_e, url) => {
-    if (typeof url !== 'string' || !/^https:\/\//.test(url)) return { ok: false, error: 'bad url' }
+  ipcMain.handle('update:install', async (_e, url, sigUrl) => {
+    if (!isAllowedUpdateUrl(url)) return { ok: false, error: 'bad url' }
+    // The signature URL is MANDATORY and must also be a GitHub host. Making it
+    // required is the secure default: an attacker who controls the feed can't strip
+    // the .sig to skip the check, and a release published without a .sig simply won't
+    // self-install (the renderer falls back to the browser download). Old, unsigned
+    // releases are therefore never self-installed — exactly what we want.
+    if (!isAllowedUpdateUrl(sigUrl)) return { ok: false, error: 'missing signature url' }
     try {
-      if (process.platform === 'darwin') return await installMac(url)
-      if (process.platform === 'win32') return await installWin(url)
+      if (process.platform === 'darwin') return await installMac(url, sigUrl)
+      if (process.platform === 'win32') return await installWin(url, sigUrl)
       return { ok: false, error: 'unsupported platform' }
     } catch (e) {
       return { ok: false, error: String((e && e.message) || e) }
@@ -395,12 +483,39 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,     // renderer can't touch Node directly (secure default)
       nodeIntegration: false,
+      // Run the renderer in the OS sandbox. SAFE with this preload: it uses ONLY
+      // contextBridge + ipcRenderer (invoke/on/removeListener), all of which are
+      // available to sandboxed preloads. It does NOT require any other Node built-in
+      // at runtime, so no `require()` breaks. (Electron has defaulted preloads to
+      // sandboxed since v20; we set it explicitly so it can't regress.)
+      sandbox: true,
     },
   })
 
   mainWin = win
 
   win.on('closed', () => { if (mainWin === win) mainWin = null })
+
+  // Pin the window to its own origin. This app is a HashRouter SPA, so in-app route
+  // changes are hash updates that do NOT fire will-navigate/will-redirect — only a
+  // REAL navigation (a stray window.location =, a form post, an injected link) does.
+  // Anything not pointing at our own origin is cancelled and (if external http/s)
+  // opened in the real browser instead.
+  const ORIGIN = isDev ? DEV_URL : APP_URL
+  const isSameOrigin = (target) => {
+    try {
+      const u = new URL(target)
+      const base = new URL(ORIGIN)
+      return u.protocol === base.protocol && u.host === base.host
+    } catch { return false }
+  }
+  const guardNav = (e, url) => {
+    if (isSameOrigin(url)) return            // legit same-origin (rare; hash routing won't hit this)
+    e.preventDefault()
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url)   // send real web links to the browser
+  }
+  win.webContents.on('will-navigate', guardNav)
+  win.webContents.on('will-redirect', guardNav)
 
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error('did-fail-load', code, desc, url)

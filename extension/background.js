@@ -10,20 +10,68 @@ const BLOCK_PAGE = chrome.runtime.getURL('blocked.html')
 const STALE_MS = 3000          // re-fetch state if older than this
 const HEARTBEAT_MS = 10000     // tell the app "extension is alive" at most this often
 
+// The bridge requires TWO things on every data endpoint (see rotblockBridge.cjs):
+//  - X-RotBlock-Ext: 1  → a non-safelisted header. The extension can send it freely
+//    (host_permissions bypasses CORS); a malicious web page that tries to send it is
+//    forced into a CORS preflight the bridge refuses, so its /drain never fires.
+//  - X-RotBlock-Token   → a random per-launch secret we fetch once from /token and
+//    cache in chrome.storage. Re-fetched automatically on a 403 (e.g. app restarted
+//    → new token).
+const EXT_HEADER = { 'X-RotBlock-Ext': '1' }
+let token = ''                 // cached bridge token (also persisted)
+
 let cfg = { enabled: false, coins: 0, breakGlassUntil: 0, secondsPerCoin: 2, testBlockUntil: 0, siteTargets: [] }
 let cfgAt = 0
 let lastHeartbeat = 0
 const drainAcc = {}            // tabId -> leftover seconds not yet converted to a coin
 
-// Restore last-known state so a freshly-woken worker isn't totally blind.
-try { chrome.storage.local.get(['cfg'], (r) => { if (r && r.cfg) cfg = r.cfg }) } catch (e) { /* */ }
+// Restore last-known state + token so a freshly-woken worker isn't totally blind.
+try { chrome.storage.local.get(['cfg', 'token'], (r) => {
+  if (r && r.cfg) cfg = r.cfg
+  if (r && typeof r.token === 'string') token = r.token
+}) } catch (e) { /* */ }
 
 const now = () => Date.now()
+
+// Fetch (and cache) the per-launch token. Header-gated on the bridge, so only the
+// extension can read it. Returns '' if the app isn't running.
+async function fetchToken() {
+  try {
+    const res = await fetch(BRIDGE + '/token', { cache: 'no-store', headers: EXT_HEADER })
+    const data = await res.json()
+    if (data && data.ok && typeof data.token === 'string' && data.token) {
+      token = data.token
+      try { chrome.storage.local.set({ token }) } catch (e) { /* */ }
+      return token
+    }
+  } catch (e) { /* app down */ }
+  return ''
+}
+
+// Auth headers for data endpoints. `extra` merges in e.g. Content-Type.
+function authHeaders(extra) {
+  return Object.assign({}, EXT_HEADER, token ? { 'X-RotBlock-Token': token } : {}, extra || {})
+}
+
+// fetch() against the bridge with auth + a single transparent retry: if we get a 403
+// (stale/missing token, e.g. the app restarted), re-fetch the token once and retry.
+async function bridgeFetch(path, opts) {
+  if (!token) await fetchToken()
+  const build = () => Object.assign({ cache: 'no-store' }, opts, {
+    headers: authHeaders(opts && opts.headers),
+  })
+  let res = await fetch(BRIDGE + path, build())
+  if (res.status === 403) {
+    await fetchToken()
+    res = await fetch(BRIDGE + path, build())
+  }
+  return res
+}
 
 async function refreshCfg(force) {
   if (!force && now() - cfgAt < STALE_MS) return cfg
   try {
-    const res = await fetch(BRIDGE + '/state', { cache: 'no-store' })
+    const res = await bridgeFetch('/state', { method: 'GET' })
     const data = await res.json()
     if (data && data.ok) {
       cfg = data; cfgAt = now()
@@ -35,7 +83,7 @@ async function refreshCfg(force) {
   }
   if (now() - lastHeartbeat > HEARTBEAT_MS) {
     lastHeartbeat = now()
-    fetch(BRIDGE + '/heartbeat', { method: 'POST' }).catch(() => {})
+    bridgeFetch('/heartbeat', { method: 'POST' }).catch(() => {})
   }
   return cfg
 }
@@ -118,7 +166,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const coins = Math.floor(drainAcc[tabId] / per)
       drainAcc[tabId] -= coins * per
       let host = 'site'; try { host = new URL(url).hostname } catch { /* */ }
-      fetch(BRIDGE + '/drain', {
+      bridgeFetch('/drain', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ coins, host }),
       }).catch(() => {})

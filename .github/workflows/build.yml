@@ -24,9 +24,13 @@ jobs:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      # Third-party Actions are pinned to a full commit SHA (not a mutable @vN tag):
+      # whoever controls a tag could repoint it at malicious code, and these jobs hold
+      # the signing cert + RELEASES_TOKEN. The trailing `# vX.Y.Z` keeps it readable and
+      # lets Dependabot bump the SHA. (Verified against GitHub's API on 2026-06-22.)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -62,14 +66,30 @@ jobs:
       - name: Build installer
         run: npm run electron:build
 
+      # Sign the updater-fetched artifacts (the -mac.zip / .exe / .dmg) with the
+      # Ed25519 private key held ONLY as the UPDATE_SIGNING_KEY secret. Writes a
+      # detached <artifact>.sig next to each; the app verifies these before any
+      # install (refuses anything not signed by Lauren's key). Each matrix runner
+      # signs what it built. No-ops cleanly if the secret is absent. The public key
+      # is passed so the script self-verifies and fails the build on a key mismatch.
+      - name: Sign updater artifacts
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          UPDATE_PUBLIC_KEY_PEM: |
+            -----BEGIN PUBLIC KEY-----
+            MCowBQYDK2VwAyEADaUVjYMYxlN5HDJGdewWMSwlzm3JS9scLJtfExB3iL4=
+            -----END PUBLIC KEY-----
+        run: node scripts/sign-artifacts.cjs release
+
       # Always keep the installers as downloadable artifacts on the run.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: installers-${{ matrix.os }}
           path: |
             release/*.dmg
             release/*.exe
             release/*.zip
+            release/*.sig
           if-no-files-found: ignore
 
       # On a version tag, publish the installers to the PUBLIC releases repo
@@ -78,7 +98,7 @@ jobs:
       # with write access to that repo, stored as the RELEASES_TOKEN secret.
       - name: Publish to the public releases repo
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           repository: SaladCup/my-habit-addiction-releases
           token: ${{ secrets.RELEASES_TOKEN }}
@@ -87,3 +107,4 @@ jobs:
             release/*.dmg
             release/*.exe
             release/*.zip
+            release/*.sig
