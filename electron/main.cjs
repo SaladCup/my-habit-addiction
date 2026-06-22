@@ -9,6 +9,9 @@ const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 const { spawn } = require('node:child_process')
+const rotblockBridge = require('./rotblockBridge.cjs')
+
+const BRIDGE_PORT = 7691   // localhost port the browser extension talks to
 
 // Dev = loading the live Vite server. Packaged = loading the built files.
 // HABIT_FORCE_PROD lets us test the built (app://) path without packaging.
@@ -216,6 +219,13 @@ function registerBlockerIpc() {
     }
     return { ok: true }
   })
+
+  // ── Browser-extension bridge IPC ──
+  // The renderer pushes the live RotBlock slice (site targets + coins + Break
+  // Glass) to the bridge server so the extension can read it; drains posted by the
+  // extension are forwarded back here → the renderer spends the coins.
+  ipcMain.handle('rb:publish-state', (_e, st) => { rotblockBridge.setState(st); return { ok: true } })
+  ipcMain.handle('rb:extension-active', () => rotblockBridge.isExtensionActive())
 }
 
 // ── Auto-update check ────────────────────────────────────────────────────
@@ -418,6 +428,14 @@ app.whenReady().then(() => {
   registerBlockerIpc()
   registerUpdateIpc()
   createWindow()
+  // Start the localhost bridge for the browser extension. Drains it reports are
+  // forwarded to the renderer, which spends the coins through the store.
+  rotblockBridge.start({
+    port: BRIDGE_PORT,
+    onDrain: (payload) => {
+      if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('rb:drain', payload)
+    },
+  })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

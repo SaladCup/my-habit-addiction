@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "My Habit Addiction — RotBlock",
+  "version": "0.1.0",
+  "description": "Blocks your Brainrot sites (down to specific paths like youtube.com/shorts) as part of My Habit Addiction's coin economy.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms",
+    "http://127.0.0.1:7691/*",
+    "http://localhost:7691/*",
+    "<all_urls>"
+  ],
+  "background": { "scripts": ["background.js"], "persistent": false },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": ["blocked.html"],
+  "browser_action": { "default_title": "RotBlock", "default_popup": "popup.html" },
+  "icons": { "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "browser_specific_settings": {
+    "gecko": { "id": "rotblock@habitaddiction.local", "strict_min_version": "109.0" }
+  }
+}

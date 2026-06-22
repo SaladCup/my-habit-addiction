@@ -30,6 +30,7 @@ import RotBlockScreen     from './screens/RotBlockScreen'
 import BreakGlassScreen   from './screens/BreakGlassScreen'
 import BlockedScreen      from './screens/BlockedScreen'
 import RotBlockEnforcer   from './components/RotBlockEnforcer'
+import RotBlockBridge     from './components/RotBlockBridge'
 import AudioRainbow       from './components/AudioRainbow'
 import UpdatePrompt       from './components/UpdatePrompt'
 
@@ -112,6 +113,7 @@ function AppShell() {
     <div className="app-shell">
       <MusicController />
       <RotBlockEnforcer />
+      <RotBlockBridge />
       <AudioRainbow />
       <UpdatePrompt />
       <main className="screen">

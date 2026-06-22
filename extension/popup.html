@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 260px; font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #2E2440, #4A2E54); color: #FFE3F1; padding: 16px;
+    }
+    h1 { font-size: 16px; margin-bottom: 12px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .row:last-child { border-bottom: none; }
+    .k { color: #C9B6DC; }
+    .v { font-weight: 700; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+    .ok { background: #6BE08A; }
+    .bad { background: #FF6B6B; }
+    .hint { font-size: 11px; color: #A892BE; margin-top: 12px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>✨ RotBlock</h1>
+  <div class="row"><span class="k">App connection</span><span class="v" id="conn"><span class="dot bad"></span>checking…</span></div>
+  <div class="row"><span class="k">RotBlock</span><span class="v" id="enabled">—</span></div>
+  <div class="row"><span class="k">Coins (free time)</span><span class="v" id="coins">—</span></div>
+  <div class="row"><span class="k">Blocked sites</span><span class="v" id="sites">—</span></div>
+  <p class="hint" id="hint">Add or edit blocked sites in the app: Spend → RotBlock.</p>
+  <script src="popup.js"></script>
+</body>
+</html>

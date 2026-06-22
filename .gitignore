@@ -28,3 +28,6 @@ release
 # Blender: keep heavy scene files + iteration renders out (commit scripts + HERO renders only)
 blender/*.blend
 blender/renders/
+
+# generated extension builds
+extension/dist/

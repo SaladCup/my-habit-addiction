@@ -27,6 +27,16 @@ contextBridge.exposeInMainWorld('desktop', {
   getScreenStatus: () => ipcRenderer.invoke('blocker:screen-status'),
   openScreenRecordingSettings: () => ipcRenderer.invoke('blocker:open-screen-recording'),
 
+  // Browser-extension bridge: the renderer pushes RotBlock state to the local
+  // server the extension reads; the extension's coin drains come back via onRbDrain.
+  rbPublishState: (state) => ipcRenderer.invoke('rb:publish-state', state),
+  rbExtensionActive: () => ipcRenderer.invoke('rb:extension-active'),
+  onRbDrain: (cb) => {
+    const handler = (_e, payload) => cb(payload)
+    ipcRenderer.on('rb:drain', handler)
+    return () => ipcRenderer.removeListener('rb:drain', handler)
+  },
+
   // Auto-update: ask the public releases repo whether a newer version exists,
   // and open the right installer to download. Resolves to:
   //   { ok, updateAvailable, latestVersion, currentVersion, downloadUrl, releaseUrl }

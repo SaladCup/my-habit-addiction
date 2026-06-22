@@ -131,6 +131,11 @@ export default function RotBlockEnforcer() {
       let res
       try { res = await desktop.getActiveApp() } catch { res = null }
       if (!alive) return
+      // If the browser extension is checked in, IT enforces SITE Brainrots (reliably,
+      // per-tab) — so the desktop cover stands down for sites to avoid double-blocking.
+      let extActive = false
+      try { extActive = await desktop.rbExtensionActive?.() } catch { extActive = false }
+      if (!alive) return
       const cur = useStore.getState()
       if (!cur.rotblock.enabled) { releaseBlock(); return }   // re-check after the await
 
@@ -152,7 +157,8 @@ export default function RotBlockEnforcer() {
       const testBlock = (cur.rbRuntime.testBlockUntil || 0) > Date.now()
       // HARD GUARD: the habit app can never be a Brainrot (so it can't block itself
       // and trap the user — e.g. if it was accidentally added via Capture).
-      const isBrainrot = !isOwnApp(app) && rb.targets.some(t => matchesTarget(app, t))
+      const isBrainrot = !isOwnApp(app) && rb.targets.some(t =>
+        (extActive && t.kind === 'site') ? false : matchesTarget(app, t))
       const broke = cur.getCoinsAvailable() <= 0 && !(rb.breakGlassUntil && rb.breakGlassUntil > Date.now())
       const blocked = isBrainrot && (broke || testBlock)
 
