@@ -1,0 +1,113 @@
+# Publishes the RotBlock browser extension on each version tag, alongside the
+# desktop installers (build.yml). Runs on cheap Linux.
+#
+#  • Always: builds the Chrome .zip (for the Chrome Web Store / load-unpacked).
+#  • If AMO secrets exist: signs the Firefox add-on (unlisted) and publishes the
+#    signed .xpi + an updates.json feed → friends install once and auto-update.
+#  • If Chrome Web Store secrets exist: pushes the .zip to the store (auto-publish).
+#
+# Secret-gating is done INSIDE the run scripts (GitHub doesn't allow `secrets` in
+# step `if:`), so missing secrets just skip that piece instead of failing.
+name: Publish browser extension
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Build dist/chrome + dist/firefox (version is stamped from package.json).
+      - name: Build extension folders
+        run: node extension/build.mjs
+
+      # Chrome package — always produced (no credentials needed). manifest.json must
+      # be at the zip root, so we zip from inside the folder.
+      - name: Package Chrome zip
+        run: |
+          cd extension/dist/chrome
+          zip -r ../rotblock-chrome.zip . >/dev/null
+          echo "Built rotblock-chrome.zip"
+
+      # Firefox — sign as an UNLISTED add-on via the AMO API (web-ext). Needs
+      # WEB_EXT_API_KEY (JWT issuer) + WEB_EXT_API_SECRET (JWT secret) secrets.
+      - name: Sign Firefox add-on
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ]; then echo "No AMO key — skipping Firefox signing."; exit 0; fi
+          npx --yes web-ext sign \
+            --source-dir extension/dist/firefox \
+            --channel unlisted \
+            --api-key "$WEB_EXT_API_KEY" \
+            --api-secret "$WEB_EXT_API_SECRET" \
+            --artifacts-dir extension/dist/ffsigned || { echo "web-ext sign failed"; exit 0; }
+          XPI=$(ls extension/dist/ffsigned/*.xpi 2>/dev/null | head -1)
+          if [ -n "$XPI" ]; then
+            cp "$XPI" extension/dist/rotblock-firefox.xpi
+            echo "Signed: $XPI"
+          fi
+
+      # Auto-update feed for Firefox — only if we have a signed .xpi to point at.
+      - name: Generate Firefox updates.json
+        run: |
+          if [ ! -f extension/dist/rotblock-firefox.xpi ]; then echo "No signed .xpi — skipping updates.json."; exit 0; fi
+          VER=$(node -p "require('./package.json').version")
+          URL="https://github.com/SaladCup/my-habit-addiction-releases/releases/download/${GITHUB_REF_NAME}/rotblock-firefox.xpi"
+          cat > extension/dist/updates.json <<EOF
+          {
+            "addons": {
+              "rotblock@habitaddiction.local": {
+                "updates": [
+                  { "version": "${VER}", "update_link": "${URL}" }
+                ]
+              }
+            }
+          }
+          EOF
+          echo "Wrote updates.json for v${VER}"
+
+      # Publish whatever we built to the PUBLIC releases repo (same place as the
+      # app installers). Missing files are skipped, not errors.
+      - name: Publish extension to releases repo
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: SaladCup/my-habit-addiction-releases
+          token: ${{ secrets.RELEASES_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: false
+          files: |
+            extension/dist/rotblock-chrome.zip
+            extension/dist/rotblock-firefox.xpi
+            extension/dist/updates.json
+
+      # Optional: push the .zip to the Chrome Web Store automatically. Needs the
+      # item to already exist (first upload is manual) + OAuth secrets. Skipped if
+      # CHROME_REFRESH_TOKEN is absent.
+      - name: Publish to Chrome Web Store
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          if [ -z "$CHROME_REFRESH_TOKEN" ]; then echo "No Chrome Web Store creds — skipping (upload the .zip manually)."; exit 0; fi
+          npx --yes chrome-webstore-upload-cli@3 upload \
+            --source extension/dist/rotblock-chrome.zip \
+            --extension-id "$CHROME_EXTENSION_ID" \
+            --client-id "$CHROME_CLIENT_ID" \
+            --client-secret "$CHROME_CLIENT_SECRET" \
+            --refresh-token "$CHROME_REFRESH_TOKEN" \
+            --auto-publish || echo "Chrome upload failed (item may need a manual first submit / review)."

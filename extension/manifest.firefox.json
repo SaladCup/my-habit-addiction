@@ -24,6 +24,10 @@
   "browser_action": { "default_title": "RotBlock", "default_popup": "popup.html" },
   "icons": { "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "browser_specific_settings": {
-    "gecko": { "id": "rotblock@habitaddiction.local", "strict_min_version": "109.0" }
+    "gecko": {
+      "id": "rotblock@habitaddiction.local",
+      "strict_min_version": "109.0",
+      "update_url": "https://github.com/SaladCup/my-habit-addiction-releases/releases/latest/download/updates.json"
+    }
   }
 }
