@@ -31,3 +31,12 @@ blender/renders/
 
 # generated extension builds
 extension/dist/
+
+# Never commit secrets / signing material (defensive — nothing sensitive is tracked,
+# and the signing keys live OUTSIDE the repo at ~/.habit-signing/). This stops an
+# accidental copy from ever being staged.
+*.pem
+*.p12
+*.key
+.env
+.env.*

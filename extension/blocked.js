@@ -23,7 +23,11 @@ async function bridgeState() {
   if (res.status === 403) { await fetchToken(); res = await fetch(BRIDGE + '/state', { cache: 'no-store', headers: hdrs() }) }
   return res.json()
 }
-const from = params.get('from') || ''
+// Only ever navigate BACK to a real web page. The `from` param is attacker-
+// influenceable (it's in the block-page URL), so reject anything that isn't
+// http(s) — no javascript:/data:/file: open-redirect via the "go back" button.
+const rawFrom = params.get('from') || ''
+const from = /^https?:\/\//i.test(rawFrom) ? rawFrom : ''
 const site = params.get('site') || 'this site'
 
 const $ = (id) => document.getElementById(id)
