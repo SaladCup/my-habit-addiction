@@ -771,11 +771,14 @@ export function resolveWheelSpin(activeTier = 1, luck = {}) {
 // Two FREE bead slots replace the old FREE + Extra Spin, placed
 // non-adjacent so the wheel reads like the reference.
 //   75%≈33%  25%≈22%  50%≈19%  +  two FREE ≈13% each
+// label = the DISCOUNT the player sees (= 100 − effort), so the BIG number is the
+// WIN (matches slot psychology). value = the internal effort tier the user pre-wrote
+// a task for: '75' = "do the MOST" = only 25% off; '25' = "do a little" = 75% off.
 export const BONUS_WHEEL_SEGMENTS = [
-  { value: '75',   label: '75%',      weight: 33, color: '#FBC0D4' },
+  { value: '75',   label: '25%',      weight: 33, color: '#FBC0D4' },
   { value: 'free', label: 'FREE 🎁', weight: 13, color: '#BCE8D2' },
   { value: '50',   label: '50%',      weight: 19, color: '#D3C0EC' },
-  { value: '25',   label: '25%',      weight: 22, color: '#FBDFA8' },
+  { value: '25',   label: '75%',      weight: 22, color: '#FBDFA8' },
   { value: 'free', label: 'FREE 🎁', weight: 13, color: '#C9ECDA' },
 ]
 
@@ -829,15 +832,35 @@ export function spinBonusWheel() {
   return { result: chosen.value, label: chosen.label, stopAngle: bonusStopAngle(chosen) }
 }
 
+// ── Per-habit bonus tiers ────────────────────────────────────────────────
+// The user pre-writes a "little / some / most" version of a quick bonus for each
+// habit (in plain words — no percentage math at play time). The wheel lands on a
+// tier and shows their own words back. Keyed by the internal effort value so a
+// wheel result maps straight to a tier. Ordered most-discount-first for the form.
+export const BONUS_TIERS = [
+  { key: '25', word: 'A little', discount: 75 },
+  { key: '50', word: 'Some',     discount: 50 },
+  { key: '75', word: 'Most',     discount: 25 },
+]
+
+/** The discount % shown to the player for a wheel result (null for the free bead). */
+export function bonusDiscount(bonusResult) {
+  if (bonusResult === 'free') return null
+  const p = parseInt(bonusResult, 10)
+  return Number.isFinite(p) ? 100 - p : null
+}
+
 /**
- * Format the bonus challenge description.
- * @param {string} bonusResult  - '75'|'50'|'25'|'free'
- * @param {string} activity     - the "just a bit more" quick task (e.g. "10 push-ups")
- * @returns {string}
+ * Resolve the bonus task TEXT for a result: the habit's own tier if set, else the
+ * global default tier, else a legacy single activity, else a gentle fallback. There
+ * is no percentage math — the user already wrote what each tier means.
+ * @param {string} bonusResult  '75'|'50'|'25'|'free'
+ * @returns {string|null}  null for the free-bead result (no task)
  */
-export function formatBonusChallenge(bonusResult, activity) {
-  if (bonusResult === 'free')  return 'Free bead! No task needed 🎁'
-  const task = (typeof activity === 'string' && activity.trim()) || 'your quick task'
-  const pct = parseInt(bonusResult)
-  return `Do ${pct}% of: "${task}" within 10 minutes`
+export function resolveBonusTask(bonusResult, habit, settings) {
+  if (bonusResult === 'free') return null
+  const own = habit?.rewards?.bonusTiers?.[bonusResult]
+  const dflt = settings?.bonusTiers?.[bonusResult]
+  const legacy = settings?.bonusActivity
+  return (own && own.trim()) || (dflt && dflt.trim()) || (legacy && legacy.trim()) || 'your quick bonus'
 }

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
-import { TIER_COINS } from '../engine/gameLogic'
+import { TIER_COINS, BONUS_TIERS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
 import { KawaiiButton, PixelPanel } from '../components/ui'
 
@@ -464,16 +464,19 @@ export default function SettingsScreen() {
             />
           </div>
           <div>
-            <label style={labelStyle}>BONUS TASK ("just a bit more")</label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. 10 push-ups"
-              value={settings.bonusActivity || ''}
-              onChange={e => updateSettings({ bonusActivity: e.target.value })}
-            />
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
-              The quick task you do when a spin lands on ⭐ BONUS.
+            <label style={labelStyle}>DEFAULT BONUS TIERS</label>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 8 }}>
+              Used when a habit hasn&apos;t set its own. The bonus wheel shows one of these when you land on ⭐ BONUS.
             </div>
+            {BONUS_TIERS.map(t => (
+              <input
+                key={t.key}
+                style={{ ...inputStyle, marginBottom: 8 }}
+                placeholder={`${t.word} → ${t.discount}% off`}
+                value={(settings.bonusTiers && settings.bonusTiers[t.key]) || ''}
+                onChange={e => updateSettings({ bonusTiers: { ...(settings.bonusTiers || {}), [t.key]: e.target.value } })}
+              />
+            ))}
           </div>
         </div>
       </PixelPanel>

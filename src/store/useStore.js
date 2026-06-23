@@ -15,7 +15,12 @@ const COIN_LOG_MAX      = 500             // log is a recent-history view; total
 // Persisted-save schema version. Exported so the backup/restore UI can reject a save from a
 // NEWER app version (Zustand's persist skips migrate() when persistedVersion >= current, so a
 // future-shaped save would load unmigrated). Bump this AND add a migrate() branch together.
-export const PERSIST_VERSION = 19
+export const PERSIST_VERSION = 20
+
+// Global default bonus tiers (the funny "drop and give me 5/10/15" default). Used
+// when a habit hasn't set its own per-tier bonus. Keyed by effort value: '25' = the
+// little one (biggest discount), '75' = the most (smallest discount).
+export const DEFAULT_BONUS_TIERS = { '25': '5 push-ups', '50': '10 push-ups', '75': '15 push-ups' }
 
 const DEFAULT_SPIN_STATS = {
   totalSpins: 0,
@@ -148,7 +153,8 @@ const useStore = create(
         moneyPerCoin:   0.01,   // 1 coin = 1¢
         secondsPerCoin: 2,      // 1 coin = 2 sec → T1/T2/T3 ≈ 4/8/12.5 min
         timeActivity:   'free time',
-        bonusActivity:  '10 push-ups',  // the "just a bit more" quick task for BONUS spins
+        bonusActivity:  '10 push-ups',  // legacy single task (kept as a last-resort fallback)
+        bonusTiers:     { ...DEFAULT_BONUS_TIERS },  // global default per-tier bonuses (used when a habit has none)
         muted:          false,
         volume:         0.6,   // SFX volume (Web Audio one-shots/loops in audio.js + sounds.js)
         musicEnabled:   true,  // background music on/off (independent of SFX)
@@ -206,7 +212,15 @@ const useStore = create(
       })),
 
       // ── Habit actions ──
-      addHabit: (habit) => set(s => ({ habits: [...s.habits, { id: uuid(), rewards: { bonusActivity: '' }, ...habit }] })),
+      // Deep-merge rewards so a caller passing a partial rewards object (e.g. onboarding
+      // sends just { bonusActivity: '' }) still gets a full bonusTiers shape.
+      addHabit: (habit) => set(s => ({
+        habits: [...s.habits, {
+          id: uuid(),
+          ...habit,
+          rewards: { bonusActivity: '', bonusTiers: { '25': '', '50': '', '75': '' }, ...(habit?.rewards || {}) },
+        }],
+      })),
       updateHabit: (id, updates) => set(s => ({ habits: s.habits.map(h => h.id === id ? { ...h, ...updates } : h) })),
       deleteHabit: (id) => set(s => ({ habits: s.habits.filter(h => h.id !== id) })),
 
@@ -681,6 +695,25 @@ const useStore = create(
         if (version < 19 && !persisted.rotblock) {
           // RotBlock added — seed the default (disabled, no Brainrots) on older saves.
           persisted.rotblock = { enabled: false, targets: [], setupSeen: false, breakGlassUntil: null }
+        }
+        if (version < 20) {
+          // Per-habit, user-defined bonus TIERS replace the old "do X% of the habit"
+          // math. Seed the global default tiers (the push-ups joke) and give every
+          // existing habit an empty tier set so it falls back to that default until
+          // the user customizes it. Legacy settings.bonusActivity is preserved as a
+          // last-resort fallback in resolveBonusTask().
+          if (persisted.settings && !persisted.settings.bonusTiers) {
+            persisted.settings.bonusTiers = { ...DEFAULT_BONUS_TIERS }
+          }
+          if (Array.isArray(persisted.habits)) {
+            persisted.habits = persisted.habits.map(h => ({
+              ...h,
+              rewards: {
+                ...(h.rewards || {}),
+                bonusTiers: { '25': '', '50': '', '75': '', ...(h.rewards?.bonusTiers || {}) },
+              },
+            }))
+          }
         }
         return persisted
       },

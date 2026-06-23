@@ -2,10 +2,11 @@ import { useState } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { KawaiiButton, PixelPanel } from '../components/ui'
 import { playCreateHabit } from '../engine/sounds'
+import { BONUS_TIERS } from '../engine/gameLogic'
 
 const BLANK_HABIT = {
   name: '', description: '', categoryId: null,
-  rewards: { bonusActivity: '' },
+  rewards: { bonusActivity: '', bonusTiers: { '25': '', '50': '', '75': '' } },
 }
 
 function ColorSwatches({ selected, onSelect }) {
@@ -128,12 +129,17 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
     return {
       ...BLANK_HABIT,
       ...base,
-      rewards: { ...BLANK_HABIT.rewards, ...(base.rewards || {}) },
+      rewards: {
+        ...BLANK_HABIT.rewards,
+        ...(base.rewards || {}),
+        bonusTiers: { ...BLANK_HABIT.rewards.bonusTiers, ...(base.rewards?.bonusTiers || {}) },
+      },
     }
   })
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
-  const setReward = (key, val) => setForm(f => ({ ...f, rewards: { ...f.rewards, [key]: val } }))
+  const setTier = (key, val) =>
+    setForm(f => ({ ...f, rewards: { ...f.rewards, bonusTiers: { ...(f.rewards.bonusTiers || {}), [key]: val } } }))
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -175,13 +181,20 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
       </div>
 
       <div>
-        <label style={labelStyle}>BONUS CHALLENGE (shown during bonus round)</label>
-        <input
-          style={inputStyle}
-          placeholder="e.g. 5 more minutes of running"
-          value={form.rewards.bonusActivity}
-          onChange={e => setReward('bonusActivity', e.target.value)}
-        />
+        <label style={labelStyle}>BONUS CHALLENGE — your &quot;just a bit more&quot;</label>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#9B7EC8', marginBottom: 8, lineHeight: 1.45 }}>
+          Optional. Jot a tiny → bigger version of a quick bonus for this habit. The bonus
+          wheel picks one and shows your own words back — no math. Leave blank to use your default.
+        </div>
+        {BONUS_TIERS.map(t => (
+          <input
+            key={t.key}
+            style={{ ...inputStyle, marginBottom: 8 }}
+            placeholder={`${t.word} → ${t.discount}% off`}
+            value={form.rewards.bonusTiers?.[t.key] || ''}
+            onChange={e => setTier(t.key, e.target.value)}
+          />
+        ))}
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>

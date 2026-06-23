@@ -650,7 +650,13 @@ export default function HomeScreen() {
   function handleOnboardingComplete(catData, habitData, bonusActivity) {
     const newCat = addCategory(catData)
     addHabit({ ...habitData, categoryId: newCat.id })
-    if (bonusActivity) updateSettings({ bonusActivity })
+    if (bonusActivity) {
+      // The legacy onboarding collects ONE bonus task. Seed it across all three
+      // default tiers so it actually appears on the bonus wheel (the new system reads
+      // settings.bonusTiers; the upcoming Habit-Chan onboarding will collect the
+      // little/some/most variants properly).
+      updateSettings({ bonusActivity, bonusTiers: { '25': bonusActivity, '50': bonusActivity, '75': bonusActivity } })
+    }
     playCreateHabit()
   }
 

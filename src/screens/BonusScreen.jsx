@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { getBonusStopAngle, formatBonusChallenge } from '../engine/gameLogic'
+import { getBonusStopAngle, resolveBonusTask, bonusDiscount } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TimerDisplay } from '../components/ui'
 import BonusWheel from '../components/BonusWheel'
 
@@ -70,13 +70,11 @@ export default function BonusScreen() {
 
   if (!validEntry) return null   // un-earned visit — redirecting home (guard effect above)
 
-  // The "just a bit more" task is set globally in onboarding; fall back to the
-  // habit's own activity/description for installs created before that screen existed.
-  const bonusActivity = settings.bonusActivity
-    || selectedHabit?.rewards?.bonusActivity
-    || selectedHabit?.description
-    || 'your quick task'
-  const challengeText = formatBonusChallenge(currentResult, bonusActivity)
+  // The bonus task is what the USER pre-wrote for this tier — their habit's own tier
+  // if set, else the global default, else legacy. No percentage math (see
+  // resolveBonusTask). The wheel's % is the DISCOUNT they won, not work to compute.
+  const bonusTask = resolveBonusTask(currentResult, selectedHabit, settings)
+  const discountPct = bonusDiscount(currentResult)
 
   return (
     <div style={{
@@ -127,11 +125,11 @@ export default function BonusScreen() {
             </div>
           ) : (
             <>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#FF85A1', marginBottom: 10 }}>
-                ⚡ BONUS CHALLENGE
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#FF85A1', marginBottom: 6 }}>
+                💪 {discountPct}% OFF!
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F', marginBottom: 14 }}>
-                {challengeText}
+                Quick — knock out <b>{bonusTask}</b> before the timer for your bead!
               </div>
 
               {bonusTimerEnd && !timedOut && !beadEarned && (
