@@ -3,21 +3,27 @@ import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
+import WinFlash from '../../components/casino/WinFlash'
 import { RANKS, SUITS, drawCard, hiloMults, hiloWin } from '../../engine/casino/hilo'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playCoinTick } from '../../engine/sounds'
 
 const MIN_BET = 10
 const isRed = suit => suit === 1 || suit === 2   // ♥ ♦
 
-function Card({ card, big }) {
+function Card({ card, big, flipKey }) {
   const red = isRed(card.suit)
   return (
-    <div style={{
-      width: big ? 104 : 64, height: big ? 144 : 90, borderRadius: 14,
-      background: '#FFFDF7', border: '3px solid #E6D8B8', boxShadow: '0 6px 0 #D8C49A, 0 8px 16px rgba(150,120,60,0.25)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
-      fontFamily: "'Fredoka', cursive", color: red ? '#E0466B' : '#3D2B4F',
-    }}>
+    <div
+      key={flipKey}
+      style={{
+        width: big ? 104 : 64, height: big ? 144 : 90, borderRadius: 14,
+        background: '#FFFDF7', border: '3px solid #E6D8B8',
+        boxShadow: '0 6px 0 #D8C49A, 0 8px 16px rgba(150,120,60,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+        fontFamily: "'Fredoka', cursive", color: red ? '#E0466B' : '#3D2B4F',
+        animation: flipKey ? 'card-flip-in 0.22s ease-out' : undefined,
+      }}
+    >
       <div style={{ fontSize: big ? 40 : 26, lineHeight: 1 }}>{RANKS[card.rank]}</div>
       <div style={{ fontSize: big ? 38 : 24, lineHeight: 1 }}>{SUITS[card.suit]}</div>
     </div>
@@ -29,11 +35,14 @@ export default function HiLoScreen() {
   const { getCoinsAvailable, placeBet, settleBet } = useStore()
   const balance = getCoinsAvailable()
 
-  const [betRaw, setBet]  = useState(() => Math.min(50, Math.max(MIN_BET, balance)))
-  const [phase, setPhase] = useState('betting')   // betting | playing | cashed | lost
-  const [card, setCard]   = useState(() => drawCard())
-  const [pot, setPot]     = useState(0)
+  const [betRaw, setBet]   = useState(() => Math.min(50, Math.max(MIN_BET, balance)))
+  const [phase, setPhase]  = useState('betting')   // betting | playing | cashed | lost
+  const [card, setCard]    = useState(() => drawCard())
+  const [pot, setPot]      = useState(0)
   const [streak, setStreak] = useState(0)
+  const [flipKey, setFlipKey] = useState(0)        // bumps on each new card → triggers flip-in
+  const [flashKey, setFlashKey] = useState(0)
+  const [flashTier, setFlashTier] = useState('t1')
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -42,12 +51,15 @@ export default function HiLoScreen() {
   function deal() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'hilo')) return
-    setCard(drawCard()); setPot(bet); setStreak(0); setPhase('playing')
+    const newCard = drawCard()
+    setCard(newCard); setPot(bet); setStreak(0); setPhase('playing')
+    setFlipKey(k => k + 1)
     playButtonTap()
   }
 
   function guess(dir) {
     const draw = drawCard()
+    setFlipKey(k => k + 1)
     if (hiloWin(dir, card.rank, draw.rank)) {
       const newPot = Math.floor(pot * mults[dir])
       setPot(newPot); setStreak(s => s + 1); setCard(draw)
@@ -55,19 +67,26 @@ export default function HiLoScreen() {
     } else {
       setCard(draw); setPhase('lost')
       playNearMiss()
+      setFlashTier('loss'); setFlashKey(k => k + 1)
     }
   }
 
   function bank() {
-    settleBet(pot, 'hilo'); playWin(pot >= bet * 10 ? 'jackpot' : pot >= bet * 4 ? 't3' : pot >= bet * 2 ? 't2' : 't1'); playCoinDrop()
+    const tier = pot >= bet * 10 ? 'jackpot' : pot >= bet * 4 ? 't3' : pot >= bet * 2 ? 't2' : 't1'
+    settleBet(pot, 'hilo')
+    playWin(tier); playCoinDrop()
+    setFlashTier(tier); setFlashKey(k => k + 1)
     setPhase('cashed')
   }
-  function reset() { setPhase('betting'); setPot(0); setStreak(0) }
+
+  function reset() { setPhase('betting'); setPot(0); setStreak(0); setFlipKey(0) }
 
   const playing = phase === 'playing'
 
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <WinFlash flashKey={flashKey} tier={flashTier} />
+
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
         <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
@@ -79,7 +98,7 @@ export default function HiLoScreen() {
       </div>
 
       <div style={{ height: 156, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-        <Card card={card} big />
+        <Card card={card} big flipKey={flipKey} />
       </div>
 
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>

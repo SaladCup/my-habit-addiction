@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
 import BetBar from '../../components/casino/BetBar'
+import WinFlash from '../../components/casino/WinFlash'
 import { MINES_PRESETS, MINES_TILES, minesMultiplier, placeMines } from '../../engine/casino/mines'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop, playCoinTick } from '../../engine/sounds'
 
@@ -21,7 +22,10 @@ export default function MinesScreen() {
   const [hitTile, setHitTile]   = useState(-1)
   const [outcome, setOutcome]   = useState(null)
   const [staked, setStaked] = useState(0)
-  const settledRef = useRef(false)               // cash out a board exactly once (manual tap or auto-on-clear)
+  const [flashKey, setFlashKey] = useState(0)
+  const [flashTier, setFlashTier] = useState('t1')
+  const [shakeKey, setShakeKey] = useState(0)   // bump → re-trigger shake animation
+  const settledRef = useRef(false)
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -46,12 +50,14 @@ export default function MinesScreen() {
     if (phase !== 'playing' || revealed.has(i)) return
     if (mines.has(i)) {
       setHitTile(i); setPhase('lost'); playNearMiss()
+      setFlashTier('loss'); setFlashKey(k => k + 1)
+      setShakeKey(s => s + 1)
       return
     }
     const next = new Set(revealed); next.add(i)
     setRevealed(next)
     playCoinTick(next.size)
-    if (next.size >= safeTotal) finishCash(next.size)   // cleared the board → auto cash
+    if (next.size >= safeTotal) finishCash(next.size)
   }
 
   function finishCash(count) {
@@ -62,13 +68,24 @@ export default function MinesScreen() {
     const win = Math.floor(staked * mult)
     settleBet(win, 'mines')
     setOutcome({ win, mult }); setPhase('cashed')
-    playWin(mult >= 10 ? 'jackpot' : mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1'); playCoinDrop()
+    const tier = mult >= 10 ? 'jackpot' : mult >= 3 ? 't3' : mult >= 1.8 ? 't2' : 't1'
+    playWin(tier); playCoinDrop()
+    setFlashTier(tier); setFlashKey(k => k + 1)
   }
 
   function reset() { setPhase('betting'); setRevealed(new Set()); setHitTile(-1); setOutcome(null) }
 
   return (
-    <div style={{ minHeight: '100%', padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div
+      key={shakeKey || undefined}
+      style={{
+        minHeight: '100%', padding: '16px 16px 28px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        animation: shakeKey ? 'game-shake 0.42s ease-out' : undefined,
+      }}
+    >
+      <WinFlash flashKey={flashKey} tier={flashTier} />
+
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
         <div style={balancePill}>{balance.toLocaleString()} <CoinIcon /></div>
@@ -89,7 +106,7 @@ export default function MinesScreen() {
         </div>
       )}
 
-      {/* grid */}
+      {/* grid — tiles pop open on reveal, shake on bomb */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 7, width: '100%', maxWidth: 340, marginBottom: 12 }}>
         {Array.from({ length: MINES_TILES }).map((_, i) => {
           const isMine = mines.has(i)
@@ -99,11 +116,11 @@ export default function MinesScreen() {
           if (isRev) { face = '💎'; bg = '#D6F0DE'; border = '#9BD9B4' }
           else if (ended && isMine) { face = '💣'; bg = isHit ? '#F7B4C6' : '#FAD9E2'; border = isHit ? '#C44B6A' : '#E9AFC0' }
           else if (ended && !isMine) { face = '💎'; bg = '#F0F6F2'; border = '#D6E6DC' }
-          else { face = phase === 'playing' ? '' : '·'; }
+          else { face = phase === 'playing' ? '' : '·' }
           const tappable = phase === 'playing' && !isRev
           return (
             <button
-              key={i}
+              key={`${i}-${isRev ? 'r' : isHit ? 'h' : 'u'}`}
               type="button"
               disabled={!tappable}
               onClick={() => tapTile(i)}
@@ -113,6 +130,7 @@ export default function MinesScreen() {
                 cursor: tappable ? 'pointer' : 'default',
                 opacity: ended && !isRev && !isMine ? 0.5 : 1,
                 boxShadow: tappable ? '0 2px 0 #C8B4E0' : 'none',
+                animation: isRev ? 'tile-pop 0.32s cubic-bezier(0.34,1.56,0.64,1)' : isHit ? 'game-shake 0.38s ease-out' : undefined,
               }}
             >
               {face}

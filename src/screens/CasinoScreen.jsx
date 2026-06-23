@@ -58,6 +58,7 @@ export default function CasinoScreen() {
             type="button"
             disabled={!g.live}
             onClick={() => g.live && navigate(g.to)}
+            className={g.live ? 'casino-card' : undefined}
             style={{
               position: 'relative', textAlign: 'left', cursor: g.live ? 'pointer' : 'default',
               background: g.live ? 'linear-gradient(160deg, #FFFFFF 0%, #FFF0F8 100%)' : '#F3EEFA',
@@ -65,6 +66,7 @@ export default function CasinoScreen() {
               borderRadius: 16, padding: '10px 12px 12px',
               boxShadow: g.live ? '0 3px 0 #E48FBE' : 'none',
               opacity: g.live ? 1 : 0.7,
+              transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
             }}
           >
             <div style={{ fontSize: 28, lineHeight: 1 }}>{g.emoji === '🪙' ? <CoinIcon /> : g.emoji}</div>

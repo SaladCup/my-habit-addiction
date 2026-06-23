@@ -251,6 +251,43 @@ body {
   50%      { transform: scale(1.14); }
 }
 
+/* ── Casino juice ── */
+/* Tile reveal pop — gem in Mines / card in HiLo */
+@keyframes tile-pop {
+  0%   { transform: scale(0.55); opacity: 0; }
+  62%  { transform: scale(1.24); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+/* Full-screen win/loss flash overlay (fades in then out, pointer-none) */
+@keyframes win-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  60%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+/* Whole-game-container shake on a loss */
+@keyframes game-shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  15%      { transform: translate3d(-8px,  3px, 0); }
+  30%      { transform: translate3d( 7px, -3px, 0); }
+  45%      { transform: translate3d(-5px,  3px, 0); }
+  60%      { transform: translate3d( 5px, -2px, 0); }
+  75%      { transform: translate3d(-3px,  1px, 0); }
+}
+/* Card / element flip-in from flat → face-up */
+@keyframes card-flip-in {
+  0%   { transform: scaleX(0.05) translateY(4px); opacity: 0; }
+  55%  { transform: scaleX(1.06) translateY(-2px); opacity: 1; }
+  100% { transform: scaleX(1)    translateY(0);    opacity: 1; }
+}
+/* Casino lobby card: hover neon glow */
+.casino-card:hover {
+  border-color: #FF85A1 !important;
+  box-shadow: 0 4px 0 #E48FBE, 0 0 16px rgba(255,133,161,0.5), 0 0 32px rgba(255,133,161,0.22) !important;
+  transform: translateY(-1px);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
 /* Bottom-nav icons: grow + wiggle on hover (pointer devices only). The inline
    `transition: transform` smoothly shrinks them back when the hover ends. */
 .nav-icon { transform-origin: center 72%; }
