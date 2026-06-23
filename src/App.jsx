@@ -36,7 +36,7 @@ import UpdatePrompt       from './components/UpdatePrompt'
 import VisualNovel        from './components/VisualNovel'
 import SpotlightTour      from './components/SpotlightTour'
 import AppScaleStage      from './components/AppScaleStage'
-import { ONBOARDING_INTRO, NAV_TOUR } from './content/habitChanScript'
+import { ONBOARDING_INTRO, NAV_TOUR, ONBOARDING_ROTBLOCK } from './content/habitChanScript'
 
 /* global __APP_VERSION__ -- replaced at build time by Vite's define (see vite.config) */
 
@@ -140,7 +140,7 @@ function MusicController() {
 function AppShell({ showWarning }) {
   const onboardingComplete = useStore(s => s.onboardingComplete)
   const setOnboardingComplete = useStore(s => s.setOnboardingComplete)
-  // 'intro' → typewriter intro, then 'tour' → nav spotlight, then null (done)
+  // 'intro' → typewriter intro, 'tour' → nav spotlight, 'rotblock' → RotBlock pitch, null (done)
   const [phase, setPhase] = useState(() => (onboardingComplete ? null : 'intro'))
   // Don't show while the age-gate warning splash is still up
   const active = !showWarning && phase !== null
@@ -192,7 +192,14 @@ function AppShell({ showWarning }) {
       {active && phase === 'tour' && (
         <SpotlightTour
           steps={NAV_TOUR}
+          onComplete={() => setPhase('rotblock')}
+        />
+      )}
+      {active && phase === 'rotblock' && (
+        <VisualNovel
+          script={ONBOARDING_ROTBLOCK}
           onComplete={() => { setOnboardingComplete(); setPhase(null) }}
+          onSkip={() => { setOnboardingComplete(); setPhase(null) }}
         />
       )}
     </div>

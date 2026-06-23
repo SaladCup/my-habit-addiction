@@ -57,6 +57,13 @@ export const POSE_FIT = {
   sitting:        { fillH: 0.725, feet: 0.070 },
 }
 
+// Post-tour RotBlock pitch — fires once, right after the nav tour, before onboarding
+// completes. Introduces RotBlock so new users know it exists from day one.
+export const ONBOARDING_ROTBLOCK = [
+  { pose: 'point',    text: "One more thing — RotBlock! 🧠 Add your biggest time-sinks (YouTube, TikTok, games) as Brainrots." },
+  { pose: 'sinister', text: "Every minute in a Brainrot drains coins you earned from habits. Hit zero and it LOCKS until you do more. 😈 Find it under Spend → RotBlock!" },
+]
+
 // ── First-visit pop-ins (one per tab, shown once) ──
 export const FIRST_VISIT_CASINO = [
   { pose: 'sinister', text: "Oh, you found the Casino. 😈 One disclaimer: this is 100% optional." },
