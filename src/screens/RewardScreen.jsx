@@ -5,6 +5,8 @@ import useStore from '../store/useStore'
 import { TIER_COINS } from '../engine/gameLogic'
 import { KawaiiButton, TierBadge, PixelPanel } from '../components/ui'
 import { playReward } from '../engine/sounds'
+import VisualNovel from '../components/VisualNovel'
+import { REACTION_JACKPOT } from '../content/habitChanScript'
 // 3D physics coin shower — lazy so Three.js/rapier only load on a win
 const CoinCascade3D = lazy(() => import('../components/CoinCascade3D'))
 
@@ -100,6 +102,7 @@ export default function RewardScreen() {
   const timeVal = settings?.secondsPerCoin ? formatTime(total * settings.secondsPerCoin) : null
   const timeActivity = settings?.timeActivity || 'free time'
 
+  const [showJackpotToast, setShowJackpotToast] = useState(() => spinResult === 'jackpot' && session.phase === 'reward')
   const [newMilestones, setNewMilestones] = useState([])
   const [canLeave, setCanLeave] = useState(false)
 
@@ -230,6 +233,14 @@ export default function RewardScreen() {
         <KawaiiButton variant="primary" size="lg" onClick={handleDone} disabled={!canLeave} fullWidth style={{ maxWidth: 340 }}>
           🏠 BACK TO HABITS
         </KawaiiButton>
+      )}
+
+      {showJackpotToast && (
+        <VisualNovel
+          script={REACTION_JACKPOT}
+          onComplete={() => setShowJackpotToast(false)}
+          onSkip={() => setShowJackpotToast(false)}
+        />
       )}
     </div>
   )

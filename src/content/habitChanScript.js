@@ -82,5 +82,22 @@ export const FIRST_VISIT_SETTINGS = [
   { pose: 'happy',   text: "Milestones are the big one: set a reward (like 'sushi night') for hitting a jar count, and watch the jar fill toward it. 🌟" },
 ]
 
+// ── Reactive moments (brief 2-panel surprises, not first-visit gates) ──
+
+export const REACTION_GOLD_BEAD = [
+  { pose: 'surprised', text: "WAIT— is that a GOLD BEAD?! 😱 That's like a 1-in-20 pull!!" },
+  { pose: 'coin',      text: "Straight to Tier 3, baby. The universe is cheering for you. ✨ Lucky!!" },
+]
+
+export const REACTION_JACKPOT = [
+  { pose: 'laughing',  text: "JACKPOT!! 💎💎💎 Do you understand how rare that ACTUALLY is?!" },
+  { pose: 'celebrate', text: "You literally just won the lottery of your own habit tracker. Screenshot this. Show people. I'm AMAZED." },
+]
+
+export const REACTION_STREAK_BREAK = [
+  { pose: 'sad',      text: "Nooo… your streak… 💔 It was so beautiful." },
+  { pose: 'sinister', text: "…but also? This is how addiction WORKS. You'll be back. They always come back. 😌" },
+]
+
 // Reusable elsewhere later (RotBlock setup, tips, the bonus walkthrough, etc.).
 export default { ONBOARDING_INTRO, NAV_TOUR, POSE_FIT }

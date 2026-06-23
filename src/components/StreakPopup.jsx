@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import useStore from '../store/useStore'
 import { KawaiiButton, CoinIcon } from './ui'
 import { playStreak, playStreakBreak } from '../engine/sounds'
+import VisualNovel from './VisualNovel'
+import { REACTION_STREAK_BREAK } from '../content/habitChanScript'
 
 // Per-day streak messages (Lauren's voice). Day 0 = broken.
 const STREAK_MSG = {
@@ -32,6 +34,7 @@ export default function StreakPopup({ onClose }) {
   const checkInStreak = useStore(s => s.checkInStreak)
   const [status, setStatus] = useState(null)
   const [phase, setPhase] = useState('day')   // continued: 'day'. broken: 'streak'→'crack'→'broken'
+  const [showStreakBreakToast, setShowStreakBreakToast] = useState(false)
   const ranRef = useRef(false)
   const aliveRef = useRef(true)
 
@@ -46,7 +49,7 @@ export default function StreakPopup({ onClose }) {
       if (s.broken && s.prevStreak >= 1) {
         setPhase('streak')
         setTimeout(() => { if (aliveRef.current) { setPhase('crack'); playStreakBreak() } }, 1300)
-        setTimeout(() => { if (aliveRef.current) setPhase('broken') }, 2600)
+        setTimeout(() => { if (aliveRef.current) { setPhase('broken'); setShowStreakBreakToast(true) } }, 2600)
       } else {
         setPhase('day')
         playStreak()
@@ -140,6 +143,14 @@ export default function StreakPopup({ onClose }) {
           </>
         )}
       </div>
+
+      {showStreakBreakToast && (
+        <VisualNovel
+          script={REACTION_STREAK_BREAK}
+          onComplete={() => setShowStreakBreakToast(false)}
+          onSkip={() => setShowStreakBreakToast(false)}
+        />
+      )}
 
       <style>{`
         @keyframes streakShake {

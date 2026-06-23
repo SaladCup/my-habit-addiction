@@ -5,6 +5,8 @@ import { cashInGroupForBead } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw } from '../engine/sounds'
 import HabitChanSprite from '../components/HabitChanSprite'
+import VisualNovel from '../components/VisualNovel'
+import { REACTION_GOLD_BEAD } from '../content/habitChanScript'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
 
@@ -433,7 +435,8 @@ export default function HomeScreen() {
     jarSeenCount, markJarSeen,
   } = useStore()
 
-  const [reveal, setReveal] = useState(null)   // the earned bead being revealed
+  const [reveal, setReveal] = useState(null)         // the earned bead being revealed
+  const [showGoldToast, setShowGoldToast] = useState(false)
 
   useEffect(() => {
     if (location.state?.freeBead && !reveal) {
@@ -465,6 +468,7 @@ export default function HomeScreen() {
     playBeadDraw(bead.isGold ? 'gold' : bead.isRainbow ? 'rainbow' : null)
     setSession({ selectedHabit: habit })
     setReveal(bead)
+    if (bead.isGold) setShowGoldToast(true)
   }
 
   // Cash in the EARNED bead's group (its slot + wilds): move them wallet→jar,
@@ -547,6 +551,14 @@ export default function HomeScreen() {
           </div>
         )}
       </div>
+
+      {showGoldToast && (
+        <VisualNovel
+          script={REACTION_GOLD_BEAD}
+          onComplete={() => setShowGoldToast(false)}
+          onSkip={() => setShowGoldToast(false)}
+        />
+      )}
 
       {reveal && (
         <BeadReveal
