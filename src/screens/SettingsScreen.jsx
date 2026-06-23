@@ -4,6 +4,9 @@ import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
 import { TIER_COINS, BONUS_TIERS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
 import { KawaiiButton, PixelPanel } from '../components/ui'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_SETTINGS } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 // The localStorage key Zustand persists under (see useStore persist config).
 const STORE_KEY = 'my-habit-addiction'
@@ -45,6 +48,7 @@ const PERSISTED_KEYS = [
   'habits', 'categories', 'wallet', 'jarBeads', 'jarSeenCount',
   'coinLog', 'coinTotals', 'coinLogComplete', 'gambling', 'rotblock',
   'milestones', 'settings', 'jackpotPool', 'spinStats', 'engagement', 'daily',
+  'onboardingComplete', 'firstVisitsSeen',
 ]
 
 // parsed = JSON.parse(file). Returns a clean { state, version } blob to persist, or
@@ -148,8 +152,8 @@ function MilestoneRow({ milestone, onChange, onDelete }) {
 
 const inputStyle = {
   width: '100%',
-  fontFamily: 'Mulish, sans-serif', fontSize: 22,
-  padding: '9px 11px',
+  fontFamily: 'Mulish, sans-serif', fontSize: 17,
+  padding: '7px 10px',
   border: '2px solid #C8B4E0', borderRadius: 10,
   background: '#FFF5F9', color: '#3D2B4F',
   outline: 'none', boxSizing: 'border-box',
@@ -299,8 +303,8 @@ export default function SettingsScreen() {
 
   const labelStyle = {
     fontFamily: "'Fredoka', cursive",
-    fontSize: 24, color: '#7B5EA7',
-    display: 'block', marginBottom: 6,
+    fontSize: 18, color: '#7B5EA7',
+    display: 'block', marginBottom: 4,
   }
 
   function startEdit(cat) {
@@ -324,6 +328,8 @@ export default function SettingsScreen() {
     setAddingCat(false)
   }
 
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('settings')
+
   function handleReset() {
     resetEverything()
     setDraftMilestones([])   // store milestones are wiped — clear the local editor draft too
@@ -332,22 +338,25 @@ export default function SettingsScreen() {
   }
 
   return (
-    <div style={{ padding: '20px 16px', minHeight: '100%' }}>
+    <div style={{ padding: '14px 14px', minHeight: '100%' }}>
+      {showPopIn && (
+        <VisualNovel script={FIRST_VISIT_SETTINGS} onComplete={dismissPopIn} onSkip={dismissPopIn} />
+      )}
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
-        fontSize: 21, color: '#3D2B4F', marginBottom: 18,
+        fontSize: 21, color: '#3D2B4F', marginBottom: 14,
       }}>
         ✦ SETTINGS ✦
       </h2>
 
       {/* Categories */}
       <PixelPanel color="lavender" title="CATEGORIES" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginBottom: 10 }}>
           Group your habits by theme. Each category gets its own color.
         </div>
 
         {categories.length === 0 && !addingCat && (
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8', marginBottom: 12, textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginBottom: 10, textAlign: 'center' }}>
             No categories yet.
           </div>
         )}
@@ -379,7 +388,7 @@ export default function SettingsScreen() {
                 borderRadius: 14, padding: '10px 14px',
               }}>
                 <span style={{
-                  fontFamily: 'Mulish, sans-serif', fontSize: 24, fontWeight: 700,
+                  fontFamily: 'Mulish, sans-serif', fontSize: 17, fontWeight: 700,
                   color: '#3D2B4F', flex: 1,
                 }}>
                   {cat.name}
@@ -435,7 +444,7 @@ export default function SettingsScreen() {
               onChange={e => updateSettings({ moneyPerCoin: parseFloat(e.target.value) || 0 })}
             />
             {settings.moneyPerCoin > 0 && (
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginTop: 3 }}>
                 T1 win = ${(TIER_COINS.t1 * settings.moneyPerCoin).toFixed(2)} · T3 = ${(TIER_COINS.t3 * settings.moneyPerCoin).toFixed(2)}
               </div>
             )}
@@ -449,7 +458,7 @@ export default function SettingsScreen() {
               onChange={e => updateSettings({ secondsPerCoin: parseFloat(e.target.value) || 0 })}
             />
             {settings.secondsPerCoin > 0 && (
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginTop: 3 }}>
                 T1 win = {Math.round(TIER_COINS.t1 * settings.secondsPerCoin / 60)} min · T3 = {Math.round(TIER_COINS.t3 * settings.secondsPerCoin / 60)} min
               </div>
             )}
@@ -465,7 +474,7 @@ export default function SettingsScreen() {
           </div>
           <div>
             <label style={labelStyle}>DEFAULT BONUS TIERS</label>
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 8 }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', marginBottom: 6 }}>
               Used when a habit hasn&apos;t set its own. The bonus wheel shows one of these when you land on ⭐ BONUS.
             </div>
             {BONUS_TIERS.map(t => (
@@ -483,7 +492,7 @@ export default function SettingsScreen() {
 
       {/* Milestones */}
       <PixelPanel color="mint" title="MILESTONES (JAR LINES)" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginBottom: 10 }}>
           Set up to 3 milestone rewards. Lines appear on the jar as you fill it.
         </div>
         {draftMilestones.map(m => (
@@ -510,10 +519,10 @@ export default function SettingsScreen() {
 
       {/* RotBlock */}
       <PixelPanel color="lavender" title="ROTBLOCK" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#3D2B4F', marginBottom: 12, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#3D2B4F', marginBottom: 10, lineHeight: 1.45 }}>
           Lock the apps & sites that eat your time behind your coins — using one spends your free time, and running out locks it.
         </div>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#9B7EC8', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 10 }}>
           {rotblock?.enabled ? '🛡️ On' : '💤 Off'} · {rotblock?.targets?.length || 0} Brainrot{(rotblock?.targets?.length || 0) === 1 ? '' : 's'}
         </div>
         <KawaiiButton variant="secondary" size="md" fullWidth onClick={() => navigate('/rotblock')}>
@@ -531,7 +540,7 @@ export default function SettingsScreen() {
           onChange={e => updateSettings({ uiScale: parseFloat(e.target.value) })}
           style={{ width: '100%', accentColor: '#9B7EC8', marginBottom: 8 }}
         />
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', textAlign: 'center' }}>
           Smaller fits more on screen · bigger is easier to read
         </div>
       </PixelPanel>
@@ -539,7 +548,7 @@ export default function SettingsScreen() {
       {/* Sound */}
       <PixelPanel color="cream" title="SOUND" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F' }}>
+          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#3D2B4F' }}>
             {settings.muted ? '🔇 Muted' : '🔊 Sound on'}
           </span>
           <KawaiiButton
@@ -567,7 +576,7 @@ export default function SettingsScreen() {
 
           {/* Background music — its own on/off + volume (low by default) */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 24, color: '#3D2B4F' }}>
+            <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#3D2B4F' }}>
               {settings.muted
                 ? '🔇 Muted'
                 : ((settings.musicEnabled ?? true) ? '🎵 Music on' : '🎵 Music off')}
@@ -595,14 +604,14 @@ export default function SettingsScreen() {
         >
           🔊 TEST SOUND
         </KawaiiButton>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 6, textAlign: 'center' }}>
           No sound? Reload the page and tap once — browsers block audio until you interact.
         </div>
       </PixelPanel>
 
       {/* Backup / transfer */}
       <PixelPanel color="sky" title="BACKUP & TRANSFER" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', marginBottom: 10 }}>
           Save everything — habits, beads, coins, jackpot, streak, settings — to a file you
           can keep in a folder and load back after any update, on any device. Your progress
           never has to start from scratch.
@@ -629,7 +638,7 @@ export default function SettingsScreen() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{
-              fontFamily: 'Mulish, sans-serif', fontSize: 20, color: '#3D2B4F',
+              fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#3D2B4F',
               background: 'rgba(75,197,245,0.12)', border: '2px solid #B4E0F5', borderRadius: 12,
               padding: '10px 12px', textAlign: 'center',
             }}>
@@ -649,7 +658,7 @@ export default function SettingsScreen() {
 
         {backupMsg && (
           <div style={{
-            fontFamily: 'Mulish, sans-serif', fontSize: 19, marginTop: 10, textAlign: 'center',
+            fontFamily: 'Mulish, sans-serif', fontSize: 13, marginTop: 8, textAlign: 'center',
             color: backupMsg.ok ? '#2A9BC8' : '#C44B6A',
           }}>
             {backupMsg.text}
@@ -659,7 +668,7 @@ export default function SettingsScreen() {
 
       {/* Danger zone */}
       <PixelPanel color="pink" title="DANGER ZONE" style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', marginBottom: 10 }}>
           Wipes all habits, beads, coins, categories, and progress. Keeps settings.
         </div>
         {!confirmReset ? (

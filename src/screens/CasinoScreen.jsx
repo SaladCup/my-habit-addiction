@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { PixelPanel, CoinIcon } from '../components/ui'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_CASINO } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 const GAMES = [
   { key: 'coinflip', to: '/casino/coinflip', emoji: '🪙', name: 'Coin Flip', tag: 'Heads or tails — let it ride', live: true },
@@ -19,9 +22,11 @@ export default function CasinoScreen() {
   const { getCoinsAvailable, getCasinoNet } = useStore()
   const coins = getCoinsAvailable()
   const net = getCasinoNet()
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('casino')
 
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_CASINO} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', textAlign: 'center', margin: 0 }}>
         🎰 Casino
       </h2>

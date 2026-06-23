@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { KawaiiButton, PixelPanel, CoinIcon } from '../components/ui'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_SPEND } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 // Format a number of seconds as a friendly duration.
 function fmtTime(sec) {
@@ -35,9 +38,11 @@ export default function SpendScreen() {
   }
 
   const spends = coinLog.filter(e => e.type === 'spent' && !/^(casino|rotblock):/.test(e.note || '')).slice().reverse().slice(0, 8)
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('spend')
 
   return (
     <div style={{ minHeight: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_SPEND} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#3D2B4F', textAlign: 'center' }}>
         💸 Spend
       </h2>

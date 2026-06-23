@@ -57,5 +57,30 @@ export const POSE_FIT = {
   sitting:        { fillH: 0.725, feet: 0.070 },
 }
 
+// ── First-visit pop-ins (one per tab, shown once) ──
+export const FIRST_VISIT_CASINO = [
+  { pose: 'sinister', text: "Oh, you found the Casino. 😈 One disclaimer: this is 100% optional." },
+  { pose: 'coin',     text: "Bet your habit coins here for a shot at way, WAY more. Or lose the lot. No safety net." },
+  { pose: 'laughing', text: "The house edge is real. But so is hitting jackpot on a lucky night. Good luck, gambler. 🎰" },
+]
+
+export const FIRST_VISIT_SPEND = [
+  { pose: 'celebrate', text: "Welcome to SPEND — this is the whole point! 💖" },
+  { pose: 'coin',      text: "All those coins you earned? Cash them in for real-life treats YOU chose. Sushi? A nap? A new game? You decide." },
+  { pose: 'happy',     text: "No grind is pointless when there's a reward at the end. Set up your treats in Settings → Milestones. 🌸" },
+]
+
+export const FIRST_VISIT_ROTBLOCK = [
+  { pose: 'serious',  text: "RotBlock. This is where you put the apps eating your brain." },
+  { pose: 'point',    text: "Add your Brainrots — every minute using them drains your coins. Hit zero and they're BLOCKED." },
+  { pose: 'sinister', text: "Do a habit to earn coins back. It's a leash on your worst habits, funded by your best ones. 😈" },
+]
+
+export const FIRST_VISIT_SETTINGS = [
+  { pose: 'talking', text: "Settings! Here's where you make the app actually yours." },
+  { pose: 'point',   text: "Set what your coins are worth — real money, or free-time minutes. Then it HURTS to waste them." },
+  { pose: 'happy',   text: "Milestones are the big one: set a reward (like 'sushi night') for hitting a jar count, and watch the jar fill toward it. 🌟" },
+]
+
 // Reusable elsewhere later (RotBlock setup, tips, the bonus walkthrough, etc.).
 export default { ONBOARDING_INTRO, NAV_TOUR, POSE_FIT }

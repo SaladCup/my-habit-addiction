@@ -15,7 +15,7 @@ const COIN_LOG_MAX      = 500             // log is a recent-history view; total
 // Persisted-save schema version. Exported so the backup/restore UI can reject a save from a
 // NEWER app version (Zustand's persist skips migrate() when persistedVersion >= current, so a
 // future-shaped save would load unmigrated). Bump this AND add a migrate() branch together.
-export const PERSIST_VERSION = 20
+export const PERSIST_VERSION = 21
 
 // Global default bonus tiers (the funny "drop and give me 5/10/15" default). Used
 // when a habit hasn't set its own per-tier bonus. Keyed by effort value: '25' = the
@@ -148,6 +148,8 @@ const useStore = create(
       spinStats:   { ...DEFAULT_SPIN_STATS },    // drives the luck engine
       engagement:  { ...DEFAULT_ENGAGEMENT },    // LEARNED per-user profile (adaptive engine)
       daily:       { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
+      onboardingComplete: false,
+      firstVisitsSeen:    [],
       settings: {
         beadSlots:      DEFAULT_BEAD_SLOTS,
         moneyPerCoin:   0.01,   // 1 coin = 1¢
@@ -532,6 +534,8 @@ const useStore = create(
 
       // ── Settings actions ──
       updateSettings: (updates) => set(s => ({ settings: { ...s.settings, ...updates } })),
+      setOnboardingComplete: () => set({ onboardingComplete: true }),
+      markFirstVisit: (key) => set(s => ({ firstVisitsSeen: [...(s.firstVisitsSeen || []), key] })),
       updateBeadSlotColor: (slot, color, name) => set(s => ({
         settings: {
           ...s.settings,
@@ -559,6 +563,8 @@ const useStore = create(
         spinStats:  { ...DEFAULT_SPIN_STATS },
         engagement: { ...DEFAULT_ENGAGEMENT },
         daily:      { lastPlayDate: null, loginStreak: 0, bonusClaimedDate: null },
+        onboardingComplete: false,
+        firstVisitsSeen:    [],
         session:    { ...DEFAULT_SESSION },
         rewardChain: { prev: 0, total: 0 },
       }),
@@ -715,6 +721,17 @@ const useStore = create(
             }))
           }
         }
+        if (version < 21) {
+          // Habit-Chan onboarding added. Skip intro + first-visit pop-ins for
+          // existing users who already have habits — they know how the app works.
+          if (Array.isArray(persisted.habits) && persisted.habits.length > 0) {
+            persisted.onboardingComplete = true
+            persisted.firstVisitsSeen = ['casino', 'spend', 'rotblock', 'settings']
+          } else {
+            persisted.onboardingComplete = false
+            persisted.firstVisitsSeen = []
+          }
+        }
         return persisted
       },
       // Only persist these — session is ephemeral
@@ -734,7 +751,9 @@ const useStore = create(
         jackpotPool: state.jackpotPool,
         spinStats:  state.spinStats,
         engagement: state.engagement,
-        daily:      state.daily,
+        daily:             state.daily,
+        onboardingComplete: state.onboardingComplete,
+        firstVisitsSeen:    state.firstVisitsSeen,
       }),
       // Self-heal on every load: while the log is the complete history, it's the
       // source of truth — rebuild coinTotals from it so the balance can NEVER

@@ -137,7 +137,14 @@ function MusicController() {
   return null
 }
 
-function AppShell() {
+function AppShell({ showWarning }) {
+  const onboardingComplete = useStore(s => s.onboardingComplete)
+  const setOnboardingComplete = useStore(s => s.setOnboardingComplete)
+  // 'intro' → typewriter intro, then 'tour' → nav spotlight, then null (done)
+  const [phase, setPhase] = useState(() => (onboardingComplete ? null : 'intro'))
+  // Don't show while the age-gate warning splash is still up
+  const active = !showWarning && phase !== null
+
   return (
     <div className="app-shell">
       <MusicController />
@@ -175,6 +182,19 @@ function AppShell() {
         </Routes>
       </main>
       <BottomNav />
+      {active && phase === 'intro' && (
+        <VisualNovel
+          script={ONBOARDING_INTRO}
+          onComplete={() => setPhase('tour')}
+          onSkip={() => setPhase('tour')}
+        />
+      )}
+      {active && phase === 'tour' && (
+        <SpotlightTour
+          steps={NAV_TOUR}
+          onComplete={() => { setOnboardingComplete(); setPhase(null) }}
+        />
+      )}
     </div>
   )
 }
@@ -206,7 +226,7 @@ export default function App() {
       <AppScaleStage>
         {showWarning && <WarningSplash onDismiss={dismissWarning} />}
         <HashRouter>
-          <AppShell />
+          <AppShell showWarning={showWarning} />
         </HashRouter>
         {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
       </AppScaleStage>

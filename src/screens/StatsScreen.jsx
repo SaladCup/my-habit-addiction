@@ -131,16 +131,16 @@ export default function StatsScreen() {
     : null
 
   return (
-    <div style={{ padding: '20px 16px', minHeight: '100%' }}>
+    <div style={{ padding: '14px 14px', minHeight: '100%' }}>
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
-        fontSize: 34, color: '#3D2B4F', marginBottom: 16,
+        fontSize: 28, color: '#3D2B4F', marginBottom: 10,
       }}>
         ✦ STATS ✦
       </h2>
 
       {/* Tab switcher — flex:1 so all five periods share the width and always fit. */}
-      <div style={{ display: 'flex', gap: 5, marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
         {TABS.map(t => (
           <button
             key={t}
@@ -148,7 +148,7 @@ export default function StatsScreen() {
             style={{
               flex: 1,
               fontFamily: "'Fredoka', cursive",
-              fontSize: 18,
+              fontSize: 15,
               padding: '7px 4px',
               background: tab === t ? '#9B7EC8' : '#F5F0FF',
               color: tab === t ? '#fff' : '#7B5EA7',
@@ -165,7 +165,7 @@ export default function StatsScreen() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
         <StatCard label="BEADS EARNED" value={totalBeads} emoji="🫙" color="#C8B4E0" />
         <StatCard label={`${coinName.toUpperCase()} EARNED`} value={totalCoins} emoji="⭐" color="#FFE9A0" />
         <StatCard label="CURRENT STREAK" value={`${streak}d`} emoji="🔥" color="#FFB7C5" />
@@ -174,18 +174,18 @@ export default function StatsScreen() {
 
       {/* Coin value (money + time) */}
       {(moneyValue || timeValue) && (
-        <PixelPanel color="yellow" style={{ marginBottom: 14, textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#7B5EA7', marginBottom: 6 }}>
+        <PixelPanel color="yellow" style={{ marginBottom: 10, textAlign: 'center' }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#7B5EA7', marginBottom: 4 }}>
             VALUE EARNED THIS {tab.toUpperCase()}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             {moneyValue && (
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 20, fontWeight: 800, color: '#5C3A00' }}>
                 💰 {moneyValue}
               </div>
             )}
             {timeValue && (
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 26, fontWeight: 800, color: '#5C3A00' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 20, fontWeight: 800, color: '#5C3A00' }}>
                 ⏱ {timeValue} {settings.timeActivity || ''}
               </div>
             )}
@@ -298,17 +298,17 @@ export default function StatsScreen() {
             return (
               <div key={h.id} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '8px 0',
+                padding: '6px 0',
                 borderBottom: '1px solid #D8F0E8',
               }}>
-                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#3D2B4F' }}>
+                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#3D2B4F' }}>
                   {h.name}
                 </div>
                 <div style={{
                   fontFamily: 'Mulish, sans-serif', fontWeight: 800,
-                  fontSize: 24, color: '#1A5C3A',
-                  background: '#B4E0C8', padding: '6px 16px', borderRadius: 999,
-                  minWidth: 52, textAlign: 'center',
+                  fontSize: 18, color: '#1A5C3A',
+                  background: '#B4E0C8', padding: '4px 12px', borderRadius: 999,
+                  minWidth: 44, textAlign: 'center',
                 }}>
                   ×{count}
                 </div>
@@ -325,24 +325,24 @@ function StatCard({ label, value, emoji, color }) {
   return (
     <div style={{
       background: `${color}33`,
-      border: `3px solid ${color}`,
-      borderRadius: 16,
-      padding: '12px',
+      border: `2px solid ${color}`,
+      borderRadius: 14,
+      padding: '8px',
       textAlign: 'center',
-      boxShadow: `0 4px 0 ${darken(color, 30)}`,
+      boxShadow: `0 3px 0 ${darken(color, 30)}`,
     }}>
-      <div style={{ fontSize: 28, marginBottom: 4 }}>{emoji}</div>
+      <div style={{ fontSize: 22, marginBottom: 3 }}>{emoji}</div>
       <div style={{
         fontFamily: "'Fredoka', cursive",
-        fontSize: 34, color: '#3D2B4F',
-        marginBottom: 4,
+        fontSize: 28, color: '#3D2B4F',
+        marginBottom: 2,
       }}>
         {value}
       </div>
       <div style={{
         fontFamily: "'Fredoka', cursive",
-        fontSize: 20, color: '#7B5EA7',
-        lineHeight: 1.4,
+        fontSize: 16, color: '#7B5EA7',
+        lineHeight: 1.3,
       }}>
         {label}
       </div>

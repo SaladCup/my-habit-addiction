@@ -1,11 +1,23 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import useStore, { KAWAII_COLORS } from '../store/useStore'
+import useStore from '../store/useStore'
 import { cashInGroupForBead } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton } from '../components/ui'
-import { playBeadDraw, playCreateHabit } from '../engine/sounds'
+import { playBeadDraw } from '../engine/sounds'
+import HabitChanSprite from '../components/HabitChanSprite'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
+
+const IDLE_LINES = [
+  "Do the thing! 🌟",
+  "Your streak is waiting ✨",
+  "One habit at a time 💪",
+  "You've got this! 🌸",
+]
+// Computed once at module load — changes per page reload (roughly daily). Using
+// day+month avoids Date.now() which the react-hooks/purity rule flags in render.
+const _d = new Date()
+const DAILY_IDLE_LINE = IDLE_LINES[(_d.getDate() + _d.getMonth() * 31) % IDLE_LINES.length]
 
 // ── utils ──
 function darken(hex, amt = 20) {
@@ -411,178 +423,6 @@ function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
   )
 }
 
-// ── Onboarding (framed: frame_onboard) ──
-function OnboardingModal({ onComplete }) {
-  const [step, setStep]           = useState(1)
-  const [catName, setCatName]     = useState('')
-  const [catColor, setCatColor]   = useState('#FFB7C5')
-  const [habitName, setHabitName] = useState('')
-  const [habitDesc, setHabitDesc] = useState('')
-  const [bonusActivity, setBonusActivity] = useState('10 push-ups')
-  const canNext = catName.trim() && habitName.trim()
-
-  function handleSubmit() {
-    if (!canNext) return
-    onComplete(
-      { name: catName.trim(), color: catColor },
-      { name: habitName.trim(), description: habitDesc.trim(), rewards: { bonusActivity: '' } },
-      bonusActivity.trim() || '10 push-ups',
-    )
-  }
-
-  const inputStyle = {
-    width: '100%',
-    fontFamily: 'Mulish, sans-serif', fontSize: 18,
-    padding: '10px 12px',
-    border: '2px solid #C8B4E0', borderRadius: 10,
-    background: '#FFF5F9', color: '#3D2B4F',
-    outline: 'none', boxSizing: 'border-box',
-  }
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 400,
-      background: 'rgba(61,43,79,0.6)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 10,
-    }}>
-      <div style={{
-        position: 'relative',
-        width: '100%', maxWidth: 520,
-        aspectRatio: '600 / 1200',
-        maxHeight: '97vh',
-        background: "url('/ui/frame_onboard.png') center / 100% 100% no-repeat",
-        filter: 'drop-shadow(0 12px 30px rgba(155,126,200,0.45))',
-        animation: 'bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1)',
-      }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          padding: '12% 18% 11%',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          overflowY: 'auto',
-        }}>
-          {step === 1 ? (
-            <>
-              <div style={{ textAlign: 'center', marginBottom: 14 }}>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 28, color: '#9B3D6B' }}>
-                  WELCOME!
-                </div>
-                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7' }}>
-                  Let's set up your first habit.
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
-                  STEP 1 · CATEGORY
-                </div>
-                <input
-                  style={inputStyle}
-                  placeholder="e.g. Health, Study, Creative…"
-                  value={catName}
-                  onChange={e => setCatName(e.target.value)}
-                  autoFocus
-                />
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#7B5EA7', margin: '10px 0 6px' }}>
-                  PICK A COLOR
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {KAWAII_COLORS.map(c => (
-                    <button
-                      key={c.hex}
-                      title={c.name}
-                      onClick={() => setCatColor(c.hex)}
-                      style={{
-                        width: 28, height: 28, borderRadius: '50%', padding: 0, cursor: 'pointer',
-                        background: `radial-gradient(circle at 35% 30%, white 0%, ${c.hex} 50%, ${darken(c.hex, 20)} 100%)`,
-                        border: catColor === c.hex ? '3px solid #3D2B4F' : '2px solid rgba(0,0,0,0.08)',
-                        boxShadow: catColor === c.hex ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : '0 1px 3px rgba(0,0,0,0.1)',
-                        transform: catColor === c.hex ? 'scale(1.18)' : 'scale(1)',
-                        transition: 'all 120ms ease',
-                        flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 18, color: '#7B5EA7', marginBottom: 6 }}>
-                  STEP 2 · YOUR HABIT
-                </div>
-                <input
-                  style={{ ...inputStyle, marginBottom: 8 }}
-                  placeholder="e.g. Morning Run, Read 20 Pages…"
-                  value={habitName}
-                  onChange={e => setHabitName(e.target.value)}
-                />
-                <input
-                  style={inputStyle}
-                  placeholder="Description (optional)"
-                  value={habitDesc}
-                  onChange={e => setHabitDesc(e.target.value)}
-                />
-              </div>
-
-              <KawaiiButton variant="primary" size="lg" fullWidth onClick={() => canNext && setStep(2)} disabled={!canNext}>
-                NEXT →
-              </KawaiiButton>
-            </>
-          ) : (
-            <>
-              <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                <div style={{ fontSize: 30, lineHeight: 1 }}>⭐</div>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 25, color: '#9B3D6B' }}>
-                  THE BONUS TRICK
-                </div>
-                <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#7B5EA7', fontStyle: 'italic' }}>
-                  "just a bit more…"
-                </div>
-              </div>
-
-              <div style={{
-                background: 'rgba(255,245,249,0.85)', border: '2px solid #ECC0DE', borderRadius: 14,
-                padding: '12px 14px', marginBottom: 14,
-              }}>
-                <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14.5, lineHeight: 1.5, color: '#3D2B4F', margin: 0 }}>
-                  Sometimes a spin lands on <strong>⭐ BONUS</strong>. That's your cue to do one quick <em>"just a bit more"</em> task within 10 minutes — and you score a <strong>FREE bead</strong>. 🎁
-                </p>
-                <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, lineHeight: 1.5, color: '#7B5EA7', margin: '8px 0 0' }}>
-                  The trick: keep it tiny and instant, so there's never an excuse to skip it.
-                </p>
-              </div>
-
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 17, color: '#7B5EA7', marginBottom: 6 }}>
-                YOUR QUICK TASK
-              </div>
-              <input
-                style={inputStyle}
-                placeholder="e.g. 10 push-ups"
-                value={bonusActivity}
-                onChange={e => setBonusActivity(e.target.value)}
-                autoFocus
-              />
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#9B8AB5', margin: '7px 0 18px', lineHeight: 1.45 }}>
-                e.g. 10 push-ups · 10 squats · read 1 page · tidy one surface · 2-min stretch
-              </div>
-
-              <KawaiiButton variant="primary" size="lg" fullWidth onClick={handleSubmit}>
-                ✨ CREATE MY FIRST HABIT
-              </KawaiiButton>
-              <div style={{ textAlign: 'center', marginTop: 10 }}>
-                <KawaiiButton variant="ghost" size="sm" onClick={() => setStep(1)}>
-                  ← Back
-                </KawaiiButton>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Main Screen ──
 export default function HomeScreen() {
   const navigate = useNavigate()
@@ -590,7 +430,7 @@ export default function HomeScreen() {
   const {
     habits, categories, wallet, jarBeads, milestones, settings,
     drawBead, cashInBeads, getBeadColor, setSession,
-    addCategory, addHabit, jarSeenCount, markJarSeen, updateSettings,
+    jarSeenCount, markJarSeen,
   } = useStore()
 
   const [reveal, setReveal] = useState(null)   // the earned bead being revealed
@@ -647,19 +487,6 @@ export default function HomeScreen() {
     navigate('/spin')
   }
 
-  function handleOnboardingComplete(catData, habitData, bonusActivity) {
-    const newCat = addCategory(catData)
-    addHabit({ ...habitData, categoryId: newCat.id })
-    if (bonusActivity) {
-      // The legacy onboarding collects ONE bonus task. Seed it across all three
-      // default tiers so it actually appears on the bonus wheel (the new system reads
-      // settings.bonusTiers; the upcoming Habit-Chan onboarding will collect the
-      // little/some/most variants properly).
-      updateSettings({ bonusActivity, bonusTiers: { '25': bonusActivity, '50': bonusActivity, '75': bonusActivity } })
-    }
-    playCreateHabit()
-  }
-
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
@@ -697,9 +524,28 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* NO standing cash-in shortcut: spins are EARNED. Completing a habit
-            grants ONE spin opportunity (the BEAD EARNED prompt) — holding
-            matching beads only upgrades the tier of your NEXT earned spin. */}
+        {/* Idle Habit-Chan sprite when there are few (or no) habits */}
+        {habits.length <= 3 && !reveal && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: habits.length === 0 ? 6 : 18 }}>
+            <div style={{ animation: 'float-slow 3.5s ease-in-out infinite' }}>
+              <HabitChanSprite pose="sitting" charPx={160} bounce={false} />
+            </div>
+            <div style={{
+              background: '#FFF5F9', border: '2px solid #ECC0DE', borderRadius: 16,
+              padding: '7px 14px', maxWidth: 220,
+              fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7',
+              textAlign: 'center', lineHeight: 1.4,
+              boxShadow: '0 2px 0 #DBA9CD', marginTop: -8,
+            }}>
+              {DAILY_IDLE_LINE}
+            </div>
+            {habits.length === 0 && (
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#FF85A1', marginTop: 8, textAlign: 'center' }}>
+                Add your first habit ↑
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {reveal && (
@@ -719,9 +565,6 @@ export default function HomeScreen() {
         onOpenWallet={() => navigate('/wallet')}
       />
 
-      {habits.length === 0 && !reveal && (
-        <OnboardingModal onComplete={handleOnboardingComplete} />
-      )}
     </div>
   )
 }
