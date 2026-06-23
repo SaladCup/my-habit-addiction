@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { cashInGroupForBead } from '../engine/gameLogic'
@@ -437,6 +437,7 @@ export default function HomeScreen() {
 
   const [reveal, setReveal] = useState(null)         // the earned bead being revealed
   const [showGoldToast, setShowGoldToast] = useState(false)
+  const earnedGoldRef = useRef(false)
 
   useEffect(() => {
     if (location.state?.freeBead && !reveal) {
@@ -468,7 +469,11 @@ export default function HomeScreen() {
     playBeadDraw(bead.isGold ? 'gold' : bead.isRainbow ? 'rainbow' : null)
     setSession({ selectedHabit: habit })
     setReveal(bead)
-    if (bead.isGold) setShowGoldToast(true)
+    earnedGoldRef.current = bead.isGold
+  }
+
+  function _triggerGoldToast() {
+    if (earnedGoldRef.current) { earnedGoldRef.current = false; setShowGoldToast(true) }
   }
 
   // Cash in the EARNED bead's group (its slot + wilds): move them wallet→jar,
@@ -476,6 +481,7 @@ export default function HomeScreen() {
   function handleRevealCashIn() {
     const group = cashInGroupForBead(reveal, wallet)
     setReveal(null)
+    _triggerGoldToast()
     if (group.beads.length) cashInBeads(group.beads)   // sets cashedBeads + activeTier + phase 'cashIn'
     navigate('/cash-in')
   }
@@ -487,6 +493,7 @@ export default function HomeScreen() {
   // spin guard bounced you home.)
   function handleRevealKeep() {
     setReveal(null)
+    _triggerGoldToast()
     setSession({ activeTier: 1, phase: 'habitDone' })
     navigate('/spin')
   }

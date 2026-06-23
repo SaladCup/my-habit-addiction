@@ -77,7 +77,7 @@ export default function StreakPopup({ onClose }) {
         boxShadow: '0 0 0 5px rgba(255,255,255,0.6), 0 18px 44px rgba(60,40,80,0.5)',
         padding: '26px 22px 22px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-        textAlign: 'center', overflow: 'hidden',
+        textAlign: 'center', overflow: 'visible',
         animation: 'bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
         {/* ── BROKEN streak: previous number cracks & falls, then day 0 ── */}

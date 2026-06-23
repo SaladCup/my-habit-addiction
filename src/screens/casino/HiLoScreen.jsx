@@ -40,6 +40,7 @@ export default function HiLoScreen() {
   const [card, setCard]    = useState(() => drawCard())
   const [pot, setPot]      = useState(0)
   const [streak, setStreak] = useState(0)
+  const [staked, setStaked] = useState(0)
   const [flipKey, setFlipKey] = useState(0)        // bumps on each new card → triggers flip-in
   const [flashKey, setFlashKey] = useState(0)
   const [flashTier, setFlashTier] = useState('t1')
@@ -52,7 +53,7 @@ export default function HiLoScreen() {
     if (tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'hilo')) return
     const newCard = drawCard()
-    setCard(newCard); setPot(bet); setStreak(0); setPhase('playing')
+    setStaked(bet); setCard(newCard); setPot(bet); setStreak(0); setPhase('playing')
     setFlipKey(k => k + 1)
     playButtonTap()
   }
@@ -62,8 +63,9 @@ export default function HiLoScreen() {
     setFlipKey(k => k + 1)
     if (hiloWin(dir, card.rank, draw.rank)) {
       const newPot = Math.floor(pot * mults[dir])
-      setPot(newPot); setStreak(s => s + 1); setCard(draw)
-      playCoinTick(streak)
+      const newStreak = streak + 1
+      setPot(newPot); setStreak(newStreak); setCard(draw)
+      playCoinTick(newStreak)
     } else {
       setCard(draw); setPhase('lost')
       playNearMiss()
@@ -104,7 +106,7 @@ export default function HiLoScreen() {
       <div style={{ height: 28, fontFamily: "'Fredoka', cursive", fontSize: 20, marginBottom: 8 }}>
         {playing && pot > 0 && <span style={{ color: '#5CBFA0' }}>Pot {pot.toLocaleString()} <CoinIcon />{streak > 0 ? `  🔥×${streak}` : ''}</span>}
         {phase === 'cashed' && <span style={{ color: '#5CBFA0' }}>✅ Banked {pot.toLocaleString()} <CoinIcon />!</span>}
-        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💔 Missed it — lost {bet.toLocaleString()} <CoinIcon /></span>}
+        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>💔 Missed it — lost {staked.toLocaleString()} <CoinIcon /></span>}
       </div>
 
       {playing && (

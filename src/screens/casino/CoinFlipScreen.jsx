@@ -20,6 +20,7 @@ export default function CoinFlipScreen() {
   const [landed, setLanded] = useState('heads')
   const [pot, setPot]     = useState(0)
   const [streak, setStreak] = useState(0)
+  const [lostAmount, setLostAmount] = useState(0)
   const [flipKey, setFlipKey] = useState(0)
   const [flashKey, setFlashKey] = useState(0)
   const [flashTier, setFlashTier] = useState('t1')
@@ -43,7 +44,7 @@ export default function CoinFlipScreen() {
       playWin(tier)
       setFlashTier(tier); setFlashKey(k => k + 1)
     } else {
-      setPot(0); setStreak(0); setPhase('lost')
+      setLostAmount(stake); setPot(0); setStreak(0); setPhase('lost')
       playNearMiss()
       setFlashTier('loss'); setFlashKey(k => k + 1)
       setShakeKey(s => s + 1)
@@ -122,7 +123,7 @@ export default function CoinFlipScreen() {
       {/* result line */}
       <div style={{ height: 30, fontFamily: "'Fredoka', cursive", fontSize: 22, marginBottom: 6 }}>
         {phase === 'won'  && <span style={{ color: '#5CBFA0' }}>{isHeads ? '🌟 Heads!' : '🌙 Tails!'} +{pot.toLocaleString()} <CoinIcon />{streak > 1 ? `  🔥×${streak}` : ''}</span>}
-        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>{isHeads ? '🌟 Heads' : '🌙 Tails'} — you lost it 💔</span>}
+        {phase === 'lost' && <span style={{ color: '#C44B6A' }}>{isHeads ? '🌟 Heads' : '🌙 Tails'} — lost {lostAmount.toLocaleString()} 💔</span>}
       </div>
 
       {/* pick a side */}

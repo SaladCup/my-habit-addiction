@@ -207,6 +207,7 @@ function AppShell({ showWarning }) {
 }
 
 export default function App() {
+  const onboardingComplete = useStore(s => s.onboardingComplete)
   const [showWarning, setShowWarning] = useState(
     () => !localStorage.getItem('habitAddict_seenWarning')
   )
@@ -235,7 +236,7 @@ export default function App() {
         <HashRouter>
           <AppShell showWarning={showWarning} />
         </HashRouter>
-        {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
+        {!showWarning && !streakDone && onboardingComplete && <StreakPopup onClose={() => setStreakDone(true)} />}
       </AppScaleStage>
     </>
   )

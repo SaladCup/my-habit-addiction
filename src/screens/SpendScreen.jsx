@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import useNow from '../hooks/useNow'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { KawaiiButton, PixelPanel, CoinIcon } from '../components/ui'
@@ -20,7 +21,9 @@ export default function SpendScreen() {
   const coins = getCoinsAvailable()
   const rbOn = !!rotblock?.enabled
   const rbCount = rotblock?.targets?.length || 0
-  const rbBlocked = rbOn && coins <= 0   // out of coins (the RotBlock screen shows live Break-Glass status)
+  const now = useNow(10000)
+  const bgActive = rotblock?.breakGlassUntil && rotblock.breakGlassUntil > now
+  const rbBlocked = rbOn && coins <= 0 && !bgActive   // out of coins (the RotBlock screen shows live Break-Glass status)
   const { moneyPerCoin, secondsPerCoin, timeActivity } = settings
   const coinName = 'coins'
 

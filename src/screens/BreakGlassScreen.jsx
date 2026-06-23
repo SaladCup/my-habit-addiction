@@ -34,6 +34,7 @@ export default function BreakGlassScreen() {
     const nextRound = round + 1
     if (nextRound >= ROUNDS.length) {
       rbStartBreakGlass(GRANT_MINUTES)
+      try { window.desktop?.cover?.(false) } catch { /* non-fatal */ }
       setPhase('done')
     } else {
       setRound(nextRound)

@@ -81,10 +81,13 @@ export default function CrashScreen() {
   const startRef = useRef(0)
   const bustRef  = useRef(0)
   const autoRef  = useRef(0)
+  const stakedRef = useRef(0)
   const [staked, setStaked] = useState(0)
   const tickRef  = useRef(1)
   const aliveRef = useRef(true)
   const resolvedRef = useRef(false)
+  const actingRef = useRef(false)
+  useEffect(() => { actingRef.current = false }, [phase])
   useEffect(() => {
     aliveRef.current = true
     return () => { aliveRef.current = false; cancelAnimationFrame(rafRef.current) }
@@ -106,8 +109,10 @@ export default function CrashScreen() {
   }
 
   function launch() {
-    if (!canLaunch) return
-    if (!placeBet(bet, 'crash')) return
+    if (actingRef.current || !canLaunch) return
+    actingRef.current = true
+    if (!placeBet(bet, 'crash')) { actingRef.current = false; return }
+    stakedRef.current = bet
     setStaked(bet)
     resolvedRef.current = false
     bustRef.current = rollCrashPoint()
@@ -126,7 +131,7 @@ export default function CrashScreen() {
     cancelAnimationFrame(rafRef.current)
     const t = (performance.now() - startRef.current) / 1000
     const at = Math.min(forcedAt || crashMultiplierAt(t), bustRef.current)
-    const win = Math.floor(staked * at)
+    const win = Math.floor(stakedRef.current * at)
     settleBet(win, 'crash')
     setMult(at); setOutcome({ win, at }); setPhase('cashed')
     const tier = at >= 10 ? 'jackpot' : at >= 3 ? 't3' : at >= 1.8 ? 't2' : 't1'

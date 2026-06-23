@@ -8,16 +8,19 @@ const COLORS = {
   loss:    'rgba(196,75,106,0.22)',
 }
 
+// Inner component — keyed from the parent so React unmounts+remounts it on
+// every flashKey change, restarting the CSS animation reliably.
+function Flash({ tier }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200, pointerEvents: 'none',
+      background: COLORS[tier] || COLORS.t1,
+      animation: 'win-flash 0.72s ease-out forwards',
+    }} />
+  )
+}
+
 export default function WinFlash({ flashKey, tier = 't1' }) {
   if (!flashKey) return null
-  return (
-    <div
-      key={flashKey}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200, pointerEvents: 'none',
-        background: COLORS[tier] || COLORS.t1,
-        animation: 'win-flash 0.72s ease-out forwards',
-      }}
-    />
-  )
+  return <Flash key={flashKey} tier={tier} />
 }
