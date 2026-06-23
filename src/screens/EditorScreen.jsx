@@ -69,7 +69,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
               }}
             >
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, opacity: value === cat.id ? 1 : 0.6 }} />
-              <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, fontWeight: 700, color: '#3D2B4F' }}>
+              <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, fontWeight: 700, color: '#3D2B4F' }}>
                 {cat.name}
               </span>
               {value === cat.id && (
@@ -81,7 +81,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
       )}
 
       {categories.length > 0 && (
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#9B7EC8', marginTop: 6, marginBottom: creating ? 4 : 0 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 4, marginBottom: creating ? 4 : 0 }}>
           {value ? 'Tap the selected category again to clear it.' : 'Optional — tap a category to assign one.'}
         </div>
       )}
@@ -93,8 +93,8 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
           style={{
             marginTop: categories.length > 0 ? 8 : 0,
             background: 'transparent', border: '2px dashed #C8B4E0',
-            borderRadius: 20, padding: '6px 14px', cursor: 'pointer',
-            fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8',
+            borderRadius: 20, padding: '5px 12px', cursor: 'pointer',
+            fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8',
             transition: 'all 140ms ease',
           }}
         >
@@ -148,7 +148,7 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div>
         <label style={labelStyle}>HABIT NAME *</label>
         <input
@@ -182,7 +182,7 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
 
       <div>
         <label style={labelStyle}>BONUS CHALLENGE — your &quot;just a bit more&quot;</label>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 19, color: '#9B7EC8', marginBottom: 8, lineHeight: 1.45 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 6, lineHeight: 1.4 }}>
           Optional. Jot a tiny → bigger version of a quick bonus for this habit. The bonus
           wheel picks one and shows your own words back — no math. Leave blank to use your default.
         </div>
@@ -226,20 +226,20 @@ export default function EditorScreen() {
   }
 
   return (
-    <div style={{ padding: '20px 16px', minHeight: '100%' }}>
+    <div style={{ padding: '14px 14px', minHeight: '100%' }}>
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
-        fontSize: 38, color: '#3D2B4F', marginBottom: 4,
+        fontSize: 28, color: '#3D2B4F', marginBottom: 2,
       }}>
         ✦ MY HABITS ✦
       </h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginBottom: 18 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', marginBottom: 12 }}>
         {habits.length} habit{habits.length !== 1 ? 's' : ''}
       </div>
 
       {editing && (
         <PixelPanel color="lavender" style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#3D1A6E', marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#3D1A6E', marginBottom: 10 }}>
             {editing === 'new' ? '+ NEW HABIT' : '✏️ EDIT HABIT'}
           </div>
           <HabitForm
@@ -264,16 +264,16 @@ export default function EditorScreen() {
                 background: color, boxShadow: `0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,0.15)`,
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 27, color: '#3D2B4F', marginBottom: 3 }}>
+                <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: '#3D2B4F', marginBottom: 2 }}>
                   {habit.name}
                 </div>
                 {habit.description && (
-                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#7B5EA7' }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>
                     {habit.description}
                   </div>
                 )}
                 {cat && (
-                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#9B7EC8', marginTop: 2 }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#9B7EC8', marginTop: 1 }}>
                     {cat.name}
                   </div>
                 )}
@@ -281,13 +281,11 @@ export default function EditorScreen() {
               <div style={{ display: 'flex', gap: 6 }}>
                 <KawaiiButton variant="secondary" size="sm"
                   onClick={() => setEditing(habit.id)}
-                  style={{ fontSize: 22 }}
                 >
                   ✏️
                 </KawaiiButton>
                 <KawaiiButton variant="danger" size="sm"
                   onClick={() => { if (window.confirm(`Delete "${habit.name}"?`)) deleteHabit(habit.id) }}
-                  style={{ fontSize: 22 }}
                 >
                   ✕
                 </KawaiiButton>
@@ -308,8 +306,8 @@ export default function EditorScreen() {
 
 const inputStyle = {
   width: '100%',
-  fontFamily: 'Mulish, sans-serif', fontSize: 24,
-  padding: '10px 12px',
+  fontFamily: 'Mulish, sans-serif', fontSize: 17,
+  padding: '7px 10px',
   border: '2px solid #C8B4E0', borderRadius: 10,
   background: '#FFF5F9', color: '#3D2B4F',
   outline: 'none', boxSizing: 'border-box',
@@ -317,8 +315,8 @@ const inputStyle = {
 
 const labelStyle = {
   fontFamily: "'Fredoka', cursive",
-  fontSize: 24, color: '#7B5EA7',
-  display: 'block', marginBottom: 6,
+  fontSize: 18, color: '#7B5EA7',
+  display: 'block', marginBottom: 4,
 }
 
 function darken(hex, amount) {
