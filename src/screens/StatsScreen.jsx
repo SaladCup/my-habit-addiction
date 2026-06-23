@@ -139,23 +139,23 @@ export default function StatsScreen() {
         ✦ STATS ✦
       </h2>
 
-      {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 18, overflowX: 'auto' }}>
+      {/* Tab switcher — flex:1 so all five periods share the width and always fit. */}
+      <div style={{ display: 'flex', gap: 5, marginBottom: 18 }}>
         {TABS.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             style={{
+              flex: 1,
               fontFamily: "'Fredoka', cursive",
-              fontSize: 22,
-              padding: '7px 16px',
+              fontSize: 18,
+              padding: '7px 4px',
               background: tab === t ? '#9B7EC8' : '#F5F0FF',
               color: tab === t ? '#fff' : '#7B5EA7',
               border: `2px solid ${tab === t ? '#9B7EC8' : '#C8B4E0'}`,
               borderRadius: 10,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              flexShrink: 0,
               transition: 'all 150ms ease',
             }}
           >

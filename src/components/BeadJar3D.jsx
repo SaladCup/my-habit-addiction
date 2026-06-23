@@ -5,6 +5,7 @@ import { Physics, RigidBody, BallCollider, TrimeshCollider, CuboidCollider } fro
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { PILE_POSITIONS, PILE_ROTATIONS } from './pilePositions.js'
+import { useStageScale } from '../hooks/stageScale'
 
 // Real-time version of the Blender hero jar (blender/jar_glass.py): the rounded
 // pink-glass jar with pearls + satin bow. Beads you've ALREADY seen are placed
@@ -315,9 +316,17 @@ export default function BeadJar3D({ beads, seenCount = 0, onSeen, release, width
   const staticBeads = win.slice(0, seenAtMount)
   const newBeads = win.slice(seenAtMount)
 
+  // The whole UI is CSS-transform-scaled by AppScaleStage; the canvas would blur if its
+  // render buffer didn't account for that. Match the buffer to the on-screen size:
+  // dpr = devicePixelRatio × stage scale, capped at 2 (3–4 would render 9–16× the pixels).
+  const stageScale = useStageScale()
+  const [basePR] = useState(() => (typeof window !== 'undefined' && window.devicePixelRatio) || 1)
+  const dpr = Math.min(2, Math.max(1, basePR * stageScale))
+
   return (
     <div style={{ width, height, pointerEvents: 'none' }}>
       <Canvas
+        dpr={dpr}
         frameloop={active ? 'always' : 'demand'}
         camera={{ position: [0, 1.34, 5.2], fov: 30 }}
         gl={{ alpha: true, antialias: true }}

@@ -6,7 +6,7 @@ import { playSpinStart, playNearMiss, playWin, playWheelTick } from '../engine/s
 // The decorative rim / hub / pointer are PNG art (public/ui/wheel_*.png).
 // Only the colored value segments are drawn dynamically in SVG and spin
 // underneath the static gold ring, so prize values can still scale by tier.
-const BOX = 480                            // wheel container (px) — fills most of the phone width
+const BOX = 360                            // wheel container (px) — fits comfortably in the 430px design card
 const CX = BOX / 2, CY = BOX / 2            // SVG center
 const R = Math.round(BOX * 0.444)          // segment radius — tucks just under the rim's inner lip
 const R_TEXT = Math.round(BOX * 0.345)     // label center radius (labels run radially along the spoke)

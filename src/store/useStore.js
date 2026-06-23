@@ -159,7 +159,7 @@ const useStore = create(
         volume:         0.6,   // SFX volume (Web Audio one-shots/loops in audio.js + sounds.js)
         musicEnabled:   true,  // background music on/off (independent of SFX)
         musicVolume:    0.2,   // background music — intentionally low by default (it sits UNDER everything)
-        uiScale:        0.9,   // desktop content zoom (Settings → Display); window size unchanged
+        uiScale:        1,     // fine-tune multiplier on the auto fit-to-window scale (Settings → Display); 1 = fit
       },
 
       // ── RotBlock: gate "Brainrots" (apps/sites) behind your coins ──

@@ -521,13 +521,10 @@ function createWindow() {
     console.error('did-fail-load', code, desc, url)
   })
 
-  // Content zoom: real browser-zoom, so the jar / wheels / slot / text / buttons
-  // all scale while the WINDOW stays its normal size (fonts are hardcoded px, so
-  // this is the only sane global knob). ~10% smaller by default; the renderer
-  // pushes the saved "App size" setting (Settings → Display) right after load.
-  win.webContents.on('did-finish-load', () => {
-    if (!win.isDestroyed()) { try { win.webContents.setZoomFactor(0.9) } catch { /* */ } }
-  })
+  // NOTE: content scaling is now done IN the app by AppScaleStage (one transform that
+  // fits the fixed-design UI to the window). So we leave the native zoomFactor at its
+  // default 1 — applying zoom here too would double-scale. The "App size" slider feeds
+  // AppScaleStage as a fine-tune multiplier.
 
   win.loadURL(isDev ? DEV_URL : APP_URL)
 

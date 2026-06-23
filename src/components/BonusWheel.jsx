@@ -5,7 +5,7 @@ import { playWheelTick } from '../engine/sounds'
 // ── Layout (mirrors the main Wheel) ──
 // Decorative rim / hub / pointer are PNG art (public/ui/bonus_*.png); the 5
 // weighted prize slices are drawn dynamically in SVG and spin underneath.
-const BOX = 440                            // bigger than before (was 300)
+const BOX = 360                            // fits the 430px design card with comfortable margins
 const CX = BOX / 2, CY = BOX / 2
 const R = Math.round(BOX * 0.444)          // slice radius — tucks just under the rim's inner lip
 const R_TEXT = Math.round(BOX * 0.31)      // label radius (inside the ring, outside the hub)

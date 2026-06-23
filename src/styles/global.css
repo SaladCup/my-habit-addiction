@@ -35,16 +35,37 @@ body {
   justify-content: center;   /* centre the phone card vertically */
 }
 
+/* ── Scale stage ── */
+/* Fixed design-size box (set inline by AppScaleStage) that transform-scales the whole
+   app to fit the window. transform-origin center so it scales around the middle; the
+   transform makes fixed/absolute overlays inside resolve against the card, not the
+   window. #root (flex-centered) keeps it centered. */
+.app-stage {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  transform-origin: center center;
+}
+
+/* Dreamy blurred backdrop filling the window behind the card (the "letterbox"). */
+.dreamy-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url('/ui/bg_sunburst.png?v=2');
+  background-size: cover;
+  background-position: center;
+  filter: blur(34px) saturate(1.08) brightness(1.02);
+  transform: scale(1.25);   /* overscan so the blur never reveals a hard edge */
+  pointer-events: none;
+}
+
 /* ── App shell ── */
 .app-shell {
   position: relative;
-  /* Framed sunburst fills as much of the viewport as fits (height-driven), so
-     it scales up to mobile-game size. No scene behind it — just solid margins. */
-  aspect-ratio: 768 / 1344;
+  /* Fills the fixed-size scale stage; the stage handles fitting to the window. */
+  width: 100%;
   height: 100%;
-  width: auto;
-  max-width: 100%;
-  max-height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -142,6 +163,33 @@ body {
   80%  { transform: scale(0.95); }
   100% { transform: scale(1); }
 }
+
+/* Pulsing halo behind a spotlighted element (SpotlightTour coach-marks). */
+@keyframes tour-glow {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50%      { opacity: 0.9;  transform: scale(1.1); }
+}
+
+/* Lifts a nav icon up out of the bar to the center while growing big. The start
+   position/size come from CSS vars set inline per step (--nav-dx/dy/scale). */
+@keyframes tour-lift {
+  from { transform: translate(var(--nav-dx, 0), var(--nav-dy, 0)) scale(var(--nav-scale, 0.4)); opacity: 0.4; }
+  to   { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* Staged tour reveal: the icon first appears highlighted AT the nav (held), then
+   flies up + grows to its resting spot. (start pos/size from --nav-dx/dy/scale.) */
+@keyframes tour-lift2 {
+  0%   { transform: translate(var(--nav-dx, 0), var(--nav-dy, 0)) scale(var(--nav-scale, 0.4)); opacity: 0; }
+  20%  { transform: translate(var(--nav-dx, 0), var(--nav-dy, 0)) scale(var(--nav-scale, 0.4)); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* The screen "fogs out" — homepage clear, then the dim + blur fade in. */
+@keyframes tour-fog { from { opacity: 0; } to { opacity: 1; } }
+
+/* Habit-Chan + the dialogue box ease in (after the icon has flown up). */
+@keyframes tour-soft { from { opacity: 0; } to { opacity: 1; } }
 
 @keyframes slide-up {
   from { transform: translateY(20px); opacity: 0; }

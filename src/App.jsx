@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { HashRouter, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import './styles/global.css'
 import useStore from './store/useStore'
 import { setMusicConfig } from './engine/music'
@@ -33,6 +33,10 @@ import RotBlockEnforcer   from './components/RotBlockEnforcer'
 import RotBlockBridge     from './components/RotBlockBridge'
 import AudioRainbow       from './components/AudioRainbow'
 import UpdatePrompt       from './components/UpdatePrompt'
+import VisualNovel        from './components/VisualNovel'
+import SpotlightTour      from './components/SpotlightTour'
+import AppScaleStage      from './components/AppScaleStage'
+import { ONBOARDING_INTRO, NAV_TOUR } from './content/habitChanScript'
 
 /* global __APP_VERSION__ -- replaced at build time by Vite's define (see vite.config) */
 
@@ -46,7 +50,28 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: `/ui/icon_settings.png?v=${ICON_V}` },
 ]
 
-const HIDDEN_NAV_ROUTES = ['/cash-in', '/spin', '/bonus', '/reward', '/break-glass', '/blocked', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/blackjack', '/casino/slots', '/casino/wheel']
+const HIDDEN_NAV_ROUTES = ['/meet', '/cash-in', '/spin', '/bonus', '/reward', '/break-glass', '/blocked', '/casino/coinflip', '/casino/crash', '/casino/penguin', '/casino/mines', '/casino/plinko', '/casino/hilo', '/casino/blackjack', '/casino/slots', '/casino/wheel']
+
+// Preview/standalone player for Habit-Chan's intro (route: /meet). The real
+// onboarding will mount VisualNovel inline; this lets us watch it on its own.
+function MeetHabitChan() {
+  const navigate = useNavigate()
+  return <VisualNovel script={ONBOARDING_INTRO} onComplete={() => navigate('/')} onSkip={() => navigate('/')} />
+}
+
+// Standalone player for the bottom-nav coach-mark tour (route: /tour). NOT in
+// HIDDEN_NAV_ROUTES — the nav must stay on screen for the spotlight to highlight it.
+// Renders the real Home screen behind so the "see the homepage, then fog out" reveal
+// works (in the real onboarding the tour will simply overlay whatever screen you're on).
+function NavTourDemo() {
+  const navigate = useNavigate()
+  return (
+    <>
+      <HomeScreen />
+      <SpotlightTour steps={NAV_TOUR} onComplete={() => navigate('/')} />
+    </>
+  )
+}
 
 // Only chirp the hover sound for a real mouse. On touch, a tap synthesizes a
 // pointerenter right before the click, which would otherwise stack hover+swoosh.
@@ -64,6 +89,7 @@ function BottomNav() {
           end={item.to === '/'}
           style={navItemStyle}
           aria-label={item.label}
+          data-tour={item.label.toLowerCase()}
           onPointerEnter={handleNavHover}
           onClick={playSwoosh}
         >
@@ -111,26 +137,10 @@ function MusicController() {
   return null
 }
 
-// Pushes the saved "App size" (uiScale) to the native shell, which zooms the page
-// content while leaving the window size alone. Desktop-only; a no-op in a browser.
-function UiScaleController() {
-  const uiScale = useStore(s => s.settings.uiScale ?? 0.9)
-  useEffect(() => {
-    try {
-      // Native app: real browser-zoom (gap-free, handles the full-screen cover).
-      if (window.desktop?.setUiZoom) window.desktop.setUiZoom(uiScale)
-      // Web / launcher: CSS zoom fallback (no native shell to zoom).
-      else document.documentElement.style.zoom = String(uiScale)
-    } catch { /* */ }
-  }, [uiScale])
-  return null
-}
-
 function AppShell() {
   return (
     <div className="app-shell">
       <MusicController />
-      <UiScaleController />
       <RotBlockEnforcer />
       <RotBlockBridge />
       <AudioRainbow />
@@ -160,6 +170,8 @@ function AppShell() {
           <Route path="/rotblock"    element={<RotBlockScreen />} />
           <Route path="/break-glass" element={<BreakGlassScreen />} />
           <Route path="/blocked"     element={<BlockedScreen />} />
+          <Route path="/meet"        element={<MeetHabitChan />} />
+          <Route path="/tour"        element={<NavTourDemo />} />
         </Routes>
       </main>
       <BottomNav />
@@ -188,11 +200,16 @@ export default function App() {
 
   return (
     <>
-      {showWarning && <WarningSplash onDismiss={dismissWarning} />}
-      <HashRouter>
-        <AppShell />
-      </HashRouter>
-      {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
+      {/* Blurred dreamy backdrop fills the window behind the card (the letterbox). */}
+      <div className="dreamy-backdrop" />
+      {/* One scale stage: everything inside scales together to fit any window/display. */}
+      <AppScaleStage>
+        {showWarning && <WarningSplash onDismiss={dismissWarning} />}
+        <HashRouter>
+          <AppShell />
+        </HashRouter>
+        {!showWarning && !streakDone && <StreakPopup onClose={() => setStreakDone(true)} />}
+      </AppScaleStage>
     </>
   )
 }
