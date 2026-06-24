@@ -1,10 +1,19 @@
 import { useRef, useState, useEffect } from 'react'
-import { Application, Assets, Graphics } from 'pixi.js'
+import { Application, Assets, Graphics, loadTextures as pixiLoadTextures } from 'pixi.js'
 import { gsap } from 'gsap'
 import { ReelSetBuilder, SpeedPresets } from 'pixi-reels'
 import { FitSpriteSymbol } from './slots/FitSpriteSymbol'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
 import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
+
+// CRITICAL for the packaged app: assets are served over the custom app:// protocol.
+// Pixi v8 decodes images in a Web Worker via createImageBitmap by default, and that
+// worker can't fetch over the privileged app:// scheme → every texture hangs forever
+// ("loading reels…" with no error). Force Pixi's plain HTMLImageElement load path —
+// the same browser image pipeline that loads every OTHER image in the app fine over
+// app:// (nav icons, sunburst bg, the splash webp). Harmless in the http launcher too.
+pixiLoadTextures.config.preferWorkers = false
+pixiLoadTextures.config.preferCreateImageBitmap = false
 
 // ── Layout ────────────────────────────────────────────────
 const REELS        = 5
@@ -84,6 +93,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const [running, setRun]   = useState(0)
   const [activeLines, setActiveLines] = useState([])
   const [shaking, setShaking] = useState(false)
+  const [loadError, setLoadError] = useState(null)   // surface init failures instead of hanging
 
   const current = session?.spins?.[index] || null
 
@@ -94,6 +104,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     let reelSet = null
 
     ;(async () => {
+      try {
       const textures = await loadTextures()
       if (cancelled || !hostRef.current) return
 
@@ -151,6 +162,9 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       appRef.current = app
       reelSetRef.current = reelSet
       setReady(true)
+      } catch (err) {
+        if (!cancelled) setLoadError(String(err?.message || err))
+      }
     })()
 
     return () => {
@@ -279,8 +293,9 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           {!ready && (
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Fredoka', cursive", fontSize: 15, color: '#6B4FA0',
-            }}>loading reels…</div>
+              textAlign: 'center', padding: '0 16px',
+              fontFamily: "'Fredoka', cursive", fontSize: loadError ? 12 : 15, color: loadError ? '#FF9DB0' : '#6B4FA0',
+            }}>{loadError ? `reels failed: ${loadError}` : 'loading reels…'}</div>
           )}
         </div>
 
