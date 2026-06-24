@@ -169,7 +169,7 @@ export default function RewardScreen() {
             fontFamily: 'Mulish, sans-serif', fontSize: 21, color: '#FF85A1',
             marginTop: 4, fontStyle: 'italic',
           }}>
-            (so close to a higher tier!)
+            (so close to a higher level!)
           </div>
         )}
       </div>

@@ -273,7 +273,7 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
                 RAINBOW BEAD!
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.32 }}>
-                Whoa — the <strong>beautiful gay rainbow bead</strong>! 🏳️‍🌈 The wild card: match it with <strong>ANY</strong> beads in your wallet to unlock higher tiers.
+                Whoa — the <strong>beautiful gay rainbow bead</strong>! 🏳️‍🌈 The wild card: match it with <strong>ANY</strong> beads in your wallet to unlock higher levels.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                 {canCashTier && (
