@@ -1,4 +1,11 @@
 import { useRef, useState, useEffect } from 'react'
+// Side-effect import: patches Pixi's renderer to generate shaders/uniforms WITHOUT
+// new Function()/eval, using polyfills instead. REQUIRED in the packaged app — its
+// hardened CSP is `script-src 'self' 'wasm-unsafe-eval'` (no 'unsafe-eval'), so Pixi's
+// default eval-based codegen throws "Current environment does not allow unsafe-eval".
+// (The dev launcher sends no CSP, so this is a packaged-only failure.) Must run before
+// any Renderer is created — a top-level import guarantees that. Don't loosen the CSP.
+import 'pixi.js/unsafe-eval'
 import { Application, Assets, Graphics, loadTextures as pixiLoadTextures } from 'pixi.js'
 import { gsap } from 'gsap'
 import { ReelSetBuilder, SpeedPresets } from 'pixi-reels'
