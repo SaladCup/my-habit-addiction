@@ -445,7 +445,7 @@ export default function SettingsScreen() {
             />
             {settings.moneyPerCoin > 0 && (
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginTop: 3 }}>
-                T1 win = ${(TIER_COINS.t1 * settings.moneyPerCoin).toFixed(2)} · T3 = ${(TIER_COINS.t3 * settings.moneyPerCoin).toFixed(2)}
+                LVL 1 win = ${(TIER_COINS.t1 * settings.moneyPerCoin).toFixed(2)} · LVL 3 = ${(TIER_COINS.t3 * settings.moneyPerCoin).toFixed(2)}
               </div>
             )}
           </div>
@@ -459,7 +459,7 @@ export default function SettingsScreen() {
             />
             {settings.secondsPerCoin > 0 && (
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', marginTop: 3 }}>
-                T1 win = {Math.round(TIER_COINS.t1 * settings.secondsPerCoin / 60)} min · T3 = {Math.round(TIER_COINS.t3 * settings.secondsPerCoin / 60)} min
+                LVL 1 win = {Math.round(TIER_COINS.t1 * settings.secondsPerCoin / 60)} min · LVL 3 = {Math.round(TIER_COINS.t3 * settings.secondsPerCoin / 60)} min
               </div>
             )}
           </div>

@@ -94,7 +94,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen }) {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '-36px 0 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '-8px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* transparent placeholder while three.js/rapier lazy-load — NOT the old
             painted jar.png (it flashed a different jar, then the beads re-poured) */}
@@ -255,10 +255,10 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
                 GOLD BEAD!
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14.5, color: '#7B5EA7', lineHeight: 1.3 }}>
-                The rare one — straight to a Tier 3 spin! ⚡
+                The rare one — straight to a Level 3 spin! ⚡
               </div>
               <KawaiiButton variant="gold" size="md" fullWidth onClick={onCashIn}>
-                💎 Cash In · Tier 3
+                💎 Cash In · LVL 3
               </KawaiiButton>
             </>
           ) : bead.isRainbow ? (
@@ -278,11 +278,11 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                 {canCashTier && (
                   <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
-                    💎 Cash In · Tier {tier}
+                    💎 Cash In · LVL {tier}
                   </KawaiiButton>
                 )}
                 <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
-                  🎰 Keep · Tier 1
+                  🎰 Keep · LVL 1
                 </KawaiiButton>
               </div>
             </>
@@ -293,17 +293,17 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', lineHeight: 1.3 }}>
                 {canCashTier
-                  ? `Cash in your matching ${beadName} beads for a Tier ${tier} spin — or keep them for Tier 1.`
-                  : 'Spin now at Tier 1, or keep saving to match beads for higher tiers!'}
+                  ? `Cash in your matching ${beadName} beads for a Level ${tier} spin — or keep them for Level 1.`
+                  : 'Spin now at Level 1, or keep saving to match beads for higher levels!'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                 {canCashTier && (
                   <KawaiiButton variant="mint" size="md" fullWidth onClick={onCashIn}>
-                    💎 Cash In · Tier {tier}
+                    💎 Cash In · LVL {tier}
                   </KawaiiButton>
                 )}
                 <KawaiiButton variant={canCashTier ? 'secondary' : 'primary'} size="md" fullWidth onClick={onKeep}>
-                  🎰 Keep · Tier 1
+                  🎰 Keep · LVL 1
                 </KawaiiButton>
               </div>
             </>
@@ -500,17 +500,10 @@ export default function HomeScreen() {
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* ── Pinned header: logo + jar + tap-a-habit (never scrolls) ── */}
-      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '14px 16px 2px' }}>
-        <img
-          src="/ui/logo.png"
-          alt="My Habit Addiction — get addicted for good this time"
-          style={{ width: '100%', maxWidth: 420, height: 'auto', margin: '0 auto', display: 'block',
-            // layered ABOVE the jar canvas: beads spawning at the canvas top
-            // fall out from behind the title art instead of appearing mid-air
-            position: 'relative', zIndex: 12,
-            filter: 'drop-shadow(0 4px 10px rgba(155,126,200,0.3))' }}
-        />
+      {/* ── Pinned header: jar + tap-a-habit (never scrolls). The title logo lives
+          on the launch splash now (LaunchSplash), freeing this space for the jar
+          and the tap-a-habit banner. ── */}
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '12px 16px 2px' }}>
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor}
           seenCount={jarSeenCount} onSeen={markJarSeen} />
         <img

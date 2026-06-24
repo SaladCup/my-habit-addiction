@@ -23,6 +23,8 @@
     "@react-three/rapier": "^2.2.0",
     "canvas-confetti": "^1.9.4",
     "get-windows": "^9.3.0",
+    "gsap": "^3.15.0",
+    "pixi-reels": "^1.1.0",
     "pixi.js": "^8.19.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

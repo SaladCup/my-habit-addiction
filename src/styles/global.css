@@ -302,40 +302,49 @@ body {
   100% { transform: scale(1.2)  rotate(0deg); }
 }
 
-/* Audio-reactive rainbow edge glow ("audiolink"): a rotating rainbow ring framing
-   the app card, its thickness/glow/opacity pulsing with the music via --audio-level
+/* Audio-reactive rainbow edge glow ("audiolink"): a rotating rainbow frame hugging
+   the true WINDOW edge, its glow/opacity pulsing with the music via --audio-level
    (set each frame by AudioRainbow.jsx). Breathes gently when there's no audio.
-   Lives INSIDE .app-shell (position:absolute) so it hugs the card edge, not the
-   window/viewport edge, and sits BELOW the nav (z 100) and all overlays
-   (modals 300/400, streak popup 500, warning splash 999) — never painting over them. */
+   Mounted OUTSIDE the scale stage (position:fixed, top-most z) so it follows the
+   actual viewport edge at ANY window size/shape — browser, resized, letterboxed —
+   not just the scaled card. Vivid at the very edge, fading hard toward the middle. */
 @property --rb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 /* Wrapper: carries the blur ONLY. A filter on the parent is applied AFTER the
-   child's mask, so it blurs the finished band — including its edges — giving the
-   soft/blurry look. (Blurring the masked element itself only softens the colors;
-   the mask re-sharpens the edges.) */
+   child's mask, so it blurs the finished frame — including its inner falloff —
+   giving the soft/blurry look. (Blurring the masked element itself only softens
+   the colors; the mask re-sharpens the falloff.) Saturation cranked hard here
+   since only the very edge shows now. */
 .audio-rainbow {
-  position: absolute;
+  position: fixed;              /* the TRUE window/viewport edge, not the card */
   inset: 0;
-  z-index: 50;
+  z-index: 9000;               /* above the scaled app-stage (z 1) — always on top */
   pointer-events: none;
-  filter: blur(calc(4px + var(--audio-level, 0.13) * 7px)) saturate(1.0) brightness(1.03);
+  filter: blur(calc(4px + var(--audio-level, 0.13) * 7px)) saturate(2.5) brightness(1.03);
 }
-/* Inner ring: the rainbow band itself (conic gradient masked to a WIDE edge band,
-   so once the wrapper blurs it the glow stays visibly rainbow, not washed out). */
+/* Inner ring: the rainbow itself (rotating conic gradient) masked to an edge-fade
+   FRAME — four per-edge linear gradients unioned (default mask-composite), each
+   fading from opaque at the perimeter to transparent --rb-fade px inward. Using px
+   (not %) keeps the falloff depth identical on every side regardless of aspect. */
 .audio-rainbow__ring {
   position: absolute;
   inset: 0;
-  /* Narrower band than before (was 16–38px) so the frame is a slimmer ribbon. */
-  padding: calc(6px + var(--audio-level, 0.13) * 9px);
-  /* Pastel rainbow (was fully-saturated neon) — soft candy tones. */
+  --rb-fade: 32px;             /* how far the rainbow reaches inward before vanishing */
   background: conic-gradient(from var(--rb-angle),
-    #ffc4dd, #ffe0bd, #fff6c2, #c8f5d2, #c2e6ff, #ddc8ff, #ffc4dd);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  /* More translucent / faded (was ~0.92). */
-  opacity: calc(0.38 + var(--audio-level, 0.13) * 0.14);
+    #ff9ec7, #ffc093, #fff09a, #9aeab4, #93cdff, #c2a4ff, #ff9ec7);
+  /* Pure 2-stop ramp per edge: fully opaque exactly at the bleed edge, fading
+     smoothly to nothing --rb-fade px in. No intermediate stops → no hard line. */
+  -webkit-mask:
+    linear-gradient(to right,  #000, transparent var(--rb-fade)),
+    linear-gradient(to left,   #000, transparent var(--rb-fade)),
+    linear-gradient(to bottom, #000, transparent var(--rb-fade)),
+    linear-gradient(to top,    #000, transparent var(--rb-fade));
+          mask:
+    linear-gradient(to right,  #000, transparent var(--rb-fade)),
+    linear-gradient(to left,   #000, transparent var(--rb-fade)),
+    linear-gradient(to bottom, #000, transparent var(--rb-fade)),
+    linear-gradient(to top,    #000, transparent var(--rb-fade));
+  /* Stronger at the bleed edge so it actually reads (was ~0.68). */
+  opacity: calc(0.85 + var(--audio-level, 0.13) * 0.15);
   animation: rb-spin 8s linear infinite;
 }
 

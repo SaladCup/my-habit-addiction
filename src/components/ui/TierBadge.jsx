@@ -1,7 +1,7 @@
 const TIER_CONFIG = {
-  t1:      { label: 'T1',        bg: '#FFB7C5', color: '#7A2040', shadow: '#D4607A' },
-  t2:      { label: 'T2',        bg: '#C8B4E0', color: '#3D1A6E', shadow: '#8B6BAE' },
-  t3:      { label: 'T3',        bg: '#B4E0C8', color: '#1A5C3A', shadow: '#5CBFA0' },
+  t1:      { label: 'LVL 1',     bg: '#FFB7C5', color: '#7A2040', shadow: '#D4607A' },
+  t2:      { label: 'LVL 2',     bg: '#C8B4E0', color: '#3D1A6E', shadow: '#8B6BAE' },
+  t3:      { label: 'LVL 3',     bg: '#B4E0C8', color: '#1A5C3A', shadow: '#5CBFA0' },
   bonus:   { label: '🎰 BONUS',  bg: '#FFE9A0', color: '#5C3A00', shadow: '#C8A800' },
   jackpot: { label: '💎 JACKPOT',bg: '#FFD700', color: '#5C3A00', shadow: '#C8A800' },
 }

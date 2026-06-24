@@ -73,7 +73,7 @@ function CoinCounter({ from = 0, to, duration = 1400 }) {
 const RESULT_CFG = {
   t1:      { emoji: '🌸', color: '#FFB7C5', msg: 'Nice work!',    sub: 'Every habit counts!' },
   t2:      { emoji: '✦',  color: '#C8B4E0', msg: 'So good!',     sub: 'You\'re on a roll!' },
-  t3:      { emoji: '✿',  color: '#B4E0C8', msg: 'Amazing!!',    sub: 'Tier 3 — you crushed it!' },
+  t3:      { emoji: '✿',  color: '#B4E0C8', msg: 'Amazing!!',    sub: 'Level 3 — you crushed it!' },
   bonus:   { emoji: '⭐',  color: '#FFE9A0', msg: 'BONUS!',       sub: 'Lucky bonus round!' },
   jackpot: { emoji: '💎', color: '#FFD700', msg: '💎 JACKPOT!! 💎', sub: 'This almost never happens!' },
 }

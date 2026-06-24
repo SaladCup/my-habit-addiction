@@ -20,7 +20,7 @@ const STREAK_MSG = {
   10: "You need the beads and the beads need you.",
   11: "Are you feeling lucky?",
   12: "On the twelveth day of Beadmas, my true love gave to me: Addiction to my habits!",
-  13: "Today is unlucky. Don't spin Tier 3.",
+  13: "Today is unlucky. Don't spin Level 3.",
   14: "Is it gambling if it's good for me?",
 }
 const EXTRA_MSG = [

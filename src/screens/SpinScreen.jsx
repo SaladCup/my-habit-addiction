@@ -141,21 +141,12 @@ export default function SpinScreen() {
       padding: '24px 16px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
     }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center' }}>
-        <h2 style={{
-          fontFamily: "'Fredoka', cursive",
-          fontSize: 34, color: '#3D2B4F',
-          marginBottom: 8,
-        }}>
+      {/* Header — compact single line */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F', margin: 0 }}>
           ✦ SPIN TO WIN ✦
         </h2>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7' }}>
-            Active up to:
-          </span>
-          <TierBadge tier={`t${activeTier}`} />
-        </div>
+        <TierBadge tier={`t${activeTier}`} style={{ fontSize: 17, padding: '4px 12px' }} />
       </div>
 
       {/* Progressive jackpot banner — hidden in slots (the cabinet shows it) */}

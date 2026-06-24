@@ -93,7 +93,7 @@ export const FIRST_VISIT_SETTINGS = [
 
 export const REACTION_GOLD_BEAD = [
   { pose: 'surprised', text: "WAIT— is that a GOLD BEAD?! 😱 That's like a 1-in-20 pull!!" },
-  { pose: 'coin',      text: "Straight to Tier 3, baby. The universe is cheering for you. ✨ Lucky!!" },
+  { pose: 'coin',      text: "Straight to Level 3, baby. The universe is cheering for you. ✨ Lucky!!" },
 ]
 
 export const REACTION_JACKPOT = [

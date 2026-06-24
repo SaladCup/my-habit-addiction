@@ -111,7 +111,7 @@ export default function SpendScreen() {
                 : `Not enough ${coinName} — you have ${coins.toLocaleString()}`}
             </div>
           )}
-          <KawaiiButton variant="primary" size="lg" onClick={handleLog} disabled={!canLog} style={{ width: '100%' }}>
+          <KawaiiButton variant="primary" size="sm" onClick={handleLog} disabled={!canLog} style={{ width: '100%' }}>
             💸 Log it
           </KawaiiButton>
         </PixelPanel>
@@ -157,7 +157,7 @@ export default function SpendScreen() {
               : <>Block distracting apps &amp; sites when you run low on {coinName}.</>}
           </div>
         </div>
-        <KawaiiButton variant="primary" size="md" onClick={() => navigate('/rotblock')} style={{ width: '100%', marginTop: 12 }}>
+        <KawaiiButton variant="primary" size="sm" onClick={() => navigate('/rotblock')} style={{ width: '100%', marginTop: 8 }}>
           {rbOn ? 'Manage RotBlock →' : 'Set up RotBlock →'}
         </KawaiiButton>
       </PixelPanel>
@@ -168,9 +168,9 @@ export default function SpendScreen() {
 const inputStyle = {
   flex: 1,
   fontFamily: 'Mulish, sans-serif',
-  fontSize: 18,
-  padding: '10px 12px',
-  borderRadius: 12,
+  fontSize: 15,
+  padding: '7px 10px',
+  borderRadius: 10,
   border: '2px solid #C8B4E0',
   background: '#FFF',
   color: '#3D2B4F',

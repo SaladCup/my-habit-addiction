@@ -36,6 +36,7 @@ import UpdatePrompt       from './components/UpdatePrompt'
 import VisualNovel        from './components/VisualNovel'
 import SpotlightTour      from './components/SpotlightTour'
 import AppScaleStage      from './components/AppScaleStage'
+import LaunchSplash        from './components/LaunchSplash'
 import { ONBOARDING_INTRO, NAV_TOUR, ONBOARDING_ROTBLOCK } from './content/habitChanScript'
 
 /* global __APP_VERSION__ -- replaced at build time by Vite's define (see vite.config) */
@@ -150,7 +151,6 @@ function AppShell({ showWarning }) {
       <MusicController />
       <RotBlockEnforcer />
       <RotBlockBridge />
-      <AudioRainbow />
       <UpdatePrompt />
       <main className="screen">
         <Routes>
@@ -232,12 +232,16 @@ export default function App() {
       <div className="dreamy-backdrop" />
       {/* One scale stage: everything inside scales together to fit any window/display. */}
       <AppScaleStage>
+        <LaunchSplash />
         {showWarning && <WarningSplash onDismiss={dismissWarning} />}
         <HashRouter>
           <AppShell showWarning={showWarning} />
         </HashRouter>
         {!showWarning && !streakDone && onboardingComplete && <StreakPopup onClose={() => setStreakDone(true)} />}
       </AppScaleStage>
+      {/* Rainbow window-frame: OUTSIDE the scale stage so it hugs the true window
+          edge (not the scaled card) — frames the viewport at any size/shape, on top. */}
+      <AudioRainbow />
     </>
   )
 }

@@ -350,14 +350,14 @@ export function getWheelStopAngle(awardedResult, rawResult, isNearMiss, segments
  * then reel symbols are chosen to match/show that outcome.
  */
 export const SLOT_SYMBOLS = [
-  { id: 'sakura',   emoji: '🌸', tier: 't1',      weight: 30, coins: 25 },
-  { id: 'heart',    emoji: '💗', tier: 't1',      weight: 25, coins: 30 },
-  { id: 'star',     emoji: '⭐', tier: 't2',      weight: 20, coins: 40 },
-  { id: 'butterfly',emoji: '🦋', tier: 't2',      weight: 15, coins: 50 },
-  { id: 'ribbon',   emoji: '🎀', tier: 't3',      weight: 8,  coins: 70 },
-  { id: 'moon',     emoji: '🌙', tier: 't3',      weight: 6,  coins: 90 },
-  { id: 'bonus',    emoji: '🎰', tier: 'bonus',   weight: 4,  coins: 0  },
-  { id: 'gold',     emoji: '✨', tier: 'jackpot', weight: 1,  coins: 0  },
+  { id: 'sakura',    emoji: '🌸', img: '/slots/sakura.png',   tier: 't1',      weight: 30, coins: 25 },
+  { id: 'heart',     emoji: '💗', img: '/slots/cherry.png',   tier: 't1',      weight: 25, coins: 30 },
+  { id: 'star',      emoji: '⭐', img: '/slots/star.png',     tier: 't2',      weight: 20, coins: 40 },
+  { id: 'butterfly', emoji: '🦋', img: '/slots/butterfly.png',tier: 't2',      weight: 15, coins: 50 },
+  { id: 'ribbon',    emoji: '🎀', img: '/slots/bow.png',      tier: 't3',      weight: 8,  coins: 70 },
+  { id: 'moon',      emoji: '🌙', img: '/slots/moon.png',     tier: 't3',      weight: 6,  coins: 90 },
+  { id: 'bonus',     emoji: '🎰', img: '/slots/bonus.png',    tier: 'bonus',   weight: 4,  coins: 0  },
+  { id: 'gold',      emoji: '✨', img: '/slots/seven.png',    tier: 'jackpot', weight: 1,  coins: 0  },
 ]
 
 // Human names for win-explanation copy.

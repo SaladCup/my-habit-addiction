@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const TIER_LABELS = { t2: 'T2', t3: 'T3', jackpot: '💎 JACKPOT', bonus: '🎰 BONUS' }
+const TIER_LABELS = { t2: 'LVL 2', t3: 'LVL 3', jackpot: '💎 JACKPOT', bonus: '🎰 BONUS' }
 
 export default function NearMissOverlay({ show, higherTier, onDone }) {
   const [visible, setVisible] = useState(false)
