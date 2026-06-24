@@ -69,12 +69,19 @@ let _gsapHijacked = false
 let _activeApp = null
 
 // ── Texture cache (survives remounts) ─────────────────────
+// Resolve each symbol path to a FULLY-QUALIFIED url via the browser before handing
+// it to Pixi. In the packaged app assets are served over the custom app:// scheme,
+// and Pixi's OWN url resolver drops the host for that scheme ('/slots/x.png' →
+// 'app://slots/x.png' instead of 'app://bundle/slots/x.png') → 404. The browser's
+// new URL() resolves it correctly (same as every <img> in the app), and Pixi leaves
+// an already-absolute url untouched. Works unchanged in the http launcher too.
+const _resolveAsset = (p) => new URL(p, document.baseURI).href
 let _texPromise = null
 function loadTextures() {
   if (!_texPromise) {
     _texPromise = (async () => {
       const out = {}
-      await Promise.all(SLOT_SYMBOLS.map(async (s) => { out[s.id] = await Assets.load(s.img) }))
+      await Promise.all(SLOT_SYMBOLS.map(async (s) => { out[s.id] = await Assets.load(_resolveAsset(s.img)) }))
       return out
     })()
   }
