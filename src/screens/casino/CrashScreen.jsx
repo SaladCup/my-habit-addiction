@@ -209,42 +209,48 @@ export default function CrashScreen() {
         )}
       </div>
 
-      {running && (
-        <div style={{ width: '100%', maxWidth: 420 }}>
-          <KawaiiButton variant="gold" size="lg" fullWidth onClick={() => cashOut()}>
-            💰 CASH OUT {Math.floor(staked * mult).toLocaleString()} <CoinIcon />
-          </KawaiiButton>
+      {/* Controls + primary action in ONE consistent block so the action button
+          NEVER changes position between phases. (Bug: during a run the bet controls
+          vanished and the CASH OUT button floated up under the graph, so the button
+          you press jumped between LAUNCH and CASH OUT.) The auto-cashout row and the
+          BetBar always reserve their space; they're hidden/dimmed when not usable. */}
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{
+          marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          visibility: phase === 'betting' ? 'visible' : 'hidden',
+        }}>
+          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>Auto cash-out at</span>
+          <input
+            type="number" min={1.01} step={0.1} placeholder="—"
+            value={auto} onChange={e => setAuto(e.target.value)} disabled={phase !== 'betting'}
+            style={{ width: 70, fontFamily: 'Mulish, sans-serif', fontSize: 16, textAlign: 'center', padding: '6px 8px', border: '2px solid #D8C4EC', borderRadius: 10, background: '#FFF5F9', color: '#3D2B4F', outline: 'none' }}
+          />
+          <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>× (optional)</span>
         </div>
-      )}
-
-      {(phase === 'betting' || phase === 'cashed' || phase === 'busted') && (
-        <>
-          {phase === 'betting' && (
-            <div style={{ width: '100%', maxWidth: 420, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>Auto cash-out at</span>
-              <input
-                type="number" min={1.01} step={0.1} placeholder="—"
-                value={auto} onChange={e => setAuto(e.target.value)}
-                style={{ width: 70, fontFamily: 'Mulish, sans-serif', fontSize: 16, textAlign: 'center', padding: '6px 8px', border: '2px solid #D8C4EC', borderRadius: 10, background: '#FFF5F9', color: '#3D2B4F', outline: 'none' }}
-              />
-              <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7' }}>× (optional)</span>
-            </div>
-          )}
+        {/* bet sliders — dimmed + inert during a run, but their space stays so nothing reflows */}
+        <div style={{ opacity: running ? 0.4 : 1, pointerEvents: running ? 'none' : 'auto', transition: 'opacity 150ms' }}>
           <BetBar bet={bet} setBet={setBet} balance={balance} min={MIN_BET} />
-          <div style={{ marginTop: 16, width: '100%', maxWidth: 420 }}>
-            <KawaiiButton variant="primary" size="lg" fullWidth disabled={phase === 'betting' && !canLaunch} onClick={phase === 'betting' ? launch : reset}>
-              {phase === 'betting'
+        </div>
+        {/* ONE action button — same position in every phase */}
+        <div style={{ marginTop: 16 }}>
+          <KawaiiButton
+            variant={running ? 'gold' : 'primary'} size="lg" fullWidth
+            disabled={phase === 'betting' && !canLaunch}
+            onClick={running ? () => cashOut() : (phase === 'betting' ? launch : reset)}
+          >
+            {running
+              ? <>💰 CASH OUT {Math.floor(staked * mult).toLocaleString()} <CoinIcon /></>
+              : phase === 'betting'
                 ? (tooPoor ? 'NOT ENOUGH COINS' : <>🚀 LAUNCH FOR {bet.toLocaleString()} <CoinIcon /></>)
                 : '↻ PLAY AGAIN'}
-            </KawaiiButton>
+          </KawaiiButton>
+        </div>
+        {tooPoor && phase === 'betting' && (
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+            Go do a habit to earn more coins 💪
           </div>
-          {tooPoor && phase === 'betting' && (
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
-              Go do a habit to earn more coins 💪
-            </div>
-          )}
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }
