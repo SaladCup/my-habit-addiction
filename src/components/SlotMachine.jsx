@@ -37,25 +37,43 @@ const CANVAS_H = ROWS * CELL + (ROWS - 1) * GAP + FRAME * 2
 // ── Win-line drawing ──────────────────────────────────────
 // Distinct color per winning line so the reel rings + the breakdown rows match.
 const LINE_COLORS = ['#FFD54A', '#5CE1E6', '#FF7FB6', '#A98BFF', '#7CFF9B', '#FF9F5A', '#6BC6FF', '#FFE27A']
-// Stage-space center of grid cell (row, col) — overlay sits at stage origin, the
-// reelSet at (FRAME, FRAME), so a symbol center is FRAME + local center.
+// Center of grid cell (row, col) in canvas px — the SVG overlay sits exactly over
+// the reel canvas (same CANVAS_W×H box), so a cell center is FRAME + local center.
 function cellCenter(row, col) {
   return [FRAME + col * (CELL + GAP) + CELL / 2, FRAME + row * (CELL + GAP) + CELL / 2]
 }
-// Draw one win onto the overlay: a glowing line connecting the winning symbols
-// (skip for the scatter bonus — those cells aren't a line) + a ring on each.
-function drawWin(g, win, color) {
-  const pts = win.cells.map(([r, c]) => cellCenter(r, c))
-  const drawLine = !!win.line && pts.length >= 2 && win.special !== 'bonus'
-  if (drawLine) {
-    const path = () => { g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]) }
-    path(); g.stroke({ width: 11, color, alpha: 0.22, cap: 'round', join: 'round' })  // glow
-    path(); g.stroke({ width: 5, color, alpha: 0.95, cap: 'round', join: 'round' })   // core
-  }
-  for (const [x, y] of pts) {
-    g.circle(x, y, CELL * 0.46).stroke({ width: 8, color, alpha: 0.22 })   // glow ring
-    g.circle(x, y, CELL * 0.46).stroke({ width: 4, color, alpha: 0.98 })   // core ring
-  }
+// An SVG overlay over the reels that draws, per winning line, a glowing connector
+// through the winning symbols + a ring on each. Driven by React state (the wins
+// revealed so far), so the lines ACCUMULATE during the reveal and STAY on the
+// settled board until the next spin clears them. Scatter bonus = rings only.
+function WinLineOverlay({ wins }) {
+  if (!wins?.length) return null
+  return (
+    <svg
+      width={CANVAS_W} height={CANVAS_H} viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+      style={{ position: 'absolute', left: 0, top: 0, zIndex: 2, pointerEvents: 'none' }}
+    >
+      {wins.map((w, i) => {
+        const pts = (w.cells || []).map(([r, c]) => cellCenter(r, c))
+        if (!pts.length) return null
+        const color = w.color || '#FFD54A'
+        const showLine = !!w.line && pts.length >= 2 && w.special !== 'bonus'
+        const poly = pts.map(p => p.join(',')).join(' ')
+        return (
+          <g key={i}>
+            {showLine && <polyline points={poly} fill="none" stroke={color} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" opacity="0.28" />}
+            {showLine && <polyline points={poly} fill="none" stroke={color} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />}
+            {pts.map(([x, y], j) => (
+              <g key={j}>
+                <circle cx={x} cy={y} r={CELL * 0.46} fill="none" stroke={color} strokeWidth="8" opacity="0.28" />
+                <circle cx={x} cy={y} r={CELL * 0.46} fill="none" stroke={color} strokeWidth="4" />
+              </g>
+            ))}
+          </g>
+        )
+      })}
+    </svg>
+  )
 }
 
 // ── Symbols / fills ───────────────────────────────────────
@@ -113,7 +131,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const hostRef    = useRef(null)
   const appRef     = useRef(null)
   const reelSetRef = useRef(null)
-  const overlayRef = useRef(null)   // win rings + connecting lines, drawn over the reels
 
   const [ready, setReady]   = useState(false)
   const [index, setIndex]   = useState(0)
@@ -172,11 +189,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         reelSet.y = FRAME
         app.stage.addChild(reelSet)
 
-        // Win-line overlay sits above the reels (stage origin, unmasked).
-        const overlay = new Graphics()
-        app.stage.addChild(overlay)
-        overlayRef.current = overlay
-
         for (const reel of reelSet.reels) {
           reel.events.on('phase:enter', (name) => {
             const on = name === 'spin'
@@ -203,7 +215,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       if (a) { if (_activeApp === a) _activeApp = null; try { a.destroy(true) } catch { /* */ } }
       appRef.current = null
       reelSetRef.current = null
-      overlayRef.current = null
     }
   }, [])
 
@@ -229,8 +240,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     setTimeout(() => setShaking(false), 360)
     playSpinStart()
 
-    try { overlayRef.current?.clear() } catch { /* */ }
-
     const brew = computeBrew(spin.grid, spin.coins)
 
     const spinPromise = reelSet.spin()
@@ -251,22 +260,16 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     await sleep(420)
 
     const wins = spin.wins || []
-    const overlay = overlayRef.current
-    if (wins.length && overlay) {
-      const per = wins.length > 5 ? 340 : 600
-      // Show each winning line one at a time — ring its symbols + connect them —
-      // so you can read each shape, in sync with its breakdown row.
+    if (wins.length) {
+      const per = wins.length > 5 ? 360 : 620
+      // Reveal each winning line one at a time (ring + connector via the SVG
+      // overlay, in sync with its breakdown row). They ACCUMULATE and stay drawn
+      // on the settled board — no longer cleared until the next spin.
       for (let i = 0; i < wins.length; i++) {
         const color = LINE_COLORS[i % LINE_COLORS.length]
-        try { overlay.clear(); drawWin(overlay, wins[i], color) } catch { /* */ }
         setActiveWins(prev => [...prev, { ...wins[i], color }])
         playLineWin(i)
         await sleep(per)
-      }
-      // Then light them ALL up together for the payoff shot.
-      if (wins.length > 1 && wins.length <= 6) {
-        try { overlay.clear(); wins.forEach((w, i) => drawWin(overlay, w, LINE_COLORS[i % LINE_COLORS.length])) } catch { /* */ }
-        await sleep(700)
       }
     }
 
@@ -286,7 +289,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     }
 
     await sleep(spin.isJackpot || spin.isBonus ? 1300 : 560)
-    try { overlayRef.current?.clear() } catch { /* */ }
     if (idx + 1 >= spinCount) { setPhase('done'); onComplete?.() }
     else setPhase('between')
   }
@@ -333,6 +335,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
               fontFamily: "'Fredoka', cursive", fontSize: loadError ? 12 : 15, color: loadError ? '#FF9DB0' : '#6B4FA0',
             }}>{loadError ? `reels failed: ${loadError}` : 'loading reels…'}</div>
           )}
+          <WinLineOverlay wins={activeWins} />
         </div>
 
         {/* Win breakdown */}
