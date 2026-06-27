@@ -158,10 +158,22 @@ export function resolveSlotSpin() {
   return { grid, wins, coins, summary: spinSummary(wins, coins) }
 }
 
+// Pick `n` scatter cells on distinct reels (random row each), sorted left→right —
+// so the bonus scatters land somewhere fresh every time instead of a fixed shape.
+function randomScatterCells(n) {
+  const cols = [0, 1, 2, 3, 4]
+  for (let i = 0; i < n; i++) {            // partial Fisher–Yates over the reels
+    const j = i + Math.floor(Math.random() * (cols.length - i))
+    const t = cols[i]; cols[i] = cols[j]; cols[j] = t
+  }
+  return cols.slice(0, n).sort((a, b) => a - b).map(c => [Math.floor(Math.random() * 3), c])
+}
+
 /**
  * The pre-rolled bonus/jackpot reveal grid (an EXTRA final spin that pays 0 itself —
  * bonus = a free bead, jackpot = the accumulated pool on top). Jackpot shows five
- * 7s across the middle; bonus shows three bonus scatters.
+ * 7s across the center line (the defined jackpot combo); bonus scatters three Bonus
+ * symbols at random positions.
  */
 export function buildSpecialGrid(kind) {
   const grid = [[], [], []]
@@ -172,7 +184,7 @@ export function buildSpecialGrid(kind) {
     for (let c = 0; c < 5; c++) { grid[1][c] = SYM.seven; cells.push([1, c]) }
     wins = [{ symbolId: 'seven', symbol: SYM.seven, run: 5, lineIndex: 0, line: PAYLINES[0], coins: 0, cells, hasWild: false, special: 'jackpot', label: 'FIVE Lucky 7s' }]
   } else {
-    const spots = [[0, 0], [1, 2], [2, 4]]
+    const spots = randomScatterCells(3)
     spots.forEach(([r, c]) => { grid[r][c] = SYM.bonus })
     wins = [{ symbolId: 'bonus', symbol: SYM.bonus, coins: 0, cells: spots, hasWild: false, special: 'bonus', label: 'Triple Bonus' }]
   }
