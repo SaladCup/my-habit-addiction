@@ -257,7 +257,11 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     const sleep = (ms) => new Promise(r => setTimeout(r, ms))
     setPhase('revealing')
     const spin = session.spins[idx]
-    await sleep(420)
+    const gained = spin.isJackpot ? session.jackpotAward : spin.coins
+    const won = gained > 0
+    // Short beat before the result; on a loss there's nothing to show, so keep it
+    // snappy and get the next-spin button back fast.
+    await sleep(won ? 420 : 180)
 
     const wins = spin.wins || []
     if (wins.length) {
@@ -273,8 +277,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       }
     }
 
-    const gained = spin.isJackpot ? session.jackpotAward : spin.coins
-    if (gained > 0) {
+    if (won) {
       const start = running
       const steps = Math.min(gained, 26)
       for (let s = 1; s <= steps; s++) {
@@ -284,11 +287,10 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       }
       setRun(start + gained)
       if (spin.isJackpot) playSlotWin()
-    } else {
-      await sleep(380)
     }
 
-    await sleep(spin.isJackpot || spin.isBonus ? 1300 : 560)
+    // Hold the win on screen; a loss advances almost immediately.
+    await sleep(spin.isJackpot || spin.isBonus ? 1300 : (won ? 560 : 180))
     if (idx + 1 >= spinCount) { setPhase('done'); onComplete?.() }
     else setPhase('between')
   }
