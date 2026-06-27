@@ -10,6 +10,7 @@ import { Application, Assets, Graphics, loadTextures as pixiLoadTextures } from 
 import { gsap } from 'gsap'
 import { ReelSetBuilder, SpeedPresets } from 'pixi-reels'
 import { FitSpriteSymbol } from './slots/FitSpriteSymbol'
+import SlotPayTable from './SlotPayTable'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
 import { REEL_WEIGHTS } from '../engine/slotEngine'
 import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
@@ -32,6 +33,30 @@ const FRAME = 10          // dark window padding inside the canvas
 
 const CANVAS_W = REELS * CELL + (REELS - 1) * GAP + FRAME * 2
 const CANVAS_H = ROWS * CELL + (ROWS - 1) * GAP + FRAME * 2
+
+// ── Win-line drawing ──────────────────────────────────────
+// Distinct color per winning line so the reel rings + the breakdown rows match.
+const LINE_COLORS = ['#FFD54A', '#5CE1E6', '#FF7FB6', '#A98BFF', '#7CFF9B', '#FF9F5A', '#6BC6FF', '#FFE27A']
+// Stage-space center of grid cell (row, col) — overlay sits at stage origin, the
+// reelSet at (FRAME, FRAME), so a symbol center is FRAME + local center.
+function cellCenter(row, col) {
+  return [FRAME + col * (CELL + GAP) + CELL / 2, FRAME + row * (CELL + GAP) + CELL / 2]
+}
+// Draw one win onto the overlay: a glowing line connecting the winning symbols
+// (skip for the scatter bonus — those cells aren't a line) + a ring on each.
+function drawWin(g, win, color) {
+  const pts = win.cells.map(([r, c]) => cellCenter(r, c))
+  const drawLine = !!win.line && pts.length >= 2 && win.special !== 'bonus'
+  if (drawLine) {
+    const path = () => { g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]) }
+    path(); g.stroke({ width: 11, color, alpha: 0.22, cap: 'round', join: 'round' })  // glow
+    path(); g.stroke({ width: 5, color, alpha: 0.95, cap: 'round', join: 'round' })   // core
+  }
+  for (const [x, y] of pts) {
+    g.circle(x, y, CELL * 0.46).stroke({ width: 8, color, alpha: 0.22 })   // glow ring
+    g.circle(x, y, CELL * 0.46).stroke({ width: 4, color, alpha: 0.98 })   // core ring
+  }
+}
 
 // ── Symbols / fills ───────────────────────────────────────
 // The blurred spin-fill uses the real reel weights (so the spin looks like the
@@ -88,6 +113,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const hostRef    = useRef(null)
   const appRef     = useRef(null)
   const reelSetRef = useRef(null)
+  const overlayRef = useRef(null)   // win rings + connecting lines, drawn over the reels
 
   const [ready, setReady]   = useState(false)
   const [index, setIndex]   = useState(0)
@@ -95,6 +121,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const [running, setRun]   = useState(0)
   const [activeWins, setActiveWins] = useState([])
   const [shaking, setShaking] = useState(false)
+  const [showPays, setShowPays] = useState(false)
   const [loadError, setLoadError] = useState(null)   // surface init failures instead of hanging
 
   const current = session?.spins?.[index] || null
@@ -145,6 +172,11 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         reelSet.y = FRAME
         app.stage.addChild(reelSet)
 
+        // Win-line overlay sits above the reels (stage origin, unmasked).
+        const overlay = new Graphics()
+        app.stage.addChild(overlay)
+        overlayRef.current = overlay
+
         for (const reel of reelSet.reels) {
           reel.events.on('phase:enter', (name) => {
             const on = name === 'spin'
@@ -171,6 +203,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       if (a) { if (_activeApp === a) _activeApp = null; try { a.destroy(true) } catch { /* */ } }
       appRef.current = null
       reelSetRef.current = null
+      overlayRef.current = null
     }
   }, [])
 
@@ -196,7 +229,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     setTimeout(() => setShaking(false), 360)
     playSpinStart()
 
-    try { reelSet.spotlight.hide() } catch { /* */ }
+    try { overlayRef.current?.clear() } catch { /* */ }
 
     const brew = computeBrew(spin.grid, spin.coins)
 
@@ -215,17 +248,25 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     const sleep = (ms) => new Promise(r => setTimeout(r, ms))
     setPhase('revealing')
     const spin = session.spins[idx]
-    const reelSet = reelSetRef.current
     await sleep(420)
 
     const wins = spin.wins || []
-    if (wins.length && reelSet) {
-      const groups = wins.map(w => ({ positions: w.cells.map(([r, c]) => ({ reelIndex: c, rowIndex: r })) }))
-      try { reelSet.spotlight.cycle(groups, { displayDuration: 900, gapDuration: 180, cycles: 1 }) } catch { /* */ }
+    const overlay = overlayRef.current
+    if (wins.length && overlay) {
+      const per = wins.length > 5 ? 340 : 600
+      // Show each winning line one at a time — ring its symbols + connect them —
+      // so you can read each shape, in sync with its breakdown row.
       for (let i = 0; i < wins.length; i++) {
-        setActiveWins(prev => [...prev, wins[i]])
+        const color = LINE_COLORS[i % LINE_COLORS.length]
+        try { overlay.clear(); drawWin(overlay, wins[i], color) } catch { /* */ }
+        setActiveWins(prev => [...prev, { ...wins[i], color }])
         playLineWin(i)
-        await sleep(340)
+        await sleep(per)
+      }
+      // Then light them ALL up together for the payoff shot.
+      if (wins.length > 1 && wins.length <= 6) {
+        try { overlay.clear(); wins.forEach((w, i) => drawWin(overlay, w, LINE_COLORS[i % LINE_COLORS.length])) } catch { /* */ }
+        await sleep(700)
       }
     }
 
@@ -245,7 +286,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     }
 
     await sleep(spin.isJackpot || spin.isBonus ? 1300 : 560)
-    try { reelSetRef.current?.spotlight.hide() } catch { /* */ }
+    try { overlayRef.current?.clear() } catch { /* */ }
     if (idx + 1 >= spinCount) { setPhase('done'); onComplete?.() }
     else setPhase('between')
   }
@@ -275,6 +316,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
               <span key={running} style={{ animation: 'coin-pop 0.25s ease-out', display: 'inline-block' }}>{running}</span>
             </div>
           </div>
+          <button onClick={() => setShowPays(true)} aria-label="Pay table" title="Pay table" style={infoBtn}>ⓘ</button>
         </div>
 
         {/* Pixi reel canvas */}
@@ -303,6 +345,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           }}>
             {activeWins.map((w, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: "'Fredoka', cursive", fontSize: 15, color: '#3D2B4F' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 5, flexShrink: 0, background: w.color || '#5CBFA0', boxShadow: `0 0 6px ${w.color || '#5CBFA0'}` }} />
                 {w.symbol?.img
                   ? <img src={w.symbol.img} alt={w.symbol.id} style={{ width: 22, height: 22, objectFit: 'contain' }} />
                   : <span>{w.symbol?.emoji}</span>}
@@ -345,6 +388,8 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
       {phase === 'done' && session.isBonus && (<div style={banner('#FFE9A0', '#5C3A00')}>⭐ BONUS ROUND! ⭐</div>)}
       {phase === 'done' && !session.isJackpot && !session.isBonus && (<div style={banner('#B4E0C8', '#1A5C3A')}>✦ YOU WON {running} COINS! ✦</div>)}
 
+      {showPays && <SlotPayTable onClose={() => setShowPays(false)} />}
+
       <style>{`
         @keyframes spin-btn-pulse {
           0%, 100% { box-shadow: 0 5px 0 #9A2550, 0 8px 20px rgba(224,85,128,0.4); }
@@ -357,6 +402,12 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
 // ── Styles ────────────────────────────────────────────────
 const displayBox = { flex: 1, background: '#0D0520', borderRadius: 10, border: '1.5px solid #3A1560', padding: '6px 10px', textAlign: 'center' }
+const infoBtn = {
+  flexShrink: 0, width: 34, alignSelf: 'stretch',
+  background: '#0D0520', borderRadius: 10, border: '1.5px solid #3A1560',
+  color: '#FFE9A0', fontSize: 17, cursor: 'pointer', lineHeight: 1,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
 const displayLabel = { fontFamily: 'Mulish, sans-serif', fontSize: 10, color: '#6B4FA0', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }
 const displayValue = { fontFamily: "'Fredoka', cursive", fontSize: 19, color: '#FFE9A0', textShadow: '0 0 8px rgba(255,215,0,0.55)', letterSpacing: '0.02em' }
 const spinBtn = {
