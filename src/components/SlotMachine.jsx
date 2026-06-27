@@ -11,6 +11,7 @@ import { gsap } from 'gsap'
 import { ReelSetBuilder, SpeedPresets } from 'pixi-reels'
 import { FitSpriteSymbol } from './slots/FitSpriteSymbol'
 import { SLOT_SYMBOLS } from '../engine/gameLogic'
+import { REEL_WEIGHTS } from '../engine/slotEngine'
 import { playSpinStart, playReelStop, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
 
 // CRITICAL for the packaged app: assets are served over the custom app:// protocol.
@@ -23,52 +24,42 @@ pixiLoadTextures.config.preferWorkers = false
 pixiLoadTextures.config.preferCreateImageBitmap = false
 
 // ── Layout ────────────────────────────────────────────────
-const REELS        = 5
-const ROWS         = 3
-const CORE_OFFSET  = 1          // engine col c  →  display reel c + 1
-const CELL         = 70         // px square cell
-const GAP          = 4          // gap between reels (and rows)
-const FRAME        = 10         // dark window padding inside the canvas
+const REELS = 5
+const ROWS  = 3
+const CELL  = 70          // px square cell
+const GAP   = 4           // gap between reels (and rows)
+const FRAME = 10          // dark window padding inside the canvas
 
 const CANVAS_W = REELS * CELL + (REELS - 1) * GAP + FRAME * 2
 const CANVAS_H = ROWS * CELL + (ROWS - 1) * GAP + FRAME * 2
 
-// ── Symbols ───────────────────────────────────────────────
-// Decorative outer reels + the blurred spin-fill only ever show fillers
-// (t1–t3). Bonus/jackpot are placed deliberately via setResult, never random.
-const FILLER_IDS = SLOT_SYMBOLS.filter(s => ['t1', 't2', 't3'].includes(s.tier)).map(s => s.id)
-// Symbols missing from .weights() default to 10, so bonus/gold would otherwise
-// flash by during the spin and on the resting frame. Force them to 0 — they only
-// ever appear when deliberately placed via setResult (jackpot/bonus sessions).
-const FILL_WEIGHTS = Object.fromEntries(
-  SLOT_SYMBOLS.map(s => [s.id, FILLER_IDS.includes(s.id) ? s.weight : 0]),
-)
-const rndFillerId = () => FILLER_IDS[Math.floor(Math.random() * FILLER_IDS.length)]
-const fillerFrame = () => Array.from({ length: REELS }, () => ({ visible: [rndFillerId(), rndFillerId(), rndFillerId()] }))
+// ── Symbols / fills ───────────────────────────────────────
+// The blurred spin-fill uses the real reel weights (so the spin looks like the
+// result distribution). `bonus` is special-only (weight 0). The idle/resting frame
+// uses non-wild, non-bonus fillers.
+const FILL_WEIGHTS = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s.id === 'bonus' ? 0 : (REEL_WEIGHTS[s.id] || 0)]))
+const IDLE_IDS = SLOT_SYMBOLS.filter(s => s.id !== 'bonus' && s.id !== 'wild').map(s => s.id)
+const rndIdle = () => IDLE_IDS[Math.floor(Math.random() * IDLE_IDS.length)]
+const idleFrame = () => Array.from({ length: REELS }, () => ({ visible: [rndIdle(), rndIdle(), rndIdle()] }))
 
-// Engine 3×3 grid (cells are symbol objects) → 5 ColumnTargets, top-to-bottom.
+// Engine grid is rows×reels of symbol OBJECTS → one ColumnTarget per reel.
 function buildResultCols(grid) {
-  const cols = []
-  for (let d = 0; d < REELS; d++) {
-    const coreCol = d - CORE_OFFSET
-    if (coreCol < 0 || coreCol > 2) {
-      cols.push({ visible: [rndFillerId(), rndFillerId(), rndFillerId()] })
-    } else {
-      cols.push({ visible: [grid[0][coreCol].id, grid[1][coreCol].id, grid[2][coreCol].id] })
-    }
-  }
-  return cols
+  return Array.from({ length: REELS }, (_, c) => ({
+    visible: [grid[0][c].id, grid[1][c].id, grid[2][c].id],
+  }))
 }
 
-// "Brewing" = first two core reels match on any row → tease the deciding reel.
-function computeBrewing(grid) {
-  for (let r = 0; r < ROWS; r++) {
-    const a = grid[r][0], b = grid[r][1]
-    if (a && b && a.id === b.id) {
-      return { brewing: true, willWin: !!(grid[r][2] && grid[r][2].id === a.id) }
-    }
+// "Brewing" = a pay symbol lands on reels 0 AND 1 (wild bridges) → a combo is
+// building, so tease a later reel for suspense. willWin = the spin actually pays.
+function computeBrew(grid, coins) {
+  const idsOn = (c) => new Set([0, 1, 2].map(r => grid[r][c].id))
+  const r0 = idsOn(0), r1 = idsOn(1)
+  let brewing = false
+  for (const id of r0) {
+    if (id === 'bonus') continue
+    if (id === 'wild' || r1.has(id) || r1.has('wild')) { brewing = true; break }
   }
-  return { brewing: false, willWin: false }
+  return { brewing, willWin: coins > 0 }
 }
 
 // ── Shared GSAP driver: one global updateRoot, fed by the active app ticker ──
@@ -76,12 +67,9 @@ let _gsapHijacked = false
 let _activeApp = null
 
 // ── Texture cache (survives remounts) ─────────────────────
-// Resolve each symbol path to a FULLY-QUALIFIED url via the browser before handing
-// it to Pixi. In the packaged app assets are served over the custom app:// scheme,
-// and Pixi's OWN url resolver drops the host for that scheme ('/slots/x.png' →
-// 'app://slots/x.png' instead of 'app://bundle/slots/x.png') → 404. The browser's
-// new URL() resolves it correctly (same as every <img> in the app), and Pixi leaves
-// an already-absolute url untouched. Works unchanged in the http launcher too.
+// Pre-resolve each symbol path to a FULLY-QUALIFIED url via the browser before
+// handing it to Pixi — in the packaged app Pixi's own resolver drops the app:// host
+// ('/slots/x.png' → 'app://slots/x.png', 404). new URL() resolves it correctly.
 const _resolveAsset = (p) => new URL(p, document.baseURI).href
 let _texPromise = null
 function loadTextures() {
@@ -105,7 +93,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const [index, setIndex]   = useState(0)
   const [phase, setPhase]   = useState('ready')   // ready | spinning | revealing | between | done
   const [running, setRun]   = useState(0)
-  const [activeLines, setActiveLines] = useState([])
+  const [activeWins, setActiveWins] = useState([])
   const [shaking, setShaking] = useState(false)
   const [loadError, setLoadError] = useState(null)   // surface init failures instead of hanging
 
@@ -119,63 +107,58 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
     ;(async () => {
       try {
-      const textures = await loadTextures()
-      if (cancelled || !hostRef.current) return
+        const textures = await loadTextures()
+        if (cancelled || !hostRef.current) return
 
-      app = new Application()
-      await app.init({
-        width: CANVAS_W, height: CANVAS_H,
-        backgroundAlpha: 0, antialias: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true,
-      })
-      if (cancelled) { app.destroy(true); return }
-
-      // Drive GSAP from the active Pixi ticker (pixi-reels animates via GSAP).
-      if (!_gsapHijacked) { gsap.ticker.remove(gsap.updateRoot); _gsapHijacked = true }
-      _activeApp = app
-      app.ticker.add(() => { if (_activeApp === app) gsap.updateRoot(app.ticker.lastTime / 1000) })
-
-      hostRef.current.appendChild(app.canvas)
-
-      // Dark reel window + middle-row payline band, drawn behind the reels.
-      const bg = new Graphics()
-      bg.roundRect(0, 0, CANVAS_W, CANVAS_H, 14).fill(0x080318)
-      bg.roundRect(FRAME, FRAME + CELL + GAP, CANVAS_W - FRAME * 2, CELL, 4)
-        .fill({ color: 0xffc83d, alpha: 0.06 })
-      app.stage.addChild(bg)
-
-      reelSet = new ReelSetBuilder()
-        .reels(REELS).visibleRows(ROWS)
-        .symbolSize(CELL, CELL).symbolGap(GAP, GAP)
-        .symbols((reg) => {
-          for (const s of SLOT_SYMBOLS) reg.register(s.id, FitSpriteSymbol, { textures })
+        app = new Application()
+        await app.init({
+          width: CANVAS_W, height: CANVAS_H,
+          backgroundAlpha: 0, antialias: true,
+          resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true,
         })
-        .weights(FILL_WEIGHTS)
-        .initialFrame(fillerFrame())
-        .speed('normal', SpeedPresets.NORMAL)
-        .speed('turbo', SpeedPresets.TURBO)
-        .ticker(app.ticker)
-        .build()
+        if (cancelled) { app.destroy(true); return }
 
-      reelSet.x = FRAME
-      reelSet.y = FRAME
-      app.stage.addChild(reelSet)
+        if (!_gsapHijacked) { gsap.ticker.remove(gsap.updateRoot); _gsapHijacked = true }
+        _activeApp = app
+        app.ticker.add(() => { if (_activeApp === app) gsap.updateRoot(app.ticker.lastTime / 1000) })
 
-      // Blur each cell while its reel spins; crisp on landing. Per-reel phase.
-      for (const reel of reelSet.reels) {
-        reel.events.on('phase:enter', (name) => {
-          const on = name === 'spin'
-          for (let row = 0; row < ROWS; row++) {
-            const sym = reel.getSymbolAt(row)
-            if (sym && typeof sym.setBlurred === 'function') sym.setBlurred(on)
-          }
-        })
-      }
-      reelSet.events.on('spin:reelLanded', () => playReelStop())
+        hostRef.current.appendChild(app.canvas)
 
-      appRef.current = app
-      reelSetRef.current = reelSet
-      setReady(true)
+        const bg = new Graphics()
+        bg.roundRect(0, 0, CANVAS_W, CANVAS_H, 14).fill(0x080318)
+        bg.roundRect(FRAME, FRAME + CELL + GAP, CANVAS_W - FRAME * 2, CELL, 4)
+          .fill({ color: 0xffc83d, alpha: 0.06 })
+        app.stage.addChild(bg)
+
+        reelSet = new ReelSetBuilder()
+          .reels(REELS).visibleRows(ROWS)
+          .symbolSize(CELL, CELL).symbolGap(GAP, GAP)
+          .symbols((reg) => { for (const s of SLOT_SYMBOLS) reg.register(s.id, FitSpriteSymbol, { textures }) })
+          .weights(FILL_WEIGHTS)
+          .initialFrame(idleFrame())
+          .speed('normal', SpeedPresets.NORMAL)
+          .speed('turbo', SpeedPresets.TURBO)
+          .ticker(app.ticker)
+          .build()
+
+        reelSet.x = FRAME
+        reelSet.y = FRAME
+        app.stage.addChild(reelSet)
+
+        for (const reel of reelSet.reels) {
+          reel.events.on('phase:enter', (name) => {
+            const on = name === 'spin'
+            for (let row = 0; row < ROWS; row++) {
+              const sym = reel.getSymbolAt(row)
+              if (sym && typeof sym.setBlurred === 'function') sym.setBlurred(on)
+            }
+          })
+        }
+        reelSet.events.on('spin:reelLanded', () => playReelStop())
+
+        appRef.current = app
+        reelSetRef.current = reelSet
+        setReady(true)
       } catch (err) {
         if (!cancelled) setLoadError(String(err?.message || err))
       }
@@ -207,7 +190,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     if (phase === 'between') setIndex(idx)
     const spin = session.spins[idx]
 
-    setActiveLines([])
+    setActiveWins([])
     setPhase('spinning')
     setShaking(true)
     setTimeout(() => setShaking(false), 360)
@@ -215,11 +198,10 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 
     try { reelSet.spotlight.hide() } catch { /* */ }
 
-    const brew = computeBrewing(spin.grid)
+    const brew = computeBrew(spin.grid, spin.coins)
 
     const spinPromise = reelSet.spin()
     if (brew.brewing) { try { reelSet.setAnticipation([3]) } catch { /* */ } }
-    // Small settle so the spin never feels instant even though we know the result.
     await new Promise(r => setTimeout(r, 240))
     reelSet.setResult(buildResultCols(spin.grid))
     await spinPromise
@@ -236,16 +218,14 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     const reelSet = reelSetRef.current
     await sleep(420)
 
-    const lines = spin.winningLines || []
-    if (lines.length && reelSet) {
-      const winLines = lines.map(l => ({
-        positions: l.cells.map(([r, c]) => ({ reelIndex: c + CORE_OFFSET, rowIndex: r })),
-      }))
-      try { reelSet.spotlight.cycle(winLines, { displayDuration: 900, gapDuration: 180, cycles: 1 }) } catch { /* */ }
-      for (let i = 0; i < lines.length; i++) {
-        setActiveLines(prev => [...prev, lines[i]])
+    const wins = spin.wins || []
+    if (wins.length && reelSet) {
+      const groups = wins.map(w => ({ positions: w.cells.map(([r, c]) => ({ reelIndex: c, rowIndex: r })) }))
+      try { reelSet.spotlight.cycle(groups, { displayDuration: 900, gapDuration: 180, cycles: 1 }) } catch { /* */ }
+      for (let i = 0; i < wins.length; i++) {
+        setActiveWins(prev => [...prev, wins[i]])
         playLineWin(i)
-        await sleep(360)
+        await sleep(340)
       }
     }
 
@@ -321,19 +301,21 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
             display: 'flex', flexDirection: 'column', gap: 4,
             animation: 'bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1)',
           }}>
-            {activeLines.map((l, i) => (
+            {activeWins.map((w, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: "'Fredoka', cursive", fontSize: 15, color: '#3D2B4F' }}>
-                {l.symbol.img
-                  ? <img src={l.symbol.img} alt={l.symbol.id} style={{ width: 22, height: 22, objectFit: 'contain' }} />
-                  : <span>{l.symbol.emoji}</span>}
-                <span style={{ flex: 1 }}>{l.label}</span>
-                <span style={{ color: l.special ? '#C99A00' : '#5CBFA0', fontWeight: 700 }}>
-                  {l.special ? `${l.special === 'jackpot' ? '💎 JACKPOT' : '🎰 BONUS'}!` : `+${l.coins}`}
+                {w.symbol?.img
+                  ? <img src={w.symbol.img} alt={w.symbol.id} style={{ width: 22, height: 22, objectFit: 'contain' }} />
+                  : <span>{w.symbol?.emoji}</span>}
+                <span style={{ flex: 1 }}>
+                  {w.label}{w.hasWild ? <span style={{ color: '#C77FB0', fontSize: 13 }}> · WILD ×2</span> : null}
+                </span>
+                <span style={{ color: w.special ? '#C99A00' : '#5CBFA0', fontWeight: 700 }}>
+                  {w.special ? `${w.special === 'jackpot' ? '💎 JACKPOT' : '🎰 BONUS'}!` : `+${w.coins}`}
                 </span>
               </div>
             ))}
             {current.summary && (
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', textAlign: 'center', marginTop: activeLines.length ? 2 : 0 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', textAlign: 'center', marginTop: activeWins.length ? 2 : 0 }}>
                 {current.summary}
               </div>
             )}

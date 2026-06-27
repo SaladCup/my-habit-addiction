@@ -392,7 +392,7 @@ const useStore = create(
         if (isJackpot) {
           jackpotAward = pool       // win the whole accumulated pool
           coinsAwarded = pool
-          pool = JACKPOT_SEED       // reset
+          pool = 0                  // start the progressive over at 0 when won
         }
 
         // ── Learn this user's rhythm / sitting length / return cadence ──

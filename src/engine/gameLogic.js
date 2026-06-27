@@ -5,7 +5,8 @@
  * are consistent between the wheel and slot machine.
  */
 
-import { weightedRandom, randomBetween, randomInt } from './probability.js'
+import { randomBetween, randomInt } from './probability.js'
+import { SLOT_SYMBOLS, resolveSlotSpin, buildSpecialGrid } from './slotEngine'
 
 // ── Probability table (shared by wheel AND slots) ──
 // Weights mirror the 40-segment wheel layout (equal segments → odds = count).
@@ -349,172 +350,16 @@ export function getWheelStopAngle(awardedResult, rawResult, isNearMiss, segments
  * The slot machine uses the SAME probability engine — outcome is pre-determined,
  * then reel symbols are chosen to match/show that outcome.
  */
-export const SLOT_SYMBOLS = [
-  { id: 'sakura',    emoji: '🌸', img: '/slots/sakura.png',   tier: 't1',      weight: 30, coins: 25 },
-  { id: 'heart',     emoji: '💗', img: '/slots/cherry.png',   tier: 't1',      weight: 25, coins: 30 },
-  { id: 'star',      emoji: '⭐', img: '/slots/star.png',     tier: 't2',      weight: 20, coins: 40 },
-  { id: 'butterfly', emoji: '🦋', img: '/slots/butterfly.png',tier: 't2',      weight: 15, coins: 50 },
-  { id: 'ribbon',    emoji: '🎀', img: '/slots/bow.png',      tier: 't3',      weight: 8,  coins: 70 },
-  { id: 'moon',      emoji: '🌙', img: '/slots/moon.png',     tier: 't3',      weight: 6,  coins: 90 },
-  { id: 'bonus',     emoji: '🎰', img: '/slots/bonus.png',    tier: 'bonus',   weight: 4,  coins: 0  },
-  { id: 'gold',      emoji: '✨', img: '/slots/seven.png',    tier: 'jackpot', weight: 1,  coins: 0  },
-]
-
-// Human names for win-explanation copy.
-const SYMBOL_NAME = {
-  sakura: 'Sakura', heart: 'Heart', star: 'Star', butterfly: 'Butterfly',
-  ribbon: 'Ribbon', moon: 'Moon', bonus: 'Bonus', gold: 'Gold Sparkle',
-}
-const LINE_LABEL = {
-  row0: 'Top Row', row1: 'Middle Row', row2: 'Bottom Row',
-  col0: 'Left Column', col1: 'Middle Column', col2: 'Right Column',
-  diagTLBR: 'Diagonal ↘', diagBLTR: 'Diagonal ↗',
-}
-
-const SYMBOLS_BY_TIER = {
-  t1:      SLOT_SYMBOLS.filter(s => s.tier === 't1'),
-  t2:      SLOT_SYMBOLS.filter(s => s.tier === 't2'),
-  t3:      SLOT_SYMBOLS.filter(s => s.tier === 't3'),
-  bonus:   SLOT_SYMBOLS.filter(s => s.tier === 'bonus'),
-  jackpot: SLOT_SYMBOLS.filter(s => s.tier === 'jackpot'),
-}
-
-// ─────────────────────────────────────────────
-// VIDEO SLOTS (3×3 grid, 5 paylines)
-// ─────────────────────────────────────────────
-
-// Paylines as [row, col] cell triples: 3 rows + 2 true diagonals.
-export const SLOT_PAYLINES = [
-  { id: 'row0',     cells: [[0, 0], [0, 1], [0, 2]] },
-  { id: 'row1',     cells: [[1, 0], [1, 1], [1, 2]] },
-  { id: 'row2',     cells: [[2, 0], [2, 1], [2, 2]] },
-  { id: 'col0',     cells: [[0, 0], [1, 0], [2, 0]] },
-  { id: 'col1',     cells: [[0, 1], [1, 1], [2, 1]] },
-  { id: 'col2',     cells: [[0, 2], [1, 2], [2, 2]] },
-  { id: 'diagTLBR', cells: [[0, 0], [1, 1], [2, 2]] },
-  { id: 'diagBLTR', cells: [[2, 0], [1, 1], [0, 2]] },
-]
-
-const FILLERS = SLOT_SYMBOLS.filter(s => ['t1', 't2', 't3'].includes(s.tier))
+// The reward-flow slot is now a true-RNG, 243-ways video slot. Its symbols, reel
+// strips, paytable, ways evaluation, and per-spin/special resolvers all live in
+// slotEngine.js — re-exported here so existing importers keep working.
+export { SLOT_SYMBOLS, resolveSlotSpin }
 
 // Unlocked tier → number of slot spins you get to play. Each spin is small; the
 // tier decides HOW MANY pulls, not how big each one is. Per-spin EV ≈ 42 coins,
 // so totals average T1≈125 / T2≈250 / T3≈375 ($1.25 / $2.50 / $3.75).
 export const SPINS_PER_TIER = { 1: 3, 2: 6, 3: 9 }
 
-// ── Paytable-driven slot model ──
-// Each symbol pays its fixed value; a payline pays its symbol's value; a spin's
-// coins = SUM of matching lines. Monte-Carlo-tuned to reproduce the prior
-// distribution (per-tier avg ≈ 122/251/381, bonus ~15%, jackpot ~1.2%) within ~1.5%.
-// Skewed toward the SMALL symbols so wins land OFTEN but each is modest; the big
-// symbols (ribbon/moon) are rarer, so a big line feels special. The long-run total
-// is held constant by pairing this with the line-count distribution below
-// (E[coins/spin] = E[lines] × E[value] ≈ 1.16 × 37.0 ≈ 42.9, same as before).
-const WIN_SYMBOL_WEIGHTS = [   // how likely each symbol is to be THE winning one
-  { id: 'sakura', weight: 34 }, { id: 'heart', weight: 28 }, { id: 'star', weight: 17 },
-  { id: 'butterfly', weight: 11 }, { id: 'ribbon', weight: 6 }, { id: 'moon', weight: 4 },
-]
-const LINE_COUNT_DIST = [       // winning lines per spin: 12% none, 60% one, 28% two
-  { value: 0, weight: 12 }, { value: 1, weight: 60 }, { value: 2, weight: 28 },
-]
-const PAY_BY_ID = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s]))
-const ROW_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('row'))
-const COL_LINES = SLOT_PAYLINES.filter(l => l.id.startsWith('col'))
-const pickWinSymbol = () =>
-  weightedRandom(WIN_SYMBOL_WEIGHTS.map(x => ({ value: PAY_BY_ID[x.id], weight: x.weight })))
-
-// Build the per-line explanation object (used by both wins and bonus/jackpot specials).
-function makeWinningLine(line, sym, special) {
-  const label = LINE_LABEL[line.id] || line.id
-  const tail = special === 'jackpot' ? 'JACKPOT!' : special === 'bonus' ? 'BONUS!' : `+${sym.coins}`
-  return {
-    lineId: line.id, index: SLOT_PAYLINES.indexOf(line), cells: line.cells,
-    symbol: sym, coins: special ? 0 : sym.coins, label, special: special || null,
-    tagText: `${label} ${sym.emoji}${sym.emoji}${sym.emoji} ${tail}`,
-  }
-}
-// One-line "why you won this" summary.
-function buildSpinSummary(winningLines) {
-  if (!winningLines.length) return 'So close — keep spinning! 💕'
-  const sp = winningLines[0].special
-  if (sp === 'jackpot') return '💎 THREE Gold Sparkles — JACKPOT! The whole pool is yours!'
-  if (sp === 'bonus') return '🎰 Triple Bonus — spin the bonus wheel for a free bead!'
-  if (winningLines.length === 1) {
-    const w = winningLines[0]
-    return `3 ${SYMBOL_NAME[w.symbol.id]}s on the ${w.label} — +${w.coins} coins!`
-  }
-  return `${winningLines.length} lines paid out — +${winningLines.reduce((s, w) => s + w.coins, 0)} coins! ✨`
-}
-
-function shuffled(arr) {
-  const a = arr.slice()
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = randomInt(0, i)
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-// Would placing `sym` at (r,c) complete any payline into 3-of-a-kind?
-function wouldCompleteLine(grid, r, c, sym) {
-  return SLOT_PAYLINES.some(line => {
-    if (!line.cells.some(([rr, cc]) => rr === r && cc === c)) return false
-    return line.cells
-      .filter(([rr, cc]) => !(rr === r && cc === c))
-      .every(([rr, cc]) => grid[rr][cc] && grid[rr][cc].id === sym.id)
-  })
-}
-
-function fillBlanks(grid) {
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      if (grid[r][c]) continue
-      let sym = FILLERS[randomInt(0, FILLERS.length - 1)]
-      for (let t = 0; t < 24 && wouldCompleteLine(grid, r, c, sym); t++) {
-        sym = FILLERS[randomInt(0, FILLERS.length - 1)]
-      }
-      grid[r][c] = sym
-    }
-  }
-}
-
-function specialLine(symbol, kind) {
-  const grid = [[null, null, null], [null, null, null], [null, null, null]]
-  const line = SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]
-  line.cells.forEach(([r, c]) => { grid[r][c] = symbol })
-  fillBlanks(grid)
-  const winningLines = [makeWinningLine(line, symbol, kind)]
-  return { grid, winningLines, summary: buildSpinSummary(winningLines) }
-}
-
-/**
- * Resolve ONE small slot spin (no specials — those are rolled per session).
- * Honest paytable: 0/1/2 winning lines (weighted), each placed as real 3-of-a-kind
- * of a weighted symbol; coins = SUM of those lines' symbol values. The grid is then
- * filled with non-completing fillers, so what you SEE is exactly what paid.
- * @returns {{ grid, winningLines, coins, summary }}
- */
-export function resolveSlotSpin() {
-  const grid = [[null, null, null], [null, null, null], [null, null, null]]
-  const nLines = weightedRandom(LINE_COUNT_DIST.map(x => ({ value: x.value, weight: x.weight })))
-
-  let lines = []
-  if (nLines === 1) lines = [SLOT_PAYLINES[randomInt(0, SLOT_PAYLINES.length - 1)]]  // any of 8: 3 rows, 3 cols, 2 diagonals
-  else if (nLines === 2) {
-    // two PARALLEL lines (2 rows or 2 columns) so they never cross / share a cell
-    const group = Math.random() < 0.5 ? ROW_LINES : COL_LINES
-    lines = shuffled(group).slice(0, 2)
-  }
-
-  const winningLines = lines.map(line => {
-    const sym = pickWinSymbol()
-    line.cells.forEach(([r, c]) => { grid[r][c] = sym })
-    return makeWinningLine(line, sym)
-  })
-  fillBlanks(grid)
-  const coins = winningLines.reduce((s, w) => s + w.coins, 0)
-  return { grid, winningLines, coins, summary: buildSpinSummary(winningLines) }
-}
 
 // ═════════════════════════════════════════════════════════════════════════
 // ADAPTIVE ENGAGEMENT ENGINE — reshapes the TIMING & FEEL of wins, never the total
@@ -646,44 +491,6 @@ function reshapeSessionOrder(spins, params) {
 }
 
 /**
- * Build an HONEST near-miss grid: 2-of-a-kind on the TOP ROW (columns 0 & 1) with
- * the 3rd column just missing (0 coins). Top-row + last-column shape is deliberate:
- * reels stop left→right and the final reel drops its top symbol in LAST, so the
- * player sees two match up top and the deciding symbol falls in — the "so close!".
- */
-function makeNearMissGrid() {
-  const grid = [[null, null, null], [null, null, null], [null, null, null]]
-  const sym = pickWinSymbol()
-  const r = 0
-  grid[r][0] = sym
-  grid[r][1] = sym
-  // last cell BREAKS the line: a different symbol that completes no other line
-  let breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
-  for (let t = 0; t < 24 && (breaker.id === sym.id || wouldCompleteLine(grid, r, 2, breaker)); t++) {
-    breaker = FILLERS[randomInt(0, FILLERS.length - 1)]
-  }
-  grid[r][2] = breaker
-  fillBlanks(grid)
-  return grid
-}
-
-/**
- * Convert some 0-coin spins into HONEST near-misses (visual only — coins stay 0,
- * summary stays "so close!"). Slightly likelier the longer the current dry run,
- * to sustain motivation through a cold patch without ever faking a win.
- */
-function applyNearMisses(spins, density) {
-  if (!density) return
-  let dry = 0
-  for (const sp of spins) {
-    if (sp.coins > 0 || sp.special || sp.isJackpot || sp.isBonus) { dry = 0; continue }
-    dry++
-    const p = Math.min(0.92, density + 0.10 * (dry - 1))   // run hot; near-certain deep into a dry run
-    if (Math.random() < p) { sp.grid = makeNearMissGrid(); sp.nearMiss = true }
-  }
-}
-
-/**
  * Resolve a full slots SESSION = a sequence of spins (count set by tier).
  * One bonus/jackpot is rolled for the whole session (so a bonus is exactly as
  * likely per cash-in as on the wheel), revealed as an EXTRA final spin. The
@@ -699,35 +506,30 @@ export function resolveSlotSession(activeTier = 1, luck = {}, profile = {}) {
   const tier = Math.max(1, Math.min(activeTier, 3))
   const spinCount = SPINS_PER_TIER[tier]
 
-  // Session special — same rates the wheel uses, rolled once.
+  // Bonus/jackpot are pre-rolled ONCE per session (same rates the wheel uses), so
+  // their odds and the long-run economy stay anchored while each spin is true RNG.
   const aw = getAdjustedWeights(luck)
   const awTotal = aw.reduce((s, o) => s + o.weight, 0)
   const bonusChance = aw.find(o => o.value === 'bonus').weight / awTotal
-  // Rarer base (0.6%) so the pool climbs higher between hits — rarer, BIGGER
-  // jackpots. Long-run contribution is ~unchanged (rarer × bigger pool).
   const jackpotChance = 0.006 * (1 + Math.min(luck.spinsSinceJackpot || 0, 90) / 20)
   const isJackpot = Math.random() < jackpotChance
   const isBonus = !isJackpot && Math.random() < bonusChance
 
-  // Generate the session's i.i.d. spins (total is fixed by the paytable).
+  // The session's true-RNG 243-ways spins. The session TOTAL now genuinely varies
+  // (high variance — the gamble); only the long-run average is anchored (~125/250/375).
   let spins = []
   for (let i = 0; i < spinCount; i++) spins.push(resolveSlotSpin())
 
   const params = getSlotEngineParams(profile)
-  let special = null
-  if (isJackpot) special = { ...specialLine(SYMBOLS_BY_TIER.jackpot[0], 'jackpot'), coins: 0, isJackpot: true }
-  else if (isBonus) special = { ...specialLine(SYMBOLS_BY_TIER.bonus[0], 'bonus'), coins: 0, isBonus: true }
+  spins = reshapeSessionOrder(spins, params)   // peak-end reorder (pure permutation)
 
-  spins = reshapeSessionOrder(spins, params)
-  applyNearMisses(spins, params.nearMissDensity)
-  // The special is an EXTRA final reveal (it pays 0 itself; bonus = bead,
-  // jackpot = the pool on top). The N paying spins are untouched, so a special
-  // session never costs coins — per-tier averages stay on the ~125/250/375 spec
-  // and slots match the wheel's bonus (full tier value + the bead).
-  if (special) spins.push(special)
+  // The special is an EXTRA final reveal (pays 0 itself; bonus = a free bead,
+  // jackpot = the accumulated pool on top), so a special never changes baseCoins.
+  if (isJackpot) spins.push({ ...buildSpecialGrid('jackpot'), coins: 0, isJackpot: true })
+  else if (isBonus) spins.push({ ...buildSpecialGrid('bonus'), coins: 0, isBonus: true })
 
   const baseCoins = spins.reduce((s, sp) => s + sp.coins, 0)
-  const awardedResult = isJackpot ? 'jackpot' : isBonus ? 'bonus' : (baseCoins > 0 ? 't1' : 'nothing')
+  const awardedResult = isJackpot ? 'jackpot' : isBonus ? 'bonus' : (baseCoins > 0 ? `t${tier}` : 'nothing')
   return { spinCount: spins.length, spins, baseCoins, isJackpot, isBonus, awardedResult, engineParams: params }
 }
 
