@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useRef, useLayoutEffect, lazy, Suspense }
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { BeadDisplay, KawaiiButton } from '../components/ui'
+import { playBeadDraw } from '../engine/sounds'
 // Same 3D jar as Home — so the beads you drop here are the SAME beads waiting in
 // the jar when you come back from the game.
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
@@ -19,9 +20,9 @@ export default function CashInScreen() {
   // Only reachable straight from a cash-in (cashInBeads set phase + cashedBeads).
   const [validEntry] = useState(() => session.phase === 'cashIn' && (session.cashedBeads?.length > 0))
 
-  const [release, setRelease] = useState(0)   // # of 3D marbles dropped so far
-  const [popped, setPopped]   = useState(0)   // # of PNG beads that have popped
-  const [stage, setStage]     = useState('lineup')   // 'lineup' (title up) → 'dropping'
+  const [dropped, setDropped] = useState([])  // ids of beads the player has tapped in
+  const release = dropped.length              // # of 3D marbles dropped = beads tapped in
+  const [stage, setStage]     = useState('lineup')   // 'lineup' (title up) → 'tapping'
   const [done, setDone]       = useState(false)      // all in — linger; tap to go on
 
   const wrapRef = useRef(null)
@@ -43,31 +44,32 @@ export default function CashInScreen() {
     setDims({ w: Math.round(w), h: Math.round(h) })
   }, [])
 
-  // The choreography: swoop-in → title fades → pop+drop each bead → pick a game.
+  // Swoop the beads in, then hand control to the player: the title fades and the
+  // beads become tappable (stage 'tapping').
   useEffect(() => {
     if (!validEntry) { navigate('/', { replace: true }); return }
     let cancelled = false
-    const sleep = ms => new Promise(r => setTimeout(r, ms))
-    ;(async () => {
-      await sleep(900)                       // beads swoop in & line up under the title
-      if (cancelled) return
-      setStage('dropping')                   // gold CASH IN title fades away
-      await sleep(500)
-      for (let i = 0; i < cashed.length; i++) {
-        if (cancelled) return
-        await sleep(i === 0 ? 300 : 900)     // slow, savor-able pacing between pops
-        setPopped(i + 1)                     // PNG i pops & vanishes
-        await sleep(150)                     // burst, THEN the marble appears to fall from it
-        setRelease(i + 1)                    // 3D marble i drops into the jar
-      }
-      await sleep(1400)                      // let the last marble land
-      if (cancelled) return
-      markJarSeen()                          // the cashed beads are now part of the pile
-      setDone(true)                          // linger so you can admire the jar; "Select Game" goes on
-    })()
-    return () => { cancelled = true }
+    const t = setTimeout(() => { if (!cancelled) setStage('tapping') }, 900)
+    return () => { cancelled = true; clearTimeout(t) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Once every bead has been tapped in, let the last marble land, then settle the
+  // jar and reveal "Select Game".
+  useEffect(() => {
+    if (dropped.length > 0 && dropped.length === cashed.length) {
+      const t = setTimeout(() => { markJarSeen(); setDone(true) }, 1500)
+      return () => clearTimeout(t)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dropped.length, cashed.length])
+
+  // Tapping a bead pops it and drops its marble into the jar.
+  function dropBead(b) {
+    if (stage !== 'tapping') return
+    setDropped(prev => prev.includes(b.id) ? prev : [...prev, b.id])
+    playBeadDraw(b.isGold ? 'gold' : b.isRainbow ? 'rainbow' : null)
+  }
 
   if (!validEntry) return null
 
@@ -104,7 +106,8 @@ export default function CashInScreen() {
         </div>
       </div>
 
-      {/* Cashed bead PNGs — swoop in over the neck, glow, then pop one by one */}
+      {/* Cashed bead PNGs — swoop in over the neck, glow, and wait to be tapped.
+          Tapping one pops it and drops its marble into the jar. */}
       <div style={{
         position: 'absolute', top: '25%', left: 0, right: 0, zIndex: 11,
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
@@ -113,17 +116,42 @@ export default function CashInScreen() {
         {cashed.map((b, i) => {
           const color = getBeadColor(b.slot, b.isGold)
           const glow = b.isGold ? '#FFD700' : color
+          const isDropped = dropped.includes(b.id)
+          const tappable = stage === 'tapping' && !isDropped
           return (
-            <div key={b.id} style={{ animation: `cashSwoop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.13}s both` }}>
-              <div style={{ animation: i < popped ? 'cashPop 0.3s ease-out forwards' : 'cashBeadFloat 2.4s ease-in-out infinite' }}>
-                <BeadDisplay
-                  color={color} slot={b.slot} isGold={b.isGold}
-                  style={{ width: 64, height: 64, boxShadow: `0 0 16px ${glow}, 0 0 34px ${glow}aa` }}
-                />
-              </div>
+            <div key={b.id} style={{ animation: `cashSwoop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.13}s both`, pointerEvents: tappable ? 'auto' : 'none' }}>
+              <button
+                onClick={() => dropBead(b)}
+                disabled={!tappable}
+                aria-label="Drop bead into the jar"
+                style={{ background: 'none', border: 'none', padding: 0, cursor: tappable ? 'pointer' : 'default' }}
+              >
+                <div style={{ animation: isDropped ? 'cashPop 0.3s ease-out forwards' : (tappable ? 'cashTapPulse 1.1s ease-in-out infinite' : 'cashBeadFloat 2.4s ease-in-out infinite') }}>
+                  <BeadDisplay
+                    color={color} slot={b.slot} isGold={b.isGold}
+                    style={{ width: 64, height: 64, boxShadow: tappable ? `0 0 20px ${glow}, 0 0 44px ${glow}` : `0 0 16px ${glow}, 0 0 34px ${glow}aa` }}
+                  />
+                </div>
+              </button>
             </div>
           )
         })}
+      </div>
+
+      {/* Tap prompt — shown while there are still beads to drop in */}
+      <div style={{
+        position: 'absolute', top: '40%', left: 0, right: 0, textAlign: 'center', zIndex: 11,
+        pointerEvents: 'none',
+        opacity: stage === 'tapping' && !done ? 1 : 0,
+        transition: 'opacity 400ms ease',
+      }}>
+        <span style={{
+          fontFamily: "'Fredoka', cursive", fontSize: 17, color: '#9B3D6B',
+          background: 'rgba(255,245,251,0.9)', padding: '5px 16px', borderRadius: 999,
+          boxShadow: '0 2px 8px rgba(155,126,200,0.25)',
+        }}>
+          👆 Tap each bead to drop it in! {dropped.length}/{cashed.length}
+        </span>
       </div>
 
       {/* Once everything's in the jar: linger so you can admire it, then tap to
@@ -159,6 +187,10 @@ export default function CashInScreen() {
         @keyframes cashBeadFloat {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-5px); }
+        }
+        @keyframes cashTapPulse {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50%      { transform: translateY(-5px) scale(1.08); }
         }
         @keyframes cashPop {
           0%   { transform: scale(1);   opacity: 1; }

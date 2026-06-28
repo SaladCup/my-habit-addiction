@@ -5,6 +5,7 @@ import { cashInGroupForBead } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw } from '../engine/sounds'
 import HabitChanSprite from '../components/HabitChanSprite'
+import OrbitingWallet from '../components/OrbitingWallet'
 import VisualNovel from '../components/VisualNovel'
 import { REACTION_GOLD_BEAD } from '../content/habitChanScript'
 // 3D physics jar (lazy: three.js/rapier only load once Home renders it)
@@ -77,7 +78,7 @@ function pileHeightAt(count) {
 }
 
 // ── Jar (real-time 3D glass jar — every bead physically plunks in) ──
-function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen }) {
+function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen, wallet, onOpenWallet }) {
   const W = 200, H = 291
   const JAR_PX = 225   // canvas width on screen
   // pixel band (in the 200x291 viewBox) the 3D glass occupies, for milestone
@@ -94,7 +95,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen }) {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '-8px 0 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '18px 0 0' }}>
       <div style={{ position: 'relative', width: JAR_PX, height: JAR_PX * (H / W) }}>
         {/* transparent placeholder while three.js/rapier lazy-load — NOT the old
             painted jar.png (it flashed a different jar, then the beads re-poured) */}
@@ -133,6 +134,9 @@ function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen }) {
             )
           })}
         </svg>
+
+        {/* Wallet beads orbiting the jar (replaces the old wallet bar) */}
+        <OrbitingWallet wallet={wallet} getBeadColor={getBeadColor} onOpen={onOpenWallet} />
       </div>
       {/* count BELOW the jar, pulled up into the canvas's empty bottom strip
           (glass bottom ≈ 83.5% of the box, measured) — plain HTML in flow, so
@@ -393,38 +397,6 @@ function BeadReveal({ bead, wallet, getBeadColor, beadSlots, onCashIn, onKeep })
   )
 }
 
-// ── Wallet tray: rounded "beads ready to spin" card pinned above the nav ──
-function WalletStrip({ wallet, getBeadColor, onOpenWallet }) {
-  if (!wallet.length) return null
-  return (
-    <div style={{ flexShrink: 0, position: 'relative', zIndex: 12, padding: '6px 16px 10px' }}>
-      <button
-        onClick={onOpenWallet}
-        style={{
-          width: '100%', maxWidth: 440, margin: '0 auto',
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: 'linear-gradient(180deg, #FFF8FC 0%, #F7E7F4 100%)',
-          border: '2.5px solid #ECC0DE',
-          borderRadius: 18,
-          boxShadow: '0 4px 0 #DBA9CD, 0 6px 14px rgba(180,120,160,0.25)',
-          padding: '9px 14px',
-          cursor: 'pointer',
-        }}
-      >
-        <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 17, color: '#9B3D6B', flexShrink: 0 }}>
-          👜 {wallet.length} ready
-        </span>
-        <div style={{ display: 'flex', gap: 4, flex: 1, overflow: 'hidden', justifyContent: 'flex-end', minWidth: 0 }}>
-          {wallet.slice(-10).map(b => (
-            <BeadDisplay key={b.id} color={getBeadColor(b.slot, b.isGold)} slot={b.slot} isGold={b.isGold} size="sm" />
-          ))}
-        </div>
-        <span style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#C77FB0', flexShrink: 0 }}>›</span>
-      </button>
-    </div>
-  )
-}
-
 // ── Main Screen ──
 export default function HomeScreen() {
   const navigate = useNavigate()
@@ -505,7 +477,8 @@ export default function HomeScreen() {
           and the tap-a-habit banner. ── */}
       <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '12px 16px 2px' }}>
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor}
-          seenCount={jarSeenCount} onSeen={markJarSeen} />
+          seenCount={jarSeenCount} onSeen={markJarSeen}
+          wallet={wallet} onOpenWallet={() => navigate('/wallet')} />
         <img
           src="/ui/tap_banner.png?v=2"
           alt="Tap a habit to earn a bead, silly!"
@@ -570,12 +543,6 @@ export default function HomeScreen() {
           onKeep={handleRevealKeep}
         />
       )}
-
-      <WalletStrip
-        wallet={wallet}
-        getBeadColor={getBeadColor}
-        onOpenWallet={() => navigate('/wallet')}
-      />
 
     </div>
   )
