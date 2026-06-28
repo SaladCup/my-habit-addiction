@@ -475,7 +475,7 @@ export default function HomeScreen() {
       {/* ── Pinned header: jar + tap-a-habit (never scrolls). The title logo lives
           on the launch splash now (LaunchSplash), freeing this space for the jar
           and the tap-a-habit banner. ── */}
-      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '12px 16px 2px' }}>
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 10, padding: '66px 16px 2px' }}>
         <TeapotJar jarBeads={jarBeads} milestones={milestones} getBeadColor={getBeadColor}
           seenCount={jarSeenCount} onSeen={markJarSeen}
           wallet={wallet} onOpenWallet={() => navigate('/wallet')} />

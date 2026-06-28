@@ -12,9 +12,9 @@ const SPEED_BIG = 0.16     // rad/s — slow trip around the jar
 const SPEED_SMALL = 0.7    // rad/s — beads circling within a color cluster
 // Orbit hugs the glass silhouette: centered on the glass (a touch above the box
 // center) with radii just outside the jar, as fractions of the jar box.
-const RX_FRAC = 0.435
-const RY_FRAC = 0.385
-const CY_FRAC = 0.41       // orbit center y (glass center sits above box center)
+const RX_FRAC = 0.50
+const RY_FRAC = 0.43
+const CY_FRAC = 0.39       // orbit center y (glass center sits above box center)
 const CLUSTER_R = 13       // how far apart same-color beads sit while circling
 
 export default function OrbitingWallet({ wallet, getBeadColor, onOpen }) {
