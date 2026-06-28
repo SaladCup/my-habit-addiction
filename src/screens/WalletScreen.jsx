@@ -3,6 +3,14 @@ import useStore from '../store/useStore'
 import { isCashable } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton, PixelPanel } from '../components/ui'
 
+const backBtn = {
+  width: 44, height: 44, borderRadius: 22, flexShrink: 0,
+  background: 'rgba(255,255,255,0.7)', border: '2px solid #ECC0DE',
+  color: '#9B3D6B', fontSize: 24, lineHeight: 1, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  boxShadow: '0 2px 0 #DBA9CD', marginBottom: 8,
+}
+
 // NOTE: the wallet never STARTS a spin — spins are earned one per completed
 // habit (the BEAD EARNED prompt is the only cash-in moment). This screen only
 // shows what's in hand and what the next earned spin could unlock.
@@ -28,6 +36,7 @@ export default function WalletScreen() {
 
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
+      <button onClick={() => navigate(-1)} aria-label="Back" style={backBtn}>←</button>
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
         fontSize: 38, color: '#3D2B4F',
