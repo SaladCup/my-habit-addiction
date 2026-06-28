@@ -9,7 +9,7 @@
 // `cells` + `line` shape so the UI can draw a ring on every winning symbol and a
 // colored line connecting them — you can SEE exactly how the line won.
 //
-// The paytable + reel weights are Monte-Carlo-tuned so the per-spin EV ≈ 42 coins
+// The paytable + reel weights are Monte-Carlo-tuned so the per-spin EV ≈ 41 coins
 // → sessions of 3/6/9 spins average ≈ 125/250/375 (matching the wheel), with a
 // ~52% hit rate (frequent small wins) but HIGH variance: the median session pays
 // LESS than the wheel, with a real shot at 2–5× and a rare "holy cow" tail. Bonus
@@ -73,13 +73,13 @@ export const PAYLINES = [
 
 // Pay by run length (consecutive matches along a line, from the left). Low symbols
 // pay from 2, the rest from 3. `seven` 5-of-a-kind is the in-spin "mega". Monte-
-// Carlo-tuned to EV ≈ 42/spin at ~52% hit rate.
+// Carlo-tuned to EV ≈ 41/spin at ~52% hit rate.
 const PAYTABLE = {
-  cherry: { 2: 10, 3: 25, 4: 75, 5: 200 }, sakura: { 2: 10, 3: 25, 4: 75, 5: 200 },
-  cute1:  { 2: 15, 3: 35, 4: 105, 5: 280 }, cute2:  { 2: 20, 3: 45, 4: 135, 5: 360 },
-  star:      { 3: 70, 4: 210, 5: 560 }, butterfly: { 3: 80, 4: 240, 5: 640 }, cute3: { 3: 60, 4: 180, 5: 480 },
-  bow:       { 3: 115, 4: 345, 5: 920 }, moon:      { 3: 135, 4: 405, 5: 1080 }, crown: { 3: 155, 4: 465, 5: 1240 },
-  seven:     { 3: 320, 4: 960, 5: 3520 },
+  cherry: { 2: 11, 3: 27, 4: 81, 5: 216 }, sakura: { 2: 11, 3: 27, 4: 81, 5: 216 },
+  cute1:  { 2: 15, 3: 38, 4: 114, 5: 304 }, cute2:  { 2: 20, 3: 49, 4: 147, 5: 392 },
+  star:      { 3: 76, 4: 228, 5: 608 }, butterfly: { 3: 87, 4: 261, 5: 696 }, cute3: { 3: 65, 4: 195, 5: 520 },
+  bow:       { 3: 125, 4: 375, 5: 1000 }, moon:      { 3: 147, 4: 441, 5: 1176 }, crown: { 3: 170, 4: 510, 5: 1360 },
+  seven:     { 3: 350, 4: 1050, 5: 3850 },
 }
 const MIN_RUN = id => (SYM[id].role === 'low' ? 2 : 3)
 const WILD_MULT = 2
@@ -113,8 +113,7 @@ function rollGrid() {
 // Each win carries `line` (the row shape) + `cells` so the UI can ring the
 // winning symbols and connect them with the line's color.
 function evaluate(grid) {
-  let coins = 0
-  const wins = []
+  const all = []
   const seen = new Set()
   for (let li = 0; li < PAYLINES.length; li++) {
     const line = PAYLINES[li]
@@ -136,11 +135,18 @@ function evaluate(grid) {
     const pay = PAYTABLE[id][run] * (hasWild ? WILD_MULT : 1)
     const cells = []
     for (let c = 0; c < run; c++) cells.push([line[c], c])
-    coins += pay
-    wins.push({ symbolId: id, symbol: SYM[id], run, lineIndex: li, line, coins: pay, cells, hasWild, label: `${run}× ${NAME[id]}` })
+    all.push({ symbolId: id, symbol: SYM[id], run, lineIndex: li, line, coins: pay, cells, hasWild, label: `${run}× ${NAME[id]}` })
   }
-  // best win first (drives the spotlight + summary)
+  // Drop "nested" wins — a shorter line whose winning cells are FULLY CONTAINED in
+  // a longer win reads as double-counting ("2× AND 4× Cute Bar" on the same start).
+  // Keep only the longest reach, which pays exactly what the pay table shows.
+  const sets = all.map(w => new Set(w.cells.map(([r, c]) => r + ',' + c)))
+  const wins = all.filter((w, i) => !all.some((o, j) =>
+    j !== i && sets[j].size > sets[i].size && [...sets[i]].every(k => sets[j].has(k))
+  ))
+  // best win first (drives the summary + reveal order)
   wins.sort((a, b) => b.coins - a.coins)
+  const coins = wins.reduce((s, w) => s + w.coins, 0)
   return { coins, wins }
 }
 
