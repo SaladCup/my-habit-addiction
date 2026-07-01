@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import useStore, { KAWAII_COLORS } from '../store/useStore'
-import { KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel, ScreenHeader } from '../components/ui'
 import { playCreateHabit } from '../engine/sounds'
 import { BONUS_TIERS } from '../engine/gameLogic'
 import VisualNovel from '../components/VisualNovel'
@@ -232,15 +232,7 @@ export default function EditorScreen() {
   return (
     <div style={{ padding: '14px 14px', minHeight: '100%' }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_HABITS} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
-      <h2 style={{
-        fontFamily: "'Fredoka', cursive",
-        fontSize: 28, color: '#3D2B4F', marginBottom: 2,
-      }}>
-        ✦ MY HABITS ✦
-      </h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', marginBottom: 12 }}>
-        {habits.length} habit{habits.length !== 1 ? 's' : ''}
-      </div>
+      <ScreenHeader title="✦ MY HABITS ✦" sub={`${habits.length} habit${habits.length !== 1 ? 's' : ''}`} />
 
       {editing && (
         <PixelPanel color="lavender" style={{ marginBottom: 16 }}>

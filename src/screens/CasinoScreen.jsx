@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { PixelPanel, CoinIcon } from '../components/ui'
+import { PixelPanel, CoinIcon, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_CASINO } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
@@ -27,9 +27,7 @@ export default function CasinoScreen() {
   return (
     <div style={{ minHeight: '100%', padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_CASINO} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
-      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', textAlign: 'center', margin: 0 }}>
-        🎰 Casino
-      </h2>
+      <ScreenHeader title="🎰 Casino" center style={{ marginBottom: 0 }} />
 
       {/* Balance you can gamble */}
       <PixelPanel color="cream" style={{ width: '100%', maxWidth: 420, textAlign: 'center', padding: '10px 16px' }}>

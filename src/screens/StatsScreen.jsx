@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import useStore from '../store/useStore'
-import { BeadDisplay, PixelPanel, CoinIcon } from '../components/ui'
+import { BeadDisplay, PixelPanel, CoinIcon, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_STATS } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
@@ -137,12 +137,7 @@ export default function StatsScreen() {
   return (
     <div style={{ padding: '14px 14px', minHeight: '100%' }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_STATS} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
-      <h2 style={{
-        fontFamily: "'Fredoka', cursive",
-        fontSize: 28, color: '#3D2B4F', marginBottom: 10,
-      }}>
-        ✦ STATS ✦
-      </h2>
+      <ScreenHeader title="✦ STATS ✦" style={{ marginBottom: 10 }} />
 
       {/* Tab switcher — flex:1 so all five periods share the width and always fit. */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>

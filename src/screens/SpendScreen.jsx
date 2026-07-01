@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import useNow from '../hooks/useNow'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { KawaiiButton, PixelPanel, CoinIcon } from '../components/ui'
+import { KawaiiButton, PixelPanel, CoinIcon, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_SPEND } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
@@ -67,9 +67,7 @@ export default function SpendScreen() {
           {toast}
         </div>
       )}
-      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#3D2B4F', textAlign: 'center' }}>
-        💸 Spend
-      </h2>
+      <ScreenHeader title="💸 Spend" center style={{ marginBottom: 0 }} />
 
       {/* Balance */}
       <PixelPanel color="cream" style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>

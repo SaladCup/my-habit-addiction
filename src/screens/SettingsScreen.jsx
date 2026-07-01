@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
 import { TIER_COINS, BONUS_TIERS } from '../engine/gameLogic'
 import { playWin } from '../engine/sounds'
-import { KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_SETTINGS } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
@@ -342,12 +342,7 @@ export default function SettingsScreen() {
       {showPopIn && (
         <VisualNovel script={FIRST_VISIT_SETTINGS} onComplete={dismissPopIn} onSkip={dismissPopIn} />
       )}
-      <h2 style={{
-        fontFamily: "'Fredoka', cursive",
-        fontSize: 21, color: '#3D2B4F', marginBottom: 14,
-      }}>
-        ✦ SETTINGS ✦
-      </h2>
+      <ScreenHeader title="✦ SETTINGS ✦" style={{ marginBottom: 14 }} />
 
       {/* Categories */}
       <PixelPanel color="lavender" title="CATEGORIES" style={{ marginBottom: 14 }}>

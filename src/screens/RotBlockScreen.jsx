@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import useNow from '../hooks/useNow'
-import { KawaiiButton, PixelPanel } from '../components/ui'
+import { KawaiiButton, PixelPanel, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_ROTBLOCK } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
@@ -92,7 +92,7 @@ export default function RotBlockScreen() {
   return (
     <div style={{ minHeight: '100%', padding: '22px 16px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_ROTBLOCK} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
-      <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 32, color: '#3D2B4F', margin: 0 }}>🧠 RotBlock</h2>
+      <ScreenHeader title="🧠 RotBlock" center style={{ marginBottom: 0 }} />
       <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', maxWidth: 330, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
         Pick your <b>Brainrots</b> — the apps or sites that eat your time. Using one spends your coins. Run out and it locks until you earn more.
       </p>
