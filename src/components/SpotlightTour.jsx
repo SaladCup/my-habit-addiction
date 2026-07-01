@@ -21,14 +21,19 @@ export default function SpotlightTour({ steps, onComplete, name = 'Habit-Chan' }
       if (!el || !stage) { setRect(null); return }
       const sr = stage.getBoundingClientRect()
       const nr = el.getBoundingClientRect()
-      const scale = sr.width / DESIGN_W || 1   // the stage's current CSS scale
-      // Convert the nav icon's viewport rect into the stage's own (unscaled) px space, so
-      // the lifted icon positions correctly INSIDE the transformed stage.
+      const scale = sr.width / DESIGN_W || 1   // the stage's current zoom
+      // The overlay (fixed, inset:0) covers the real window; its children are
+      // positioned ABSOLUTE in its coordinate space, where 1 unit renders as
+      // `scale` real px from the window origin. So: real px ÷ scale everywhere.
       setRect({
-        left: (nr.left - sr.left) / scale,
-        top: (nr.top - sr.top) / scale,
+        left: nr.left / scale,
+        top: nr.top / scale,
         width: nr.width / scale,
         height: nr.height / scale,
+        // the stage's origin + size in the same units — the icon's resting spot
+        // stays centered over the CARD, not the (possibly much wider) window
+        ox: sr.left / scale,
+        oy: sr.top / scale,
       })
     }
     measure()
@@ -42,11 +47,11 @@ export default function SpotlightTour({ steps, onComplete, name = 'Habit-Chan' }
     else onComplete?.()
   }
 
-  // The icon flies from its real nav spot up to the LOWER-MIDDLE (below the box) + grows —
-  // all in the stage's own px space (DESIGN_W × DESIGN_H).
+  // The icon flies from its real nav spot up to the LOWER-MIDDLE of the CARD
+  // (below the box) + grows. All coords in overlay units (real px ÷ zoom).
   const iconBig = Math.min(DESIGN_W * 0.42, 172)
-  const cx = DESIGN_W / 2
-  const cy = DESIGN_H * 0.77
+  const cx = (rect?.ox ?? 0) + DESIGN_W / 2
+  const cy = (rect?.oy ?? 0) + DESIGN_H * 0.77
   let liftVars = null
   if (rect) {
     const nx = rect.left + rect.width / 2
@@ -74,7 +79,7 @@ export default function SpotlightTour({ steps, onComplete, name = 'Habit-Chan' }
         <div
           key={i}
           style={{
-            position: 'fixed', left: cx, top: cy, width: iconBig, height: iconBig,
+            position: 'absolute', left: cx, top: cy, width: iconBig, height: iconBig,
             marginLeft: -iconBig / 2, marginTop: -iconBig / 2,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             pointerEvents: 'none', zIndex: 3, ...liftVars,
@@ -101,13 +106,13 @@ const overlay = {
   cursor: 'pointer', userSelect: 'none', overflow: 'hidden',
 }
 const fogBg = {
-  position: 'fixed', inset: 0, zIndex: 0,
+  position: 'absolute', inset: 0, zIndex: 0,
   background: 'rgba(40,26,58,0.82)',
   backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
   animation: 'tour-fog 0.55s ease 0.15s both',
 }
 const chanWrap = {
-  position: 'fixed', top: 44, left: 0, right: 0,
+  position: 'absolute', top: 44, left: 0, right: 0,
   display: 'flex', justifyContent: 'center', zIndex: 2, pointerEvents: 'none',
   animation: 'tour-soft 0.5s ease 1.35s both',
 }
@@ -121,7 +126,7 @@ const highlightIcon = {
   filter: 'drop-shadow(0 0 16px rgba(255,133,161,0.95)) drop-shadow(0 8px 16px rgba(120,90,160,0.6))',
 }
 const box = {
-  position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+  position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
   width: 'calc(100% - 44px)', maxWidth: 318, zIndex: 4,
   background: '#FFF5FB', border: '2.5px solid #ECC0DE', borderRadius: 18,
   boxShadow: '0 12px 34px rgba(60,30,80,0.5)',

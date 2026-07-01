@@ -6,14 +6,17 @@ import { useStageScale, DESIGN_W, DESIGN_H } from '../hooks/stageScale'
 // "App size" preference. Because EVERY hardcoded px / font lives inside this one scaled
 // stage, they all scale together by one rule — no values get rewritten.
 //
-// A CSS transform here also makes position:fixed/absolute descendants resolve against
-// THIS stage instead of the viewport, so overlays (tour, modals, popups) line up with
-// the card automatically. The 3D bead-jar canvas is handled separately (its own dpr) —
-// CSS-scaling a canvas would blur it.
+// CSS `zoom` (standardized 2024), NOT transform: a transform makes position:fixed
+// descendants resolve against the STAGE, so every overlay backdrop (Habit-Chan,
+// bead reveal, popups) only dimmed the phone card. `zoom` scales layout the same
+// way but leaves fixed elements anchored to the REAL window — `inset: 0` overlays
+// now cover the whole window at any size, which is how desktop apps behave
+// (Electron apps like Slack/VS Code use page zoom for exactly this). The 3D
+// bead-jar canvas keeps its own dpr compensation (useStageScale) — unchanged.
 export default function AppScaleStage({ children }) {
   const scale = useStageScale()
   return (
-    <div className="app-stage" style={{ width: DESIGN_W, height: DESIGN_H, transform: `scale(${scale})` }}>
+    <div className="app-stage" style={{ width: DESIGN_W, height: DESIGN_H, zoom: scale }}>
       {children}
     </div>
   )
