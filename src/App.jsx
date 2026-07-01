@@ -228,10 +228,14 @@ export default function App() {
 
   return (
     <>
-      {/* Blurred dreamy backdrop fills the window behind the card (the letterbox). */}
-      <div className="dreamy-backdrop" />
       {/* One scale stage: everything inside scales together to fit any window/display. */}
       <AppScaleStage>
+        {/* The full-window sky lives INSIDE the zoomed stage: fixed inset:0 still
+            covers the whole window (zoom doesn't capture fixed the way transform
+            did), and sharing the stage's layer means the compositor can never
+            resample the sky under the card differently from the sky around it —
+            the faint hard-edged seam at the stage borders on some windows/GPUs. */}
+        <div className="dreamy-backdrop" />
         <LaunchSplash />
         {showWarning && <WarningSplash onDismiss={dismissWarning} />}
         <HashRouter>
@@ -254,7 +258,9 @@ const navStyle = {
   justifyContent: 'space-around',
   background: 'transparent',          // no banner — icons float over the bg
   zIndex: 'var(--z-nav)',
-  paddingBottom: 'env(safe-area-inset-bottom)',
+  // Icons were kissing the window's bottom edge (and could clip on some window
+  // shapes) — always keep a real gap below them.
+  paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
   flexShrink: 0,
 }
 
