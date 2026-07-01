@@ -131,11 +131,13 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   const hostRef    = useRef(null)
   const appRef     = useRef(null)
   const reelSetRef = useRef(null)
+  const skipRef    = useRef(false)   // tapping the button during reveal fast-forwards it
 
   const [ready, setReady]   = useState(false)
   const [index, setIndex]   = useState(0)
   const [phase, setPhase]   = useState('ready')   // ready | spinning | revealing | between | done
-  const [running, setRun]   = useState(0)
+  const [running, setRun]   = useState(0)      // run total across the session
+  const [lastWin, setLastWin] = useState(0)    // coins from the most recent spin
   const [activeWins, setActiveWins] = useState([])
   const [shaking, setShaking] = useState(false)
   const [showPays, setShowPays] = useState(false)
@@ -256,12 +258,15 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
   async function reveal(idx) {
     const sleep = (ms) => new Promise(r => setTimeout(r, ms))
     setPhase('revealing')
+    skipRef.current = false
+    // Tapping the button during the reveal sets skipRef → every remaining pause is
+    // skipped and the coin count jumps to the total, so you can spin again fast.
+    const wait = async (ms) => { if (!skipRef.current) await sleep(ms) }
     const spin = session.spins[idx]
     const gained = spin.isJackpot ? session.jackpotAward : spin.coins
     const won = gained > 0
-    // Short beat before the result; on a loss there's nothing to show, so keep it
-    // snappy and get the next-spin button back fast.
-    await sleep(won ? 420 : 180)
+    setLastWin(gained)
+    await wait(won ? 420 : 180)
 
     const wins = spin.wins || []
     if (wins.length) {
@@ -273,26 +278,40 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
         const color = LINE_COLORS[i % LINE_COLORS.length]
         setActiveWins(prev => [...prev, { ...wins[i], color }])
         playLineWin(i)
-        await sleep(per)
+        await wait(per)
       }
     }
 
     if (won) {
       const start = running
-      const steps = Math.min(gained, 26)
-      for (let s = 1; s <= steps; s++) {
-        await sleep(60)
-        setRun(Math.round(start + (gained * s) / steps))
-        if (s % 2) playCoinTick(s)
+      if (skipRef.current) {
+        setRun(start + gained)
+        if (spin.isJackpot) playSlotWin()
+      } else {
+        const steps = Math.min(gained, 26)
+        for (let s = 1; s <= steps; s++) {
+          if (skipRef.current) break
+          await sleep(60)
+          setRun(Math.round(start + (gained * s) / steps))
+          if (s % 2) playCoinTick(s)
+        }
+        setRun(start + gained)
+        if (spin.isJackpot) playSlotWin()
       }
-      setRun(start + gained)
-      if (spin.isJackpot) playSlotWin()
     }
 
     // Hold the win on screen; a loss advances almost immediately.
-    await sleep(spin.isJackpot || spin.isBonus ? 1300 : (won ? 560 : 180))
+    await wait(spin.isJackpot || spin.isBonus ? 1300 : (won ? 560 : 180))
     if (idx + 1 >= spinCount) { setPhase('done'); onComplete?.() }
     else setPhase('between')
+  }
+
+  // The one spin button is ALWAYS active: it lands a spin, skips a reveal, or
+  // starts the next spin — whatever moves you forward fastest.
+  function onSpinButton() {
+    if (phase === 'spinning') { try { reelSetRef.current?.skipSpin() } catch { /* */ } return }
+    if (phase === 'revealing') { skipRef.current = true; return }
+    if (phase === 'ready' || phase === 'between') startSpin()
   }
 
   // ── Render ──
@@ -300,23 +319,29 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%', maxWidth: 420 }}>
       <div style={{
         width: '100%', borderRadius: 22,
-        background: 'linear-gradient(180deg, #1A0A2E 0%, #2D1055 100%)',
-        border: '2.5px solid #6B3FA0',
-        boxShadow: '0 0 0 1px rgba(155,126,200,0.3) inset, 0 10px 32px rgba(40,8,90,0.7)',
+        background: 'linear-gradient(180deg, #3A0A20 0%, #5C1233 100%)',
+        border: '2.5px solid #D9A441',
+        boxShadow: '0 0 0 1px rgba(230,180,90,0.4) inset, 0 10px 32px rgba(50,8,26,0.7)',
         padding: '14px 12px 16px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         animation: shaking ? 'slot-shake 0.38s ease-out' : 'none',
       }}>
 
-        {/* Top displays */}
-        <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+        {/* Top displays: jackpot · this spin's win · run total · pay table */}
+        <div style={{ display: 'flex', gap: 6, width: '100%' }}>
           <div style={displayBox}>
-            <div style={displayLabel}>★ JACKPOT ★</div>
-            <div style={{ ...displayValue, fontSize: 17 }}>💎 {jackpotPool.toLocaleString()}</div>
+            <div style={displayLabel}>★ Jackpot</div>
+            <div style={{ ...displayValue, fontSize: 15 }}>💎{jackpotPool.toLocaleString()}</div>
           </div>
           <div style={displayBox}>
-            <div style={displayLabel}>coins won</div>
+            <div style={displayLabel}>This spin</div>
             <div style={{ ...displayValue, color: '#FFF3C4' }}>
+              <span key={lastWin} style={{ animation: 'coin-pop 0.25s ease-out', display: 'inline-block' }}>+{lastWin}</span>
+            </div>
+          </div>
+          <div style={displayBox}>
+            <div style={displayLabel}>Run total</div>
+            <div style={{ ...displayValue, color: '#B7F0D2' }}>
               <span key={running} style={{ animation: 'coin-pop 0.25s ease-out', display: 'inline-block' }}>{running}</span>
             </div>
           </div>
@@ -328,19 +353,40 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
           width: CANVAS_W, height: CANVAS_H, position: 'relative',
           borderRadius: 14, overflow: 'hidden',
           boxShadow: 'inset 0 2px 14px rgba(0,0,0,0.8)',
-          border: '2px solid #3A1560',
+          border: '2px solid #8A3350',
         }}>
           {!ready && (
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               textAlign: 'center', padding: '0 16px',
-              fontFamily: "'Fredoka', cursive", fontSize: loadError ? 12 : 15, color: loadError ? '#FF9DB0' : '#6B4FA0',
+              fontFamily: "'Fredoka', cursive", fontSize: loadError ? 12 : 15, color: loadError ? '#FF9DB0' : '#C88BA0',
             }}>{loadError ? `reels failed: ${loadError}` : 'loading reels…'}</div>
           )}
           <WinLineOverlay wins={activeWins} />
         </div>
 
-        {/* Win breakdown */}
+        {/* Spin button — ALWAYS here (above the win list) so multiple wins listing
+            below can never shove it around. It's always actionable: land / skip /
+            next spin. */}
+        {phase === 'done' ? (
+          <div style={doneLabel}>✦ ALL DONE ✦</div>
+        ) : (
+          <button
+            onClick={onSpinButton}
+            disabled={!ready}
+            style={{
+              ...spinBtn, opacity: ready ? 1 : 0.6,
+              ...(phase === 'spinning' ? { background: 'linear-gradient(180deg,#9B7EC8,#7B5EA7)', animation: 'none' } : {}),
+            }}
+          >
+            {phase === 'spinning' ? 'STOP ⏹'
+              : phase === 'revealing' ? 'SKIP ▸'
+                : phase === 'between' ? `✦ NEXT SPIN · ${spinsLeft} left`
+                  : `✦ SPIN! · ${spinsLeft} left`}
+          </button>
+        )}
+
+        {/* Win breakdown — BELOW the button */}
         {(phase === 'revealing' || phase === 'between' || phase === 'done') && current && (
           <div style={{
             width: '100%', background: 'rgba(255,245,253,0.96)',
@@ -369,23 +415,6 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
             )}
           </div>
         )}
-
-        {/* Controls */}
-        {(phase === 'ready' || phase === 'between') && (
-          <button onClick={startSpin} disabled={!ready} style={{ ...spinBtn, opacity: ready ? 1 : 0.5 }}>
-            {phase === 'between' ? `✦ NEXT SPIN · ${spinsLeft} left` : `✦ SPIN! · ${spinsLeft} left`}
-          </button>
-        )}
-        {phase === 'spinning' && (
-          <button onClick={startSpin} style={{ ...spinBtn, background: 'linear-gradient(180deg,#9B7EC8,#7B5EA7)' }}>
-            STOP ⏹
-          </button>
-        )}
-        {phase === 'done' && (
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#FFD700', letterSpacing: '0.08em' }}>
-            ✦ ALL DONE ✦
-          </div>
-        )}
       </div>
 
       {/* Result banners */}
@@ -406,15 +435,16 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 }
 
 // ── Styles ────────────────────────────────────────────────
-const displayBox = { flex: 1, background: '#0D0520', borderRadius: 10, border: '1.5px solid #3A1560', padding: '6px 10px', textAlign: 'center' }
+const displayBox = { flex: 1, minWidth: 0, background: '#2A0714', borderRadius: 10, border: '1.5px solid #7A2E44', padding: '5px 7px', textAlign: 'center' }
 const infoBtn = {
-  flexShrink: 0, width: 34, alignSelf: 'stretch',
-  background: '#0D0520', borderRadius: 10, border: '1.5px solid #3A1560',
-  color: '#FFE9A0', fontSize: 17, cursor: 'pointer', lineHeight: 1,
+  flexShrink: 0, width: 30, alignSelf: 'stretch',
+  background: '#2A0714', borderRadius: 10, border: '1.5px solid #7A2E44',
+  color: '#FFE9A0', fontSize: 16, cursor: 'pointer', lineHeight: 1,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
-const displayLabel = { fontFamily: 'Mulish, sans-serif', fontSize: 10, color: '#6B4FA0', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }
-const displayValue = { fontFamily: "'Fredoka', cursive", fontSize: 19, color: '#FFE9A0', textShadow: '0 0 8px rgba(255,215,0,0.55)', letterSpacing: '0.02em' }
+const displayLabel = { fontFamily: 'Mulish, sans-serif', fontSize: 9, color: '#E0A9BE', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap' }
+const displayValue = { fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#FFE9A0', textShadow: '0 0 8px rgba(255,215,0,0.55)', letterSpacing: '0.01em' }
+const doneLabel = { fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#FFD700', letterSpacing: '0.08em', padding: '10px 0' }
 const spinBtn = {
   width: '100%', padding: '13px 0',
   fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#fff', letterSpacing: '0.1em',
