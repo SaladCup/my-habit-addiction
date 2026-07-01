@@ -101,7 +101,7 @@ function ColorSwatches({ selected, onSelect }) {
           title={c.name}
           onClick={() => onSelect(c.hex)}
           style={{
-            width: 28, height: 28, borderRadius: '50%', padding: 0, cursor: 'pointer',
+            width: 40, height: 40, borderRadius: '50%', padding: 0, cursor: 'pointer',   // ≥40px tap target
             background: `radial-gradient(circle at 35% 30%, white 0%, ${c.hex} 50%, ${darken(c.hex, 20)} 100%)`,
             border: selected === c.hex ? '3px solid #3D2B4F' : '2px solid rgba(0,0,0,0.08)',
             boxShadow: selected === c.hex ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : '0 1px 3px rgba(0,0,0,0.1)',

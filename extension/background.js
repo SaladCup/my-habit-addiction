@@ -26,9 +26,11 @@ let lastHeartbeat = 0
 const drainAcc = {}            // tabId -> leftover seconds not yet converted to a coin
 
 // Restore last-known state + token so a freshly-woken worker isn't totally blind.
+// The callback is async — only apply if nothing FRESHER arrived meanwhile (a /state
+// fetch can land first; stale storage must not clobber it for the next 3s window).
 try { chrome.storage.local.get(['cfg', 'token'], (r) => {
-  if (r && r.cfg) cfg = r.cfg
-  if (r && typeof r.token === 'string') token = r.token
+  if (r && r.cfg && cfgAt === 0) cfg = r.cfg
+  if (r && typeof r.token === 'string' && !token) token = r.token
 }) } catch (e) { /* */ }
 
 const now = () => Date.now()

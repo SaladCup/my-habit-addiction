@@ -7,6 +7,9 @@ import { KawaiiButton, PixelPanel, TierBadge } from '../components/ui'
 import { playWin } from '../engine/sounds'
 import Wheel from '../components/Wheel'
 import SlotMachine from '../components/SlotMachine'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_SPIN } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 const KAWAII_COLORS = ['#FF85A1', '#C8B4E0', '#B4E0C8', '#FFD700', '#FF6B9D', '#9B7EC8']
 
@@ -48,6 +51,7 @@ export default function SpinScreen() {
   // (Lazy state = a one-time mount snapshot; later phase changes don't re-judge it.)
   const [validEntry] = useState(() => session.phase === 'cashIn' || session.phase === 'habitDone')
 
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('spin')
   const [mode, setMode] = useState(null)          // 'wheel' | 'slots'
   const [wheelOutcome, setWheelOutcome] = useState(null)
   const [shouldSpin, setShouldSpin] = useState(false)
@@ -141,6 +145,9 @@ export default function SpinScreen() {
       padding: '24px 16px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
     }}>
+      {/* First-visit explainer — only over the game picker, never mid-spin */}
+      {showPopIn && !mode && <VisualNovel script={FIRST_VISIT_SPIN} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
+
       {/* Header — compact single line */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#3D2B4F', margin: 0 }}>

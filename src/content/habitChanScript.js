@@ -91,6 +91,45 @@ export const FIRST_VISIT_SETTINGS = [
 
 // ── Reactive moments (brief 2-panel surprises, not first-visit gates) ──
 
+export const FIRST_VISIT_STATS = [
+  { pose: 'point',   text: "Stats! Receipts of you actually doing the thing. 📈" },
+  { pose: 'talking', text: "Streaks, habits done, coins earned vs spent — and how the casino's been treating you. 👀" },
+  { pose: 'happy',   text: "On a rough day, come here and look at the pile of proof. Past-you shows up for future-you. 🌸" },
+]
+
+export const FIRST_VISIT_HABITS = [
+  { pose: 'talking',  text: "This is where your habits live! Add anything you want to get hooked on doing." },
+  { pose: 'point',    text: "Keep them SMALL. 'Drink water' beats 'become a hydration god.' Tap-sized habits get done." },
+  { pose: 'sinister', text: "Each one pays a bead when you do it. More habits = more spins = more coins. Build your empire. 😈" },
+]
+
+export const FIRST_VISIT_WALLET = [
+  { pose: 'happy',   text: "Your bead wallet! These are the beads orbiting your jar. ✨" },
+  { pose: 'talking', text: "Match beads of the same color to unlock higher levels — Level 2 and 3 spins pay WAY more." },
+  { pose: 'point',   text: "Wilds (rainbow!) match with anything, and gold goes straight to Level 3. Hoard wisely. 💖" },
+]
+
+export const FIRST_VISIT_SPIN = [
+  { pose: 'coin',     text: "You did the thing — now you get PAID. Pick your game! 🎉" },
+  { pose: 'talking',  text: "Wheel = one big spin, steady payout. Slots = a whole run of spins, wilder swings." },
+  { pose: 'sinister', text: "Same luck underneath, different thrills. And that jackpot up top? It's growing… 😈" },
+]
+
+export const FIRST_VISIT_CASHIN = [
+  { pose: 'celebrate', text: "Cash-in time! Tap each bead to drop it into your jar. 🫙" },
+  { pose: 'happy',     text: "Every bead in the jar counts toward your milestones — the jar remembers EVERYTHING. ✨" },
+]
+
+export const FIRST_VISIT_BONUS = [
+  { pose: 'surprised', text: "A BONUS ROUND?! You lucky thing!! ⭐" },
+  { pose: 'coin',      text: "This wheel picks a real-life mini-treat — do the little task, keep the glow going. Spin it! 💫" },
+]
+
+export const FIRST_VISIT_BREAKGLASS = [
+  { pose: 'serious',  text: "Break Glass. The emergency exit for a block. It is NOT free." },
+  { pose: 'sinister', text: "550 taps. Yes, really. If you still want your brainrot after 550 taps… you've earned 20 minutes. 😌" },
+]
+
 export const REACTION_GOLD_BEAD = [
   { pose: 'surprised', text: "WAIT— is that a GOLD BEAD?! 😱 That's like a 1-in-20 pull!!" },
   { pose: 'coin',      text: "Straight to Level 3, baby. The universe is cheering for you. ✨ Lucky!!" },

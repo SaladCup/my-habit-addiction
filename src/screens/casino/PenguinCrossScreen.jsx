@@ -23,6 +23,10 @@ export default function PenguinCrossScreen() {
   const penRef   = useRef(null)
   const [staked, setStaked] = useState(0)
   const settledRef = useRef(false)               // cash a run out exactly once (manual tap or auto-at-top)
+  // Double-click latch: a second tap on START/HOP before React re-renders must not
+  // double-bet or double-roll. Resets whenever the game state advances.
+  const actingRef = useRef(false)
+  useEffect(() => { actingRef.current = false }, [phase, lane])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
@@ -32,9 +36,25 @@ export default function PenguinCrossScreen() {
   // keep the penguin in view as it advances (DOM scroll — not a state effect)
   useEffect(() => { penRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }) }, [lane, phase])
 
+  // Leaving mid-run must NOT silently eat the stake (it was deducted at start()).
+  // On unmount during 'crossing', auto-cash the current lane — exactly what tapping
+  // CASH OUT would pay, so it's not exploitable; at lane 0 it refunds the stake.
+  const liveRef = useRef({ phase, lane, staked, mode })
+  useEffect(() => { liveRef.current = { phase, lane, staked, mode } }, [phase, lane, staked, mode])
+  useEffect(() => () => {
+    const { phase: p, lane: l, staked: s, mode: m } = liveRef.current
+    if (p === 'crossing' && s > 0 && !settledRef.current) {
+      settledRef.current = true
+      const win = l >= 1 ? Math.floor(s * crossMultiplier(m, l)) : s   // lane 0 → refund
+      settleBet(win, 'cross')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount-only settle; reads live values via ref
+  }, [])
+
   function start() {
-    if (tooPoor || bet < MIN_BET || bet > balance) return
+    if (actingRef.current || tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'cross')) return
+    actingRef.current = true
     setStaked(bet)
     settledRef.current = false
     setLane(0); setDeathLane(-1); setOutcome(null); setPhase('crossing')
@@ -42,6 +62,8 @@ export default function PenguinCrossScreen() {
   }
 
   function cross() {
+    if (actingRef.current) return
+    actingRef.current = true
     if (crossSurvive(mode)) {
       const next = lane + 1
       setLane(next)

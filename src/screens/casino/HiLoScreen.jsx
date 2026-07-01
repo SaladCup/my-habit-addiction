@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
@@ -49,9 +49,15 @@ export default function HiLoScreen() {
   const tooPoor = balance < MIN_BET
   const mults = hiloMults(card.rank)
 
+  // Double-click latch (same pattern as CoinFlip): a second tap on GUESS/BANK
+  // before React re-renders must not double-draw or double-settle the pot.
+  const actingRef = useRef(false)
+  useEffect(() => { actingRef.current = false }, [phase, pot, flipKey])
+
   function deal() {
-    if (tooPoor || bet < MIN_BET || bet > balance) return
+    if (actingRef.current || tooPoor || bet < MIN_BET || bet > balance) return
     if (!placeBet(bet, 'hilo')) return
+    actingRef.current = true
     const newCard = drawCard()
     setStaked(bet); setCard(newCard); setPot(bet); setStreak(0); setPhase('playing')
     setFlipKey(k => k + 1)
@@ -59,6 +65,8 @@ export default function HiLoScreen() {
   }
 
   function guess(dir) {
+    if (actingRef.current) return
+    actingRef.current = true
     const draw = drawCard()
     setFlipKey(k => k + 1)
     if (hiloWin(dir, card.rank, draw.rank)) {
@@ -74,6 +82,8 @@ export default function HiLoScreen() {
   }
 
   function bank() {
+    if (actingRef.current) return
+    actingRef.current = true
     const tier = pot >= bet * 10 ? 'jackpot' : pot >= bet * 4 ? 't3' : pot >= bet * 2 ? 't2' : 't1'
     settleBet(pot, 'hilo')
     playWin(tier); playCoinDrop()

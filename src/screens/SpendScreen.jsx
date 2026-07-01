@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useNow from '../hooks/useNow'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
@@ -29,6 +29,14 @@ export default function SpendScreen() {
 
   const [dollars, setDollars] = useState('')
   const [note, setNote] = useState('')
+  const [toast, setToast] = useState(null)
+
+  // Success toast auto-dismisses (the form clearing alone read as "did it work?").
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2200)
+    return () => clearTimeout(t)
+  }, [toast])
 
   const moneyOn = moneyPerCoin > 0
   const spendCoinsForDollars = moneyOn ? Math.round(Number(dollars || 0) / moneyPerCoin) : 0
@@ -37,6 +45,7 @@ export default function SpendScreen() {
   function handleLog() {
     if (!canLog) return
     spendCoins(spendCoinsForDollars, note.trim() || 'guilt-free treat')
+    setToast(`✓ Treat logged — ${spendCoinsForDollars.toLocaleString()} coins 💖`)
     setDollars(''); setNote('')
   }
 
@@ -46,6 +55,18 @@ export default function SpendScreen() {
   return (
     <div style={{ minHeight: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_SPEND} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
+      {toast && (
+        <div style={{
+          position: 'fixed', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 400,
+          fontFamily: "'Fredoka', cursive", fontSize: 17, color: '#1A5C3A',
+          background: '#B4E0C8', border: '2px solid #5CBFA0', borderRadius: 999,
+          padding: '8px 20px', boxShadow: '0 4px 14px rgba(60,120,90,0.35)',
+          animation: 'bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1)', pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}>
+          {toast}
+        </div>
+      )}
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#3D2B4F', textAlign: 'center' }}>
         💸 Spend
       </h2>

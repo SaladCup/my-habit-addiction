@@ -4,6 +4,9 @@ import useStore from '../store/useStore'
 import { getBonusStopAngle, resolveBonusTask, bonusDiscount } from '../engine/gameLogic'
 import { KawaiiButton, PixelPanel, TimerDisplay } from '../components/ui'
 import BonusWheel from '../components/BonusWheel'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_BONUS } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 export default function BonusScreen() {
   const navigate = useNavigate()
@@ -18,6 +21,7 @@ export default function BonusScreen() {
 
   const [spinData] = useState(() =>
     bonusResult ? { stopAngle: getBonusStopAngle(bonusResult), result: bonusResult } : {})
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('bonus')
 
   const [wheelDone, setWheelDone]       = useState(false)
   const [currentResult]                   = useState(spinData.result)
@@ -82,6 +86,7 @@ export default function BonusScreen() {
       padding: '24px 16px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
     }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_BONUS} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <div style={{ textAlign: 'center' }}>
         <h2 style={{
           fontFamily: "'Fredoka', cursive",

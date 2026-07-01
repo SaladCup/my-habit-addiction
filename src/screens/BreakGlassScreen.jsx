@@ -2,6 +2,9 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { KawaiiButton } from '../components/ui'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_BREAKGLASS } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 // The deterrent override: tap your way through rounds of 100, 90, 80 … down to
 // 10 (550 taps total), confirming between each. Finishing grants a fixed window
@@ -17,6 +20,7 @@ export default function BreakGlassScreen() {
   const [tapsLeft, setTapsLeft] = useState(ROUNDS[0])
   const [phase, setPhase] = useState('tapping')  // 'tapping' | 'confirm' | 'done'
   const circleRef = useRef(null)
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('breakglass')
 
   function tap() {
     if (phase !== 'tapping') return
@@ -50,6 +54,7 @@ export default function BreakGlassScreen() {
 
   return (
     <div style={{ minHeight: '100%', padding: '24px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_BREAKGLASS} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: 0 }}>
         🔨 Break Glass
       </h2>

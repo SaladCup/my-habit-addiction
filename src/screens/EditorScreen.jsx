@@ -3,6 +3,9 @@ import useStore, { KAWAII_COLORS } from '../store/useStore'
 import { KawaiiButton, PixelPanel } from '../components/ui'
 import { playCreateHabit } from '../engine/sounds'
 import { BONUS_TIERS } from '../engine/gameLogic'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_HABITS } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 const BLANK_HABIT = {
   name: '', description: '', categoryId: null,
@@ -19,7 +22,7 @@ function ColorSwatches({ selected, onSelect }) {
           title={c.name}
           onClick={() => onSelect(c.hex)}
           style={{
-            width: 26, height: 26, borderRadius: '50%', padding: 0, cursor: 'pointer',
+            width: 40, height: 40, borderRadius: '50%', padding: 0, cursor: 'pointer',   // ≥40px tap target
             background: `radial-gradient(circle at 35% 30%, white 0%, ${c.hex} 50%, ${darken(c.hex, 20)} 100%)`,
             border: selected === c.hex ? '3px solid #3D2B4F' : '2px solid rgba(0,0,0,0.08)',
             boxShadow: selected === c.hex ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : '0 1px 3px rgba(0,0,0,0.1)',
@@ -212,6 +215,7 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
 export default function EditorScreen() {
   const { habits, categories, addHabit, updateHabit, deleteHabit, addCategory } = useStore()
   const [editing, setEditing] = useState(null)
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('habits')
 
   const categoryMap = categories.reduce((acc, c) => { acc[c.id] = c; return acc }, {})
 
@@ -227,6 +231,7 @@ export default function EditorScreen() {
 
   return (
     <div style={{ padding: '14px 14px', minHeight: '100%' }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_HABITS} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
         fontSize: 28, color: '#3D2B4F', marginBottom: 2,

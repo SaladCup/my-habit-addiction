@@ -90,7 +90,9 @@ export default function RewardScreen() {
   const [validEntry] = useState(() => session.phase === 'reward')
 
   const cfg = RESULT_CFG[spinResult] || RESULT_CFG.t1
-  const thisSpin = coinsEarned || TIER_COINS[spinResult] || 0
+  // `??` not `||`: a legit ZERO-coin slot session (all 9 spins lose) must show +0,
+  // not fall through to the tier's average (it banked 0 — showing 375 lied).
+  const thisSpin = coinsEarned ?? (TIER_COINS[spinResult] || 0)
   // Cumulative across a bonus chain: `total` is the running sum, `prev` the
   // total before this spin. First/normal spin → prev 0, total = thisSpin.
   const total = rewardChain.total > 0 ? rewardChain.total : thisSpin

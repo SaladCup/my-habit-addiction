@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { BeadDisplay, KawaiiButton } from '../components/ui'
 import { playBeadDraw } from '../engine/sounds'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_CASHIN } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 // Same 3D jar as Home — so the beads you drop here are the SAME beads waiting in
 // the jar when you come back from the game.
 const BeadJar3D = lazy(() => import('../components/BeadJar3D'))
@@ -22,6 +25,7 @@ export default function CashInScreen() {
 
   const [dropped, setDropped] = useState([])  // ids of beads the player has tapped in
   const release = dropped.length              // # of 3D marbles dropped = beads tapped in
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('cashin')
   const [stage, setStage]     = useState('lineup')   // 'lineup' (title up) → 'tapping'
   const [done, setDone]       = useState(false)      // all in — linger; tap to go on
 
@@ -75,6 +79,7 @@ export default function CashInScreen() {
 
   return (
     <div ref={wrapRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_CASHIN} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       {/* Big jar, centred — the SAME jar/beads as Home */}
       {dims && (
         <div style={{ position: 'absolute', left: '50%', top: '55%', transform: 'translate(-50%, -50%)', zIndex: 5 }}>

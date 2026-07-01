@@ -2,6 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { isCashable } from '../engine/gameLogic'
 import { BeadDisplay, KawaiiButton, PixelPanel } from '../components/ui'
+import VisualNovel from '../components/VisualNovel'
+import { FIRST_VISIT_WALLET } from '../content/habitChanScript'
+import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
 
 const backBtn = {
   width: 44, height: 44, borderRadius: 22, flexShrink: 0,
@@ -17,6 +20,7 @@ const backBtn = {
 export default function WalletScreen() {
   const navigate = useNavigate()
   const { wallet, getBeadColor, settings } = useStore()
+  const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('wallet')
 
   const cashable = isCashable(wallet)
 
@@ -36,6 +40,7 @@ export default function WalletScreen() {
 
   return (
     <div style={{ padding: '20px 16px', minHeight: '100%' }}>
+      {showPopIn && <VisualNovel script={FIRST_VISIT_WALLET} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <button onClick={() => navigate(-1)} aria-label="Back" style={backBtn}>←</button>
       <h2 style={{
         fontFamily: "'Fredoka', cursive",
