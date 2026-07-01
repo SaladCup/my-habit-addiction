@@ -319,9 +319,9 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%', maxWidth: 420 }}>
       <div style={{
         width: '100%', borderRadius: 22,
-        background: 'linear-gradient(180deg, #3A0A20 0%, #5C1233 100%)',
-        border: '2.5px solid #D9A441',
-        boxShadow: '0 0 0 1px rgba(230,180,90,0.4) inset, 0 10px 32px rgba(50,8,26,0.7)',
+        background: 'linear-gradient(180deg, #8A3358 0%, #B24E74 100%)',
+        border: '2.5px solid #F0C24E',
+        boxShadow: '0 0 0 1px rgba(240,200,90,0.5) inset, 0 10px 32px rgba(90,20,50,0.55)',
         padding: '14px 12px 16px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         animation: shaking ? 'slot-shake 0.38s ease-out' : 'none',
@@ -435,14 +435,14 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0 }) {
 }
 
 // ── Styles ────────────────────────────────────────────────
-const displayBox = { flex: 1, minWidth: 0, background: '#2A0714', borderRadius: 10, border: '1.5px solid #7A2E44', padding: '5px 7px', textAlign: 'center' }
+const displayBox = { flex: 1, minWidth: 0, background: 'linear-gradient(180deg, #6E5518 0%, #4E3D0F 100%)', borderRadius: 10, border: '1.5px solid #E7C55C', padding: '5px 7px', textAlign: 'center' }
 const infoBtn = {
   flexShrink: 0, width: 30, alignSelf: 'stretch',
-  background: '#2A0714', borderRadius: 10, border: '1.5px solid #7A2E44',
-  color: '#FFE9A0', fontSize: 16, cursor: 'pointer', lineHeight: 1,
+  background: 'linear-gradient(180deg, #6E5518 0%, #4E3D0F 100%)', borderRadius: 10, border: '1.5px solid #E7C55C',
+  color: '#FFF0B8', fontSize: 16, cursor: 'pointer', lineHeight: 1,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
-const displayLabel = { fontFamily: 'Mulish, sans-serif', fontSize: 9, color: '#E0A9BE', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap' }
+const displayLabel = { fontFamily: 'Mulish, sans-serif', fontSize: 9, color: '#F4E3AC', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap' }
 const displayValue = { fontFamily: "'Fredoka', cursive", fontSize: 16, color: '#FFE9A0', textShadow: '0 0 8px rgba(255,215,0,0.55)', letterSpacing: '0.01em' }
 const doneLabel = { fontFamily: "'Fredoka', cursive", fontSize: 22, color: '#FFD700', letterSpacing: '0.08em', padding: '10px 0' }
 const spinBtn = {

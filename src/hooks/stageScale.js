@@ -9,8 +9,11 @@ export const DESIGN_H = 880
 
 export function computeFit() {
   if (typeof window === 'undefined') return 1
-  // Cap at 1.0 — never scale up beyond the design size on large desktop windows.
-  return Math.min(1, window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H)
+  // Fit to the window, and allow scaling UP on large windows so the UI "scales
+  // out" from center instead of sitting tiny in the middle (capped so it never
+  // gets absurd on a huge display). On a wide window it fits by height, so the
+  // background sky still shows down the sides.
+  return Math.min(2.4, window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H)
 }
 
 // The live stage scale: auto fit-to-window × the user's "App size" fine-tune (1 = fit).
