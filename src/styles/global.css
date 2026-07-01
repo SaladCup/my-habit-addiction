@@ -47,16 +47,16 @@ body {
   transform-origin: center center;
 }
 
-/* Dreamy blurred backdrop filling the window behind the card (the "letterbox"). */
+/* The single, sharp full-window background. The big sky image fills the whole
+   window (cover), so a small window shows a center slice and a large/fullscreen
+   window reveals (nearly) the entire picture. The UI floats on top of this. */
 .dreamy-backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: url('/ui/bg_sunburst.png?v=2');
+  background-image: url('/ui/bg_sky.png?v=1');
   background-size: cover;
   background-position: center;
-  filter: blur(34px) saturate(1.08) brightness(1.02);
-  transform: scale(1.25);   /* overscan so the blur never reveals a hard edge */
   pointer-events: none;
 }
 
@@ -69,20 +69,14 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Framed sunburst is the page background on every screen (its gold/jewel
-     corner frame is baked in). The larger scene (on <body>) fills the
-     surrounding area on iPad / desktop so it accommodates any screen. */
-  background-image: url('/ui/bg_sunburst.png?v=2');
-  background-size: 100% 100%;   /* aspect matches the shell → full frame, no crop */
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #F3E9FF;
-  box-shadow: 0 0 60px rgba(120, 90, 160, 0.28);
+  /* Transparent so the single full-window sky (.dreamy-backdrop) shows through as
+     the shared background. The UI just floats on top and scales with the window. */
+  background: transparent;
 }
 
 /* dreamy backgrounds reusable on full-screen game/reward views */
 .bg-sunburst {
-  background-image: url('/ui/bg_sunburst.png?v=2');
+  background-image: url('/ui/bg_sky.png?v=1');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
