@@ -17,7 +17,7 @@ export const ONBOARDING_INTRO = [
   { pose: 'point',     text: "But here's the twist — I point them at YOUR habits. You get hooked on showing up." },
   { pose: 'coin',      text: "Do a habit → spin the wheel → win beads and coins. Real effort, sparkly payoff." },
   { pose: 'talking',   text: "Fill your jar with beads, hit milestones, and cash coins in for real-life treats you choose." },
-  { pose: 'celebrate', text: "Okayyy — enough chit-chat! Let's make your very first habit together. 💖" },
+  { pose: 'celebrate', text: "Okayyy — enough chit-chat! Let me show you around your kingdom first. ✨" },
 ]
 
 // Bottom-nav coach-mark tour. Each step spotlights a real nav icon (matched by
