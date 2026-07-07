@@ -91,6 +91,21 @@ export const FIRST_VISIT_SETTINGS = [
 
 // ── Reactive moments (brief 2-panel surprises, not first-visit gates) ──
 
+// ── Guided first-habit setup (onboarding phase between the nav tour and the
+//    RotBlock pitch). SETUP plays when she brings you to the Habits screen;
+//    DONE reacts the moment your first habit is saved. ──
+export const FIRST_HABIT_SETUP = [
+  { pose: 'celebrate', text: "Here we are — habit HQ! Time to make your very first one. 🌸" },
+  { pose: 'point',     text: "Keep it TINY. 'Drink a glass of water' tiny. If it takes under two minutes, you'll actually do it." },
+  { pose: 'happy',     text: "Tap ✚ ADD A HABIT below — I'll wait right here!! 💖" },
+]
+
+export const FIRST_HABIT_DONE = [
+  { pose: 'surprised', text: "You MADE it!! Look at it sitting there… so tappable. 😍" },
+  { pose: 'coin',      text: "Every time you DO it in real life, tap it on Home — a bead pops out. Beads → spins → coins → real-life treats." },
+  { pose: 'sinister',  text: "One more thing before I set you loose… let me show you my favorite weapon. 😈" },
+]
+
 export const FIRST_VISIT_STATS = [
   { pose: 'point',   text: "Stats! Receipts of you actually doing the thing. 📈" },
   { pose: 'talking', text: "Streaks, habits done, coins earned vs spent — and how the casino's been treating you. 👀" },

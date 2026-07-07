@@ -37,7 +37,7 @@ import VisualNovel        from './components/VisualNovel'
 import SpotlightTour      from './components/SpotlightTour'
 import AppScaleStage      from './components/AppScaleStage'
 import LaunchSplash        from './components/LaunchSplash'
-import { ONBOARDING_INTRO, NAV_TOUR, ONBOARDING_ROTBLOCK } from './content/habitChanScript'
+import { ONBOARDING_INTRO, NAV_TOUR, ONBOARDING_ROTBLOCK, FIRST_HABIT_SETUP, FIRST_HABIT_DONE } from './content/habitChanScript'
 
 /* global __APP_VERSION__ -- replaced at build time by Vite's define (see vite.config) */
 
@@ -139,12 +139,40 @@ function MusicController() {
 }
 
 function AppShell({ showWarning }) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const onboardingComplete = useStore(s => s.onboardingComplete)
   const setOnboardingComplete = useStore(s => s.setOnboardingComplete)
-  // 'intro' → typewriter intro, 'tour' → nav spotlight, 'rotblock' → RotBlock pitch, null (done)
+  const habitCount = useStore(s => s.habits.length)
+  const markFirstVisit = useStore(s => s.markFirstVisit)
+  // 'intro' → typewriter intro, 'tour' → nav spotlight, 'habit' → guided first-habit
+  // setup (→ 'habitWait' while she waits for you to create it → 'habitDone' when you
+  // do), 'rotblock' → RotBlock pitch, null (done)
   const [phase, setPhase] = useState(() => (onboardingComplete ? null : 'intro'))
   // Don't show while the age-gate warning splash is still up
   const active = !showWarning && phase !== null
+
+  // Entering the first-habit step: take her to the Habits screen. The guided
+  // setup replaces that screen's generic first-visit pop-in, so mark it seen.
+  // (If a habit somehow already exists, skip straight to the RotBlock pitch.)
+  useEffect(() => {
+    if (phase !== 'habit') return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot phase-entry transition: skip the step if a habit already exists
+    if (habitCount > 0) { setPhase('rotblock'); return }
+    markFirstVisit('habits')
+    navigate('/edit')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on phase entry only
+  }, [phase])
+
+  // While she's waiting for the first habit: the moment it's created → celebrate.
+  // If the user wanders off the Habits screen instead, don't hold the app hostage —
+  // move on to the RotBlock pitch.
+  useEffect(() => {
+    if (phase !== 'habitWait') return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- state-machine transition driven by store/router changes while she waits
+    if (habitCount > 0) setPhase('habitDone')
+    else if (pathname !== '/edit') setPhase('rotblock')
+  }, [phase, habitCount, pathname])
 
   return (
     <div className="app-shell">
@@ -192,14 +220,28 @@ function AppShell({ showWarning }) {
       {active && phase === 'tour' && (
         <SpotlightTour
           steps={NAV_TOUR}
+          onComplete={() => setPhase('habit')}
+        />
+      )}
+      {active && phase === 'habit' && (
+        <VisualNovel
+          script={FIRST_HABIT_SETUP}
+          onComplete={() => setPhase('habitWait')}
+          onSkip={() => setPhase('rotblock')}
+        />
+      )}
+      {active && phase === 'habitDone' && (
+        <VisualNovel
+          script={FIRST_HABIT_DONE}
           onComplete={() => setPhase('rotblock')}
+          onSkip={() => setPhase('rotblock')}
         />
       )}
       {active && phase === 'rotblock' && (
         <VisualNovel
           script={ONBOARDING_ROTBLOCK}
-          onComplete={() => { setOnboardingComplete(); setPhase(null) }}
-          onSkip={() => { setOnboardingComplete(); setPhase(null) }}
+          onComplete={() => { setOnboardingComplete(); setPhase(null); navigate('/') }}
+          onSkip={() => { setOnboardingComplete(); setPhase(null); navigate('/') }}
         />
       )}
     </div>
