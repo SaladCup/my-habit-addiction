@@ -228,14 +228,12 @@ export default function App() {
 
   return (
     <>
-      {/* One scale stage: everything inside scales together to fit any window/display. */}
+      {/* Full-window sky. Under PAGE zoom (see stageScale) everything — sky, stage,
+          overlays — scales in one pass, so there's no zoomed-vs-unzoomed boundary
+          to seam against and fixed inset:0 always covers the real window. */}
+      <div className="dreamy-backdrop" />
+      {/* One scale stage: the design-size layout box, centered by #root. */}
       <AppScaleStage>
-        {/* The full-window sky lives INSIDE the zoomed stage: fixed inset:0 still
-            covers the whole window (zoom doesn't capture fixed the way transform
-            did), and sharing the stage's layer means the compositor can never
-            resample the sky under the card differently from the sky around it —
-            the faint hard-edged seam at the stage borders on some windows/GPUs. */}
-        <div className="dreamy-backdrop" />
         <LaunchSplash />
         {showWarning && <WarningSplash onDismiss={dismissWarning} />}
         <HashRouter>

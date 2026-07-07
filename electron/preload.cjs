@@ -2,11 +2,17 @@
 // access to Electron APIs but exposes a tiny, explicit surface to the React app
 // via window.desktop. This is where the blocker's native controls are exposed,
 // one method at a time.
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, webFrame } = require('electron')
 
 contextBridge.exposeInMainWorld('desktop', {
   isDesktop: true,            // the web app checks this to enable desktop-only features
   platform: process.platform, // 'darwin' (Mac) | 'win32' (Windows)
+
+  // TRUE page zoom (what Slack/VS Code use for UI scale). Unlike CSS zoom on an
+  // element, this scales the entire page — layout, fixed overlays, compositor
+  // layers — in one coherent, battle-tested pass (no seams, no clipped overlays).
+  setZoomFactor: (f) => { try { webFrame.setZoomFactor(f) } catch { /* */ } },
+  getZoomFactor: () => { try { return webFrame.getZoomFactor() } catch { return 1 } },
 
   // Which app is in the foreground right now. Resolves to:
   //   { ok: true,  app: { name, bundleId, path, pid, title } | null }

@@ -176,6 +176,7 @@ export default function SettingsScreen() {
   const [newCatName, setNewCatName]   = useState('')
   const [newCatColor, setNewCatColor] = useState('#FFB7C5')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmFresh, setConfirmFresh] = useState(false)
 
   const fileRef = useRef(null)
   const [pendingImport, setPendingImport] = useState(null)  // { payload, summary } awaiting confirm
@@ -335,6 +336,16 @@ export default function SettingsScreen() {
     setDraftMilestones([])   // store milestones are wiped — clear the local editor draft too
     setMilestoneDirty(false)
     setConfirmReset(false)
+  }
+
+  // TRUE first-launch reset: wipe ALL local storage (persisted store, age-gate
+  // flag, update snooze — everything) and reload. The app boots exactly like a
+  // fresh install: warning splash → Habit-Chan intro → nav tour → RotBlock pitch,
+  // and every first-visit explainer is armed again.
+  function handleFreshInstall() {
+    try { localStorage.clear() } catch { /* */ }
+    window.location.hash = '#/'   // boot on Home like a real first launch
+    window.location.reload()
   }
 
   return (
@@ -686,6 +697,36 @@ export default function SettingsScreen() {
             </KawaiiButton>
           </div>
         )}
+
+        {/* Fresh-install reset: EVERYTHING back to first launch — warning splash,
+            Habit-Chan intro + nav tour, every first-visit explainer, streaks, the
+            works. Wipes ALL local storage and reloads. (For testing onboarding.) */}
+        <div style={{ borderTop: '2px dashed #ECC0DE', marginTop: 14, paddingTop: 12 }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#7B5EA7', marginBottom: 10 }}>
+            Start over as if the app was just installed — intro, Habit-Chan tour, and all
+            her first-visit pop-ins come back. Wipes everything, including settings.
+          </div>
+          {!confirmFresh ? (
+            <KawaiiButton variant="secondary" size="md" fullWidth onClick={() => setConfirmFresh(true)}>
+              🧪 FRESH-INSTALL RESET
+            </KawaiiButton>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                fontFamily: "'Fredoka', cursive",
+                fontSize: 22, color: '#C44B6A', textAlign: 'center', marginBottom: 4,
+              }}>
+                WIPE EVERYTHING + RESTART?
+              </div>
+              <KawaiiButton variant="danger" size="md" fullWidth onClick={handleFreshInstall}>
+                YES, LIKE FIRST LAUNCH
+              </KawaiiButton>
+              <KawaiiButton variant="ghost" size="md" fullWidth onClick={() => setConfirmFresh(false)}>
+                CANCEL
+              </KawaiiButton>
+            </div>
+          )}
+        </div>
       </PixelPanel>
     </div>
   )

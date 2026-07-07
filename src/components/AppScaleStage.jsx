@@ -1,22 +1,20 @@
 import { useStageScale, DESIGN_W, DESIGN_H } from '../hooks/stageScale'
 
 // ── The one scaling rule for the whole app ───────────────────────────────────
-// The entire UI is laid out at a FIXED design size (DESIGN_W × DESIGN_H px) and this
-// stage scales it uniformly to fit the window: scale = min(w/W, h/H) × the user's
-// "App size" preference. Because EVERY hardcoded px / font lives inside this one scaled
-// stage, they all scale together by one rule — no values get rewritten.
+// The entire UI is laid out at a FIXED design size (DESIGN_W × DESIGN_H px). The
+// useStageScale hook applies TRUE PAGE ZOOM (Electron webFrame zoom in the app,
+// <html> zoom in a plain browser) so the whole page — this stage, the sky, every
+// fixed overlay, every compositor layer — scales together in one coherent pass.
+// This stage is now just the design-size layout box, centered by #root.
 //
-// CSS `zoom` (standardized 2024), NOT transform: a transform makes position:fixed
-// descendants resolve against the STAGE, so every overlay backdrop (Habit-Chan,
-// bead reveal, popups) only dimmed the phone card. `zoom` scales layout the same
-// way but leaves fixed elements anchored to the REAL window — `inset: 0` overlays
-// now cover the whole window at any size, which is how desktop apps behave
-// (Electron apps like Slack/VS Code use page zoom for exactly this). The 3D
-// bead-jar canvas keeps its own dpr compensation (useStageScale) — unchanged.
+// (History: scaling used to live HERE as transform → element zoom. Both scale a
+// mid-tree element, and position:fixed children get captured/clipped against it
+// unpredictably — the card-only overlay backdrops and the stage-edge sky seam.
+// Page zoom is the mechanism desktop apps actually use, and has neither bug.)
 export default function AppScaleStage({ children }) {
-  const scale = useStageScale()
+  useStageScale()   // applies the page zoom; re-applies on resize / App-size changes
   return (
-    <div className="app-stage" style={{ width: DESIGN_W, height: DESIGN_H, zoom: scale }}>
+    <div className="app-stage" style={{ width: DESIGN_W, height: DESIGN_H }}>
       {children}
     </div>
   )
