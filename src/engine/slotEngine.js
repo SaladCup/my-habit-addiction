@@ -2,7 +2,7 @@
 // REWARD-FLOW SLOT ENGINE — true-RNG, 5-reel × 3-row, 15 PAYLINES.
 // ─────────────────────────────────────────────────────────────────────────────
 // A REAL slot: each spin rolls the reels from weighted strips and we EVALUATE the
-// wins against 15 fixed PAYLINES (rows, diagonals, V/∧ peaks, zigzags). A symbol
+// wins against 21 fixed PAYLINES (rows, diagonals, V/∧ peaks, zigzags, stairs). A symbol
 // pays when matching symbols land on consecutive reels FROM THE LEFT *along a
 // line* (low symbols from 2-in-a-row, the rest from 3). Wild substitutes (reels
 // 2–4 only) and DOUBLES any line it completes. Each winning line carries its
@@ -69,17 +69,25 @@ export const PAYLINES = [
   [1, 2, 1, 0, 1], // 13  zigzag
   [0, 1, 0, 1, 0], // 14  top zigzag
   [2, 1, 2, 1, 2], // 15  bottom zigzag
+  // Stairs — diagonally-TOUCHING pair-step runs read as connected and should be
+  // (e.g. two sakura mid-left stepping down to two sakura bottom-mid).
+  [1, 1, 2, 2, 2], // 16  mid pair → bottom
+  [1, 1, 0, 0, 0], // 17  mid pair → top
+  [0, 0, 1, 1, 2], // 18  top pair stepping down
+  [2, 2, 1, 1, 0], // 19  bottom pair stepping up
+  [0, 1, 1, 2, 2], // 20  gentle stair down
+  [2, 1, 1, 0, 0], // 21  gentle stair up
 ]
 
 // Pay by run length (consecutive matches along a line, from the left). Low symbols
 // pay from 2, the rest from 3. `seven` 5-of-a-kind is the in-spin "mega". Monte-
 // Carlo-tuned to EV ≈ 41/spin at ~52% hit rate.
 const PAYTABLE = {
-  cherry: { 2: 11, 3: 27, 4: 81, 5: 216 }, sakura: { 2: 11, 3: 27, 4: 81, 5: 216 },
-  cute1:  { 2: 15, 3: 38, 4: 114, 5: 304 }, cute2:  { 2: 20, 3: 49, 4: 147, 5: 392 },
-  star:      { 3: 76, 4: 228, 5: 608 }, butterfly: { 3: 87, 4: 261, 5: 696 }, cute3: { 3: 65, 4: 195, 5: 520 },
-  bow:       { 3: 125, 4: 375, 5: 1000 }, moon:      { 3: 147, 4: 441, 5: 1176 }, crown: { 3: 170, 4: 510, 5: 1360 },
-  seven:     { 3: 350, 4: 1050, 5: 3850 },
+  cherry: { 2: 10, 3: 23, 4: 70, 5: 185 }, sakura: { 2: 10, 3: 23, 4: 70, 5: 185 },
+  cute1:  { 2: 13, 3: 33, 4: 100, 5: 260 }, cute2:  { 2: 17, 3: 42, 4: 125, 5: 340 },
+  star:      { 3: 65, 4: 195, 5: 525 }, butterfly: { 3: 75, 4: 225, 5: 600 }, cute3: { 3: 55, 4: 170, 5: 450 },
+  bow:       { 3: 110, 4: 325, 5: 860 }, moon:      { 3: 125, 4: 380, 5: 1010 }, crown: { 3: 145, 4: 440, 5: 1170 },
+  seven:     { 3: 300, 4: 900, 5: 3300 },
 }
 const MIN_RUN = id => (SYM[id].role === 'low' ? 2 : 3)
 const WILD_MULT = 2

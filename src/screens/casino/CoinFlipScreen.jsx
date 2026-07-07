@@ -27,7 +27,9 @@ export default function CoinFlipScreen() {
   const [shakeKey, setShakeKey] = useState(0)
 
   const actingRef = useRef(false)
-  useEffect(() => { actingRef.current = false }, [phase, pot])
+  // flipKey MUST be a dep: losing twice in a row leaves phase ('lost') and pot (0)
+  // unchanged, so without it the latch never released and the flip button died.
+  useEffect(() => { actingRef.current = false }, [phase, pot, flipKey])
 
   const bet = Math.max(MIN_BET, Math.min(balance, betRaw))
   const tooPoor = balance < MIN_BET
