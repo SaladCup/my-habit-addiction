@@ -23,13 +23,15 @@ export const ONBOARDING_INTRO = [
 // Bottom-nav coach-mark tour. Each step spotlights a real nav icon (matched by
 // data-tour="<target>" on the NavLink) and Habit-Chan explains it. `icon` is the
 // art to lift + enlarge over the dimmed bar.
+// Ends on HABITS on purpose — the last stop hands off directly into the guided
+// first-habit setup ("let's make your very first one").
 export const NAV_TOUR = [
   { target: 'home',     icon: '/ui/icon_home.png',     pose: 'happy',    text: "Home base 🏠 — your jar, your beads, your daily check-in. You'll live here." },
   { target: 'casino',   icon: '/ui/icon_casino.png',   pose: 'sinister', text: "The Casino 🎰 — 100% optional! Bet your coins for a shot at way more… or lose the lot. Feeling lucky? 😈" },
   { target: 'spend',    icon: '/ui/icon_spend.png',    pose: 'coin',     text: "Spend 💖 — cash coins in for real-life treats YOU choose. This is the whole point." },
   { target: 'stats',    icon: '/ui/icon_stats.png',    pose: 'point',    text: "Stats 📈 — receipts. Proof you're actually doing the thing. Brag fuel." },
-  { target: 'habits',   icon: '/ui/icon_editor.png',   pose: 'talking',  text: "Habits ✨ — where your habits live. We're about to make your very first one." },
   { target: 'settings', icon: '/ui/icon_settings.png', pose: 'laughing', text: "Settings ⚙️ — tweak everything. Yes, including muting my fabulous theme song. 🎵" },
+  { target: 'habits',   icon: '/ui/icon_editor.png',   pose: 'talking',  text: "And Habits ✨ — where your habits live. In fact… let's go make your very first one RIGHT NOW. 💖" },
 ]
 
 // Per-pose fit data so every expression renders at a CONSISTENT character size with
