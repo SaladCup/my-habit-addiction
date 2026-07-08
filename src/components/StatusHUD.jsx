@@ -22,7 +22,8 @@ export default function StatusHUD() {
       display: 'flex', gap: 6, pointerEvents: 'auto',
     }}>
       <button onClick={() => navigate('/wallet')} aria-label={`${beads} beads in hand — open wallet`} style={pill}>
-        <span style={{ fontSize: 13 }}>🔮</span>
+        <img src="/beads/bead-6.png" alt="" draggable={false}
+          style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
         <span style={num}>{beads}</span>
       </button>
       <button onClick={() => navigate('/spend')} aria-label={`${coins} coins — open spend`} style={pill}>
