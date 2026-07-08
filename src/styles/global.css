@@ -374,3 +374,11 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* Gold KawaiiButton: soft pulsing halo AROUND the button (replaces the old
+   background-position shimmer, which read as a seam sliding rightward).
+   drop-shadow composes with the button's own 3D box-shadow instead of replacing it. */
+@keyframes btn-gold-glow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 214, 90, 0.45)); }
+  50%      { filter: drop-shadow(0 0 11px rgba(255, 214, 90, 0.85)); }
+}

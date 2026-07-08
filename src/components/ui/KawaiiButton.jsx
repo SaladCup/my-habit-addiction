@@ -87,9 +87,11 @@ export default function KawaiiButton({
         letterSpacing: '0.03em',
         position: 'relative',
         overflow: 'hidden',
+        // Gold buttons GLOW around the outside (soft pulsing halo) — the old
+        // background-position shimmer read as a weird seam sliding rightward.
+        // drop-shadow (not box-shadow) so the size-specific 3D shadow is untouched.
         ...(variant === 'gold' && !disabled ? {
-          animation: 'shimmer 2.5s linear infinite',
-          backgroundSize: '200% 100%',
+          animation: 'btn-gold-glow 1.8s ease-in-out infinite',
         } : {}),
         ...style,
       }}
