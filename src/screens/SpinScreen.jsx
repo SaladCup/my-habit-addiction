@@ -233,18 +233,29 @@ export default function SpinScreen() {
         </>
       )}
 
-      {/* Slots mode — multi-spin video slot (3/6/9 spins by tier) */}
+      {/* Slots mode — multi-spin video slot (3/6/9 spins by tier). Renders as a
+          full-window THEATER overlay, so the continue button goes in as `footer`. */}
       {mode === 'slots' && (
         <SlotMachine
           session={slotSession}
           onComplete={handleSlotsComplete}
           jackpotPool={jackpotPool}
+          footer={pendingNav && (
+            <KawaiiButton
+              variant={pendingNav === '/bonus' ? 'gold' : 'primary'}
+              size="xl"
+              fullWidth
+              onClick={() => navigate(pendingNav)}
+              style={{ animation: 'bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1)', boxShadow: '0 6px 24px rgba(155,126,200,0.45)' }}
+            >
+              {pendingNav === '/bonus' ? '⭐ BONUS ROUND! TAP TO SPIN →' : '✨ TAP TO SEE REWARDS →'}
+            </KawaiiButton>
+          )}
         />
       )}
 
-      {/* Continue button after win — sticky so it's always reachable below the
-          tall slot cabinet (otherwise it rendered off-screen). */}
-      {pendingNav && (
+      {/* Continue button after a WHEEL win — sticky above the wheel. */}
+      {pendingNav && mode !== 'slots' && (
         <div style={{
           position: 'sticky', bottom: 16, zIndex: 60,
           width: '100%', maxWidth: 380,

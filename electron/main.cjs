@@ -22,6 +22,7 @@ const DIST = path.join(__dirname, '..', 'dist')
 const APP_URL = 'app://bundle/index.html'
 let mainWin = null   // the app window, so blocker IPC can raise/cover it
 let coverSavedBounds = null   // phone-size bounds saved while the window is grown to cover a Brainrot
+let slotsSavedBounds = null   // bounds saved while a slot machine holds the window in landscape
 
 // The custom scheme must be registered as privileged BEFORE the app is ready.
 protocol.registerSchemesAsPrivileged([
@@ -235,11 +236,29 @@ function registerBlockerIpc() {
   ipcMain.handle('rb:publish-state', (_e, st) => { rotblockBridge.setState(st); return { ok: true } })
   ipcMain.handle('rb:extension-active', () => rotblockBridge.isExtensionActive())
 
-  // UI scale: the renderer pushes the user's "App size" setting; we apply it as a
-  // page zoom (window size unchanged — only the content scales).
-  ipcMain.handle('ui:zoom', (_e, z) => {
-    const f = Math.max(0.5, Math.min(1.2, Number(z) || 0.9))
-    if (mainWin && !mainWin.isDestroyed()) { try { mainWin.webContents.setZoomFactor(f) } catch { /* */ } }
+  // SLOTS THEATER: while a slot machine is open, grow the window to a LANDSCAPE
+  // size (the machine + icons scale up to fill it) and restore the phone-size
+  // bounds when it closes. Mirrors the cover's save-once/restore pattern.
+  // (Note: page zoom is owned by the renderer — stageScale via webFrame.)
+  ipcMain.handle('window:slots-mode', (_e, on) => {
+    if (!mainWin || mainWin.isDestroyed()) return { ok: false }
+    try {
+      if (on) {
+        if (coverSavedBounds) return { ok: false }   // never fight an active RotBlock cover
+        if (!slotsSavedBounds) slotsSavedBounds = mainWin.getBounds()
+        const wa = screen.getDisplayMatching(mainWin.getBounds()).workArea
+        const w = Math.min(Math.round(wa.width * 0.92), 1280)
+        const h = Math.min(Math.round(wa.height * 0.92), 840)
+        mainWin.setBounds({
+          x: wa.x + Math.round((wa.width - w) / 2),
+          y: wa.y + Math.round((wa.height - h) / 2),
+          width: w, height: h,
+        }, true)
+      } else if (slotsSavedBounds) {
+        mainWin.setBounds(slotsSavedBounds, true)
+        slotsSavedBounds = null
+      }
+    } catch { /* non-fatal — worst case the window keeps its current size */ }
     return { ok: true }
   })
 }

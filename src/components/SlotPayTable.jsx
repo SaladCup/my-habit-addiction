@@ -5,7 +5,7 @@ import { PAYOUT_ROWS, SLOT_RULES, SLOT_SYMBOLS } from '../engine/slotEngine'
 // straight from slotEngine so the sheet can never drift from the actual math.
 const SYM = Object.fromEntries(SLOT_SYMBOLS.map(s => [s.id, s]))
 
-export default function SlotPayTable({ onClose }) {
+export default function SlotPayTable({ onClose, note = null }) {
   return (
     <div onClick={onClose} style={overlay}>
       <div onClick={e => e.stopPropagation()} style={card}>
@@ -17,6 +17,7 @@ export default function SlotPayTable({ onClose }) {
         <div style={scroll}>
           <div style={hint}>
             Match symbols left-to-right on any of the {SLOT_RULES.lineCount} lines. Each line pays on its own.
+            {note && <div style={{ marginTop: 4, color: '#FFD56B' }}>{note}</div>}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>

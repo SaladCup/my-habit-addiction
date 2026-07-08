@@ -172,6 +172,21 @@ export function resolveSlotSpin() {
   return { grid, wins, coins, summary: spinSummary(wins, coins) }
 }
 
+// ── Casino variant: the SAME machine, but wins scale with the BET. ──
+// The base paytable averages BASE_EV coins/spin (Monte-Carlo, 2.5M spins), so
+// scaling every win by bet·RTP/BASE_EV makes a spin return bet×0.95 on average —
+// the same ~5% house edge as the other casino games. Rounding is per-win.
+const CASINO_RTP = 0.95
+const BASE_EV = 41.1
+export function resolveCasinoSpin(bet) {
+  const grid = rollGrid()
+  const { wins } = evaluate(grid)
+  const k = (Math.max(1, bet) * CASINO_RTP) / BASE_EV
+  const scaled = wins.map(w => ({ ...w, coins: Math.max(1, Math.round(w.coins * k)) }))
+  const coins = scaled.reduce((s, w) => s + w.coins, 0)
+  return { grid, wins: scaled, coins, summary: spinSummary(scaled, coins) }
+}
+
 // Pick `n` scatter cells on distinct reels (random row each), sorted left→right —
 // so the bonus scatters land somewhere fresh every time instead of a fixed shape.
 function randomScatterCells(n) {

@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('desktop', {
   setZoomFactor: (f) => { try { webFrame.setZoomFactor(f) } catch { /* */ } },
   getZoomFactor: () => { try { return webFrame.getZoomFactor() } catch { return 1 } },
 
+  // Slots theater: grow the window to landscape while a slot machine is open,
+  // restore on close (main saves/restores the bounds).
+  slotsWindow: (on) => ipcRenderer.invoke('window:slots-mode', !!on),
+
   // Which app is in the foreground right now. Resolves to:
   //   { ok: true,  app: { name, bundleId, path, pid, title } | null }
   //   { ok: false, needsPermission: true, error }   ← macOS Accessibility not granted yet
@@ -29,8 +33,6 @@ contextBridge.exposeInMainWorld('desktop', {
   // so the Brainrot is fully covered, and restore phone size when unblocked.
   cover: (on) => ipcRenderer.invoke('blocker:cover', on),
 
-  // UI scale ("App size") — scales the page content; window size is unchanged.
-  setUiZoom: (z) => ipcRenderer.invoke('ui:zoom', z),
   openAccessibilitySettings: () => ipcRenderer.invoke('blocker:open-accessibility'),
   // Screen Recording = needed to read the window title (how we match Firefox sites).
   getScreenStatus: () => ipcRenderer.invoke('blocker:screen-status'),
