@@ -57,9 +57,12 @@ export function bucketForX(x) {
   return Math.max(0, Math.min(BUCKETS - 1, i))
 }
 
-// Payout multiplier per bucket — BAKED from 20k real-physics drops (scripts/bake-plinko.mjs)
-// against the EXACT rendered board (dividers incl. half-width + top caps), realizing ~97% RTP.
-// Center is common (0.5×), the shoulder pockets are the rare sweet spots (~2.6×). Re-run the
-// bake and paste both the multipliers and the realized RTP here if any geometry changes.
-export const BUCKET_MULTS = [0.7, 2.9, 1.9, 1, 0.6, 0.5, 0.6, 1, 2, 2.6, 0.8]
-export const BUCKET_RTP = 0.967
+// Payout multiplier per bucket — tuned against the MEASURED landing distribution
+// (scripts/bake-plinko.mjs, 20k real-physics drops: 11.0 3.4 4.9 8.7 14.2 16.3
+// 13.6 8.8 4.6 3.8 10.9 %). Same ~97% RTP as the old table, but the SHAPE is
+// friendly: 62% of drops pay ≥1× (was 34%) — near-center breaks even, shoulders
+// pay 1.1–1.3×, sweet spots 2.2× — with ONE dead pocket dead-center (0.4×, ~16%
+// of drops) carrying the house edge; edge losses are mild (0.7×). Re-run the
+// bake + recompute Σ P·m here if the board geometry ever changes.
+export const BUCKET_MULTS = [0.7, 2.2, 1.3, 1.1, 1, 0.4, 1, 1.1, 1.3, 2.2, 0.7]
+export const BUCKET_RTP = 0.971
