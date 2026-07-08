@@ -96,7 +96,7 @@ export default function BonusScreen() {
         }}>
           🎰 BONUS ROUND! 🎰
         </h2>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#9B7EC8' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#6B4E9E' }}>
           Coins collected — now spin for a bonus bead! 🎁
         </div>
       </div>

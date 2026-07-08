@@ -93,7 +93,7 @@ export default function RotBlockScreen() {
     <div style={{ minHeight: '100%', padding: '22px 16px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_ROTBLOCK} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       <ScreenHeader title="🧠 RotBlock" center style={{ marginBottom: 0 }} />
-      <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', maxWidth: 330, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+      <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#6B4E9E', maxWidth: 330, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
         Pick your <b>Brainrots</b> — the apps or sites that eat your time. Using one spends your coins. Run out and it locks until you earn more.
       </p>
 
@@ -114,7 +114,7 @@ export default function RotBlockScreen() {
           </KawaiiButton>
         </div>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#3D2B4F' }}>
-          Free time banked: <b>{fmtTime(freeTimeSec)}</b> <span style={{ color: '#B79DD6' }}>({coins} coins)</span>
+          Free time banked: <b>{fmtTime(freeTimeSec)}</b> <span style={{ color: '#6B4E9E' }}>({coins} coins)</span>
         </div>
         {bgActive && (
           <div style={{ marginTop: 8, color: '#2E7D52', fontFamily: 'Mulish, sans-serif', fontSize: 17 }}>
@@ -149,7 +149,7 @@ export default function RotBlockScreen() {
             <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openAccessibilitySettings()}>
               ⚙️ Open Accessibility Settings
             </KawaiiButton>
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 8, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 8, lineHeight: 1.4 }}>
               RotBlock needs this to see your front app &amp; browser tab. Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen.
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function RotBlockScreen() {
       {/* YOUR BRAINROTS */}
       <PixelPanel color="cream" title="YOUR BRAINROTS" style={{ width: '100%', maxWidth: 380 }}>
         {rotblock.targets.length === 0 ? (
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#B79DD6', textAlign: 'center', padding: '6px 0 12px' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#6B4E9E', textAlign: 'center', padding: '6px 0 12px' }}>
             None yet — add the first one below.
           </div>
         ) : (
@@ -192,7 +192,7 @@ export default function RotBlockScreen() {
           placeholder={kind === 'site' ? 'e.g. youtube.com' : 'e.g. Steam, or a game name'}
         />
         {kind === 'site' && (
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', margin: '0 0 10px', lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', margin: '0 0 10px', lineHeight: 1.4 }}>
             Matched by URL in Chrome, Safari, Edge, Brave, Opera &amp; Vivaldi — and by tab title in <b>Firefox</b> (enable Screen Recording below).
           </div>
         )}
@@ -202,13 +202,13 @@ export default function RotBlockScreen() {
             it'd actually help: a site Brainrot exists and the permission isn't granted. */}
         {desktop?.platform === 'darwin' && hasSiteTargets && screenStatus !== 'granted' && desktop.openScreenRecordingSettings && (
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #ECC0DE' }}>
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 8, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 8, lineHeight: 1.45 }}>
               🦊 To block sites in <b>Firefox</b>, RotBlock reads the tab title — which needs <b>Screen Recording</b>. (Other browsers already work via the URL.)
             </div>
             <KawaiiButton variant="secondary" size="sm" fullWidth onClick={() => desktop.openScreenRecordingSettings()}>
               🎬 Enable Firefox blocking
             </KawaiiButton>
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#B79DD6', marginTop: 6, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#6B4E9E', marginTop: 6, lineHeight: 1.4 }}>
               Add <b>My Habit Addiction</b>, turn it on, then fully quit &amp; reopen.
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function RotBlockScreen() {
             {appList && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, maxHeight: 260, overflowY: 'auto' }}>
                 {appList.length === 0 ? (
-                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#9B7EC8', padding: '4px 0', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#6B4E9E', padding: '4px 0', textAlign: 'center' }}>
                     No other apps found — open the app you want to block, then tap again.
                   </div>
                 ) : appList.map(a => (
@@ -235,7 +235,7 @@ export default function RotBlockScreen() {
             )}
           </>
         )}
-        {capMsg && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginTop: 8, textAlign: 'center' }}>{capMsg}</div>}
+        {capMsg && <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#6B4E9E', marginTop: 8, textAlign: 'center' }}>{capMsg}</div>}
       </PixelPanel>
 
       {/* SEE IT IN ACTION — arm a pretend-broke window, then the user switches to a

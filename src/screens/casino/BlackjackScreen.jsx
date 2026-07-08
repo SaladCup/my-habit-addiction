@@ -115,7 +115,7 @@ export default function BlackjackScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🃏 Blackjack</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 12 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 12 }}>
         Beat the dealer to 21 without busting. Blackjack pays 3:2.
       </div>
 
@@ -158,7 +158,7 @@ export default function BlackjackScreen() {
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 10, textAlign: 'center' }}>
               Go do a habit to earn more coins 💪
             </div>
           )}

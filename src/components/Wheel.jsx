@@ -284,7 +284,7 @@ const Wheel = forwardRef(function Wheel(
       {spinning && (
         <div style={{
           fontFamily: "'Fredoka', cursive",
-          fontSize: 28, color: '#9B7EC8',
+          fontSize: 28, color: '#6B4E9E',
           animation: 'twinkle 0.6s ease-in-out infinite',
         }}>
           SPINNING...

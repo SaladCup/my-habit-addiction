@@ -105,7 +105,7 @@ export default function HiLoScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎴 Hi-Lo</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 14 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 14 }}>
         Higher or lower? A tie wins. Stack the streak, then bank it.
       </div>
 
@@ -144,7 +144,7 @@ export default function HiLoScreen() {
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 10, textAlign: 'center' }}>
               Go do a habit to earn more coins 💪
             </div>
           )}

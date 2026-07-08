@@ -34,7 +34,7 @@ export default function CasinoScreen() {
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#7B5EA7', fontWeight: 700 }}>
           Coins to play with
         </div>
-        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 38, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
+        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 32, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
           {coins.toLocaleString()} <CoinIcon size={22} />
         </div>
         {net !== 0 && (
@@ -44,7 +44,7 @@ export default function CasinoScreen() {
         )}
       </PixelPanel>
 
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#9B7EC8', textAlign: 'center', lineHeight: 1.3 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12, color: '#6B4E9E', textAlign: 'center', lineHeight: 1.3 }}>
         Bet your coins. Win big or lose it all — no floor. 💅
       </div>
 
@@ -73,7 +73,7 @@ export default function CasinoScreen() {
             {!g.live && (
               <div style={{
                 position: 'absolute', top: 10, right: 10, fontFamily: 'Mulish, sans-serif', fontSize: 10, fontWeight: 800,
-                color: '#9B7EC8', background: '#E7DCF7', borderRadius: 8, padding: '2px 7px', letterSpacing: '0.04em',
+                color: '#6B4E9E', background: '#E7DCF7', borderRadius: 8, padding: '2px 7px', letterSpacing: '0.04em',
               }}>SOON</div>
             )}
           </button>

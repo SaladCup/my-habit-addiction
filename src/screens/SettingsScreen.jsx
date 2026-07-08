@@ -362,7 +362,7 @@ export default function SettingsScreen() {
         </div>
 
         {categories.length === 0 && !addingCat && (
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8', marginBottom: 10, textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#6B4E9E', marginBottom: 10, textAlign: 'center' }}>
             No categories yet.
           </div>
         )}
@@ -528,7 +528,7 @@ export default function SettingsScreen() {
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#3D2B4F', marginBottom: 10, lineHeight: 1.45 }}>
           Lock the apps & sites that eat your time behind your coins — using one spends your free time, and running out locks it.
         </div>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 10 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 10 }}>
           {rotblock?.enabled ? '🛡️ On' : '💤 Off'} · {rotblock?.targets?.length || 0} Brainrot{(rotblock?.targets?.length || 0) === 1 ? '' : 's'}
         </div>
         <KawaiiButton variant="secondary" size="md" fullWidth onClick={() => navigate('/rotblock')}>
@@ -546,7 +546,7 @@ export default function SettingsScreen() {
           onChange={e => updateSettings({ uiScale: parseFloat(e.target.value) })}
           style={{ width: '100%', accentColor: '#9B7EC8', marginBottom: 8 }}
         />
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', textAlign: 'center' }}>
           Smaller fits more on screen · bigger is easier to read
         </div>
       </PixelPanel>
@@ -610,7 +610,7 @@ export default function SettingsScreen() {
         >
           🔊 TEST SOUND
         </KawaiiButton>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 6, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 6, textAlign: 'center' }}>
           No sound? Reload the page and tap once — browsers block audio until you interact.
         </div>
       </PixelPanel>

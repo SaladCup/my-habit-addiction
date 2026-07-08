@@ -143,7 +143,7 @@ function TeapotJar({ jarBeads, milestones, getBeadColor, seenCount, onSeen, wall
           it can never collide with the glass, the pile, or the banner */}
       <div style={{
         marginTop: -50, position: 'relative', zIndex: 11, textAlign: 'center',
-        fontFamily: "'Fredoka', cursive", fontSize: 21, color: '#9B7EC8',
+        fontFamily: "'Fredoka', cursive", fontSize: 21, color: '#6B4E9E',
       }}>
         {jarBeads.length} beads
       </div>

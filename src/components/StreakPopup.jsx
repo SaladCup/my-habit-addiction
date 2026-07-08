@@ -98,7 +98,7 @@ export default function StreakPopup({ onClose }) {
             </>
           ) : (
             <>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#9B7EC8', fontWeight: 800, letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#6B4E9E', fontWeight: 800, letterSpacing: '0.08em' }}>
                 YOUR STREAK
               </div>
               <div style={{ position: 'relative', height: 150, width: '100%', display: 'grid', placeItems: 'center' }}>

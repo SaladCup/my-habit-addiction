@@ -92,7 +92,7 @@ export default function MinesScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>💣 Mines</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 10 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 10 }}>
         Tap gems to climb the multiplier. Hit a bomb and it&apos;s gone.
       </div>
 
@@ -151,7 +151,7 @@ export default function MinesScreen() {
           <KawaiiButton variant="gold" size="lg" fullWidth disabled={k < 1} onClick={() => finishCash()}>
             {k < 1 ? 'REVEAL A GEM FIRST' : <>💰 CASH OUT {Math.floor(staked * curMult).toLocaleString()} <CoinIcon /></>}
           </KawaiiButton>
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#9B7EC8', textAlign: 'center', marginTop: 8 }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 12.5, color: '#6B4E9E', textAlign: 'center', marginTop: 8 }}>
             {k} gem{k === 1 ? '' : 's'} · next gem → ×{nextMult}
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function MinesScreen() {
             </KawaiiButton>
           </div>
           {tooPoor && phase === 'betting' && (
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 10, textAlign: 'center' }}>
               Go do a habit to earn more coins 💪
             </div>
           )}

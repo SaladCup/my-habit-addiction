@@ -53,7 +53,7 @@ export default function SpendScreen() {
   const { show: showPopIn, dismiss: dismissPopIn } = useFirstVisitPopIn('spend')
 
   return (
-    <div style={{ minHeight: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+    <div style={{ minHeight: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
       {showPopIn && <VisualNovel script={FIRST_VISIT_SPEND} onComplete={dismissPopIn} onSkip={dismissPopIn} />}
       {toast && (
         <div style={{
@@ -74,7 +74,7 @@ export default function SpendScreen() {
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 18, color: '#7B5EA7', fontWeight: 700 }}>
           You have
         </div>
-        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 44, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
+        <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 34, color: '#E0A800', lineHeight: 1.1, textShadow: '0 2px 0 rgba(200,150,0,0.25)' }}>
           {coins.toLocaleString()} <CoinIcon size={24} />
         </div>
         <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7', marginTop: 4 }}>
@@ -91,7 +91,7 @@ export default function SpendScreen() {
           )}
           {secondsPerCoin > 0 && (
             <div>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#9B7EC8' }}>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26, color: '#6B4E9E' }}>
                 {fmtTime(coins * secondsPerCoin)}
               </div>
               <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B8AB5' }}>{timeActivity}</div>

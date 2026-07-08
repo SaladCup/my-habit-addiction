@@ -58,7 +58,7 @@ export default function BreakGlassScreen() {
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: 0 }}>
         🔨 Break Glass
       </h2>
-      <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#9B7EC8', maxWidth: 320, margin: 0, lineHeight: 1.5 }}>
+      <p style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#6B4E9E', maxWidth: 320, margin: 0, lineHeight: 1.5 }}>
         Out of coins but really need in? Tap your way through. It gets easier each round — that's the deal.
       </p>
 
@@ -117,14 +117,14 @@ export default function BreakGlassScreen() {
             <div style={{ height: 12, borderRadius: 8, background: '#EFE6F6', overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#FFB3CE,#FF85A1)', transition: 'width 120ms ease' }} />
             </div>
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#B79DD6', marginTop: 6 }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#6B4E9E', marginTop: 6 }}>
               {doneTaps} / {allTaps} taps
             </div>
           </div>
 
           <button
             onClick={() => navigate(-1)}
-            style={{ marginTop: 10, background: 'none', border: 'none', color: '#B79DD6', fontFamily: 'Mulish, sans-serif', fontSize: 16, cursor: 'pointer', textDecoration: 'underline' }}
+            style={{ marginTop: 10, background: 'none', border: 'none', color: '#6B4E9E', fontFamily: 'Mulish, sans-serif', fontSize: 16, cursor: 'pointer', textDecoration: 'underline' }}
           >
             Never mind, take me back
           </button>

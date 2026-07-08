@@ -198,15 +198,15 @@ export default function StatsScreen() {
         <PixelPanel color="lavender" title="🎰 CASINO · ALL-TIME" style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>WAGERED</div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#6B4E9E' }}>WAGERED</div>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#7B5EA7' }}>{(gambling.wagered ?? 0).toLocaleString()} <CoinIcon /></div>
             </div>
             <div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>WON BACK</div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#6B4E9E' }}>WON BACK</div>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: '#7B5EA7' }}>{(gambling.won ?? 0).toLocaleString()} <CoinIcon /></div>
             </div>
             <div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#9B7EC8' }}>NET</div>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, fontWeight: 700, color: '#6B4E9E' }}>NET</div>
               <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 24, color: casinoNet >= 0 ? '#3E9B6A' : '#C44B6A' }}>
                 {casinoNet >= 0 ? '+' : '−'}{Math.abs(casinoNet).toLocaleString()} <CoinIcon />
               </div>

@@ -7,7 +7,17 @@ import { useNavigate } from 'react-router-dom'
 export default function ScreenHeader({ title, sub, back = false, center = false, style }) {
   const navigate = useNavigate()
   return (
-    <div style={{ marginBottom: 12, ...style }}>
+    <div style={{
+      marginBottom: 12,
+      // STICKY: the title + back button stay visible while the screen scrolls
+      // (standard app convention — you can always orient + go back). The soft
+      // translucent backdrop keeps scrolling content readable underneath.
+      position: 'sticky', top: 0, zIndex: 30, alignSelf: 'stretch',
+      background: 'linear-gradient(180deg, rgba(238,226,246,0.92) 55%, rgba(238,226,246,0))',
+      backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+      margin: '0 -16px 12px', padding: '6px 16px 10px',
+      ...style,
+    }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         justifyContent: center ? 'center' : 'flex-start',
@@ -26,7 +36,7 @@ export default function ScreenHeader({ title, sub, back = false, center = false,
       </div>
       {sub && (
         <div style={{
-          fontFamily: 'Mulish, sans-serif', fontSize: 16, color: '#7B5EA7',
+          fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#5C4483',
           marginTop: 3, textAlign: center ? 'center' : 'left',
         }}>
           {sub}

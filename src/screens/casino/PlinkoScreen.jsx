@@ -66,7 +66,7 @@ export default function PlinkoScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🎯 Plinko</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 8 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 8 }}>
         Drop the marble — real physics decides where it lands.
       </div>
 
@@ -91,7 +91,7 @@ export default function PlinkoScreen() {
         {phase === 'landed' && (result.mult >= 1
           ? <span style={{ color: '#5CBFA0' }}>×{result.mult} — won {result.win.toLocaleString()} <CoinIcon /></span>
           : <span style={{ color: '#C44B6A' }}>×{result.mult} — got {result.win.toLocaleString()} <CoinIcon /> back</span>)}
-        {dropping && <span style={{ color: '#9B7EC8' }}>dropping…</span>}
+        {dropping && <span style={{ color: '#6B4E9E' }}>dropping…</span>}
       </div>
 
       {!dropping && (
@@ -103,7 +103,7 @@ export default function PlinkoScreen() {
             </KawaiiButton>
           </div>
           {tooPoor && (
-            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 10, textAlign: 'center' }}>
               Go do a habit to earn more coins 💪
             </div>
           )}

@@ -84,7 +84,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
       )}
 
       {categories.length > 0 && (
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 4, marginBottom: creating ? 4 : 0 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 4, marginBottom: creating ? 4 : 0 }}>
           {value ? 'Tap the selected category again to clear it.' : 'Optional — tap a category to assign one.'}
         </div>
       )}
@@ -97,7 +97,7 @@ function CategoryPicker({ value, onChange, categories, onCreateCategory }) {
             marginTop: categories.length > 0 ? 8 : 0,
             background: 'transparent', border: '2px dashed #C8B4E0',
             borderRadius: 20, padding: '5px 12px', cursor: 'pointer',
-            fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#9B7EC8',
+            fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#6B4E9E',
             transition: 'all 140ms ease',
           }}
         >
@@ -185,7 +185,7 @@ function HabitForm({ initial, onSave, onCancel, categories, onCreateCategory }) 
 
       <div>
         <label style={labelStyle}>BONUS CHALLENGE — your &quot;just a bit more&quot;</label>
-        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 6, lineHeight: 1.4 }}>
+        <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 6, lineHeight: 1.4 }}>
           Optional. Jot a tiny → bigger version of a quick bonus for this habit. The bonus
           wheel picks one and shows your own words back — no math. Leave blank to use your default.
         </div>
@@ -270,7 +270,7 @@ export default function EditorScreen() {
                   </div>
                 )}
                 {cat && (
-                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#9B7EC8', marginTop: 1 }}>
+                  <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 14, color: '#6B4E9E', marginTop: 1 }}>
                     {cat.name}
                   </div>
                 )}

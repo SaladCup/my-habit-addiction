@@ -76,7 +76,7 @@ export default function WarningSplash({ onDismiss }) {
       <p style={{
         fontFamily: 'Mulish, sans-serif',
         fontSize: '11px',
-        color: '#9B7EC8',
+        color: '#6B4E9E',
         marginTop: '16px',
         opacity: 0.7,
       }}>

@@ -182,27 +182,27 @@ export default function SpinScreen() {
         <PixelPanel color="lavender" style={{ width: '100%', maxWidth: 380 }}>
           <div style={{
             fontFamily: "'Fredoka', cursive",
-            fontSize: 27, color: '#3D2B4F',
+            fontSize: 22, color: '#3D2B4F',
             textAlign: 'center', marginBottom: 16,
           }}>
             CHOOSE YOUR GAME
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={() => pickMode('wheel')} style={modeBtn(tierColor)}>
-              <div style={{ fontSize: 47, marginBottom: 6 }}>🎡</div>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26 }}>
+              <div style={{ fontSize: 38, marginBottom: 4 }}>🎡</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22 }}>
                 WHEEL
               </div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#5C4483', marginTop: 3 }}>
                 1 spin
               </div>
             </button>
             <button onClick={() => pickMode('slots')} style={modeBtn(tierColor)}>
-              <div style={{ fontSize: 47, marginBottom: 6 }}>🎰</div>
-              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 26 }}>
+              <div style={{ fontSize: 38, marginBottom: 4 }}>🎰</div>
+              <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 22 }}>
                 SLOTS
               </div>
-              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#7B5EA7', marginTop: 4 }}>
+              <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 15, color: '#5C4483', marginTop: 3 }}>
                 {SPINS_PER_TIER[activeTier] || 3} spins
               </div>
             </button>

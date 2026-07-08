@@ -32,10 +32,19 @@ export default function CashInScreen() {
   const wrapRef = useRef(null)
   const [dims, setDims] = useState(null)
 
-  const beads3d = useMemo(
-    () => jarBeads.map(b => ({ id: b.id, color: getBeadColor(b.slot, b.isGold), isGold: b.isGold, isRainbow: b.isRainbow })),
-    [jarBeads, getBeadColor]
-  )
+  // The jar releases its NEW beads (the cashed tail) in ARRAY order — so the tail
+  // must be in TAP order, or tapping the pink bead would drop whatever color sat
+  // leftmost. Tapped beads go first (in the order tapped — their marbles are
+  // already falling, keyed by id, so this prefix is append-only-stable); untapped
+  // beads follow and can be reordered freely since they haven't spawned yet.
+  const beads3d = useMemo(() => {
+    const cashedIds = new Set(cashed.map(b => b.id))
+    const base = jarBeads.filter(b => !cashedIds.has(b.id))
+    const tapped = dropped.map(id => cashed.find(b => b.id === id)).filter(Boolean)
+    const untapped = cashed.filter(b => !dropped.includes(b.id))
+    return [...base, ...tapped, ...untapped]
+      .map(b => ({ id: b.id, color: getBeadColor(b.slot, b.isGold), isGold: b.isGold, isRainbow: b.isRainbow }))
+  }, [jarBeads, cashed, dropped, getBeadColor])
 
   // Size the jar as big as fits the screen (height-constrained on tall phones).
   useLayoutEffect(() => {

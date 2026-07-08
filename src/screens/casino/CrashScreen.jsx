@@ -168,7 +168,7 @@ export default function CrashScreen() {
       </div>
 
       <h2 style={{ fontFamily: "'Fredoka', cursive", fontSize: 30, color: '#3D2B4F', margin: '6px 0 2px' }}>🚀 Crash</h2>
-      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginBottom: 8 }}>
+      <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginBottom: 8 }}>
         Cash out before it blows. The longer you wait, the bigger — and riskier.
       </div>
 
@@ -246,7 +246,7 @@ export default function CrashScreen() {
           </KawaiiButton>
         </div>
         {tooPoor && phase === 'betting' && (
-          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#9B7EC8', marginTop: 10, textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Mulish, sans-serif', fontSize: 13, color: '#6B4E9E', marginTop: 10, textAlign: 'center' }}>
             Go do a habit to earn more coins 💪
           </div>
         )}
