@@ -322,7 +322,7 @@ body {
 .audio-rainbow__ring {
   position: absolute;
   inset: 0;
-  --rb-fade: 32px;             /* how far the rainbow reaches inward before vanishing */
+  --rb-fade: 16px;             /* how far the rainbow reaches inward before vanishing (halved per feedback) */
   background: conic-gradient(from var(--rb-angle),
     #ff9ec7, #ffc093, #fff09a, #9aeab4, #93cdff, #c2a4ff, #ff9ec7);
   /* Pure 2-stop ramp per edge: fully opaque exactly at the bleed edge, fading
@@ -337,8 +337,8 @@ body {
     linear-gradient(to left,   #000, transparent var(--rb-fade)),
     linear-gradient(to bottom, #000, transparent var(--rb-fade)),
     linear-gradient(to top,    #000, transparent var(--rb-fade));
-  /* Stronger at the bleed edge so it actually reads (was ~0.68). */
-  opacity: calc(0.85 + var(--audio-level, 0.13) * 0.15);
+  /* ~10% fainter than the previous 0.85 base, per feedback. */
+  opacity: calc(0.76 + var(--audio-level, 0.13) * 0.14);
   animation: rb-spin 8s linear infinite;
 }
 
