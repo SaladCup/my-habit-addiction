@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../../store/useStore'
 import { KawaiiButton, CoinIcon } from '../../components/ui'
@@ -6,6 +6,8 @@ import BetBar from '../../components/casino/BetBar'
 import WinFlash from '../../components/casino/WinFlash'
 import { flipCoin, COINFLIP_PAYOUT } from '../../engine/casino/coinflip'
 import { playButtonTap, playWin, playNearMiss, playCoinDrop } from '../../engine/sounds'
+// 3D embossed coin (three.js — lazy so the casino lobby stays light)
+const CoinFlip3D = lazy(() => import('../../components/CoinFlip3D'))
 
 const MIN_BET = 10
 
@@ -83,7 +85,6 @@ export default function CoinFlipScreen() {
       }}
     >
       <WinFlash flashKey={flashKey} tier={flashTier} />
-      <style>{`@keyframes cf-flip{0%{transform:rotateY(0deg) scale(0.85)}60%{transform:rotateY(620deg) scale(1.08)}100%{transform:rotateY(720deg) scale(1)}}`}</style>
 
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" onClick={() => navigate('/casino')} style={backBtn}>← Lobby</button>
@@ -95,31 +96,17 @@ export default function CoinFlipScreen() {
         Win pays {COINFLIP_PAYOUT}× · let it ride to double up
       </div>
 
-      {/* the coin */}
-      <div style={{ height: 168, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div
-          key={flipKey}
-          style={{
+      {/* the coin — real 3D, embossed: heads = Habit-Chan, tails = her sinister self 😈 */}
+      <div style={{ height: 196, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Suspense fallback={
+          <div style={{
             width: 140, height: 140, borderRadius: '50%',
-            background: isHeads
-              ? 'radial-gradient(circle at 36% 30%, #FFF9D6 0%, #FBD15B 42%, #D4960A 100%)'
-              : 'radial-gradient(circle at 36% 30%, #F0E8FF 0%, #D0B8F0 45%, #8B62C8 100%)',
-            border: `6px solid ${isHeads ? '#C98A00' : '#7A54B8'}`,
-            boxShadow: isHeads
-              ? '0 8px 0 #9A6A00, 0 12px 24px rgba(180,130,0,0.35), 0 0 18px rgba(251,209,91,0.45)'
-              : '0 8px 0 #5E3E96, 0 12px 24px rgba(120,90,200,0.35), 0 0 14px rgba(180,140,240,0.35)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            animation: 'cf-flip 0.42s cubic-bezier(0.25,0.46,0.45,0.94)',
-            gap: 2,
-          }}
-        >
-          <div style={{ fontSize: 52, lineHeight: 1 }}>
-            {isHeads ? '🌟' : '🌙'}
-          </div>
-          <div style={{ fontFamily: "'Fredoka', cursive", fontSize: 20, color: isHeads ? '#7A5200' : '#3D1A6E', lineHeight: 1, letterSpacing: '0.04em' }}>
-            {isHeads ? 'HEADS' : 'TAILS'}
-          </div>
-        </div>
+            background: 'radial-gradient(circle at 36% 30%, #FFF9D6 0%, #FBD15B 42%, #D4960A 100%)',
+            border: '6px solid #C98A00',
+          }} />
+        }>
+          <CoinFlip3D landed={landed} flipKey={flipKey} size={196} />
+        </Suspense>
       </div>
 
       {/* result line */}
