@@ -5,7 +5,7 @@ import {
   canvasW, canvasH, LINE_COLORS,
   cabinetStyle, displayBox, infoBtn, displayLabel, displayValue, spinBtn, theaterStyle, winRowStyle, winPanelStyle,
 } from './slots/rig'
-import { playSpinStart, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
+import { playSpinStart, playLineWin, playCoinTick, playSlotWin, playNearMiss, playScreenTransitionIn, playScreenTransitionOut, playSwoosh } from '../engine/sounds'
 
 // ── The REWARD slot machine (the "bead" slots) ────────────────────────────────
 // Plays a pre-resolved session (resolveSlotSession) in THEATER MODE: a full-window
@@ -118,7 +118,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0, foot
   // starts the next spin — whatever moves you forward fastest.
   function onSpinButton() {
     if (phase === 'spinning') { try { reelSetRef.current?.skipSpin() } catch { /* */ } return }
-    if (phase === 'revealing') { skipRef.current = true; return }
+    if (phase === 'revealing') { playSwoosh(); skipRef.current = true; return }
     if (phase === 'ready' || phase === 'between') startSpin()
   }
 
@@ -149,7 +149,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0, foot
                 <span key={running} style={{ animation: 'coin-pop 0.25s ease-out', display: 'inline-block' }}>{running}</span>
               </div>
             </div>
-            <button onClick={() => setShowPays(true)} aria-label="Pay table" title="Pay table" style={infoBtn}>ⓘ</button>
+            <button onClick={() => { playScreenTransitionIn(); setShowPays(true) }} aria-label="Pay table" title="Pay table" style={infoBtn}>ⓘ</button>
           </div>
 
           {/* Pixi reel canvas */}
@@ -225,7 +225,7 @@ export default function SlotMachine({ session, onComplete, jackpotPool = 0, foot
         {footer && <div style={{ width: '100%', maxWidth: 380 }}>{footer}</div>}
       </div>
 
-      {showPays && <SlotPayTable onClose={() => setShowPays(false)} />}
+      {showPays && <SlotPayTable onClose={() => { playScreenTransitionOut(); setShowPays(false) }} />}
 
       <style>{`
         @keyframes spin-btn-pulse {

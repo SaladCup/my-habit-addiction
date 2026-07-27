@@ -81,6 +81,25 @@ export function playButtonTap() {
   if (playSfx('buttonTap', 0.7)) return           // kawaii sparkle "ting"
   play(c => note(c, 660, c.currentTime, 0.07, 'sine', 0.13))   // synth fallback
 }
+let _lastSecondaryTapAt = 0
+export function playButtonTapSecondary() {   // quieter bubble-pop — secondary/ghost/cancel buttons + the wallet bead tap
+  const now = (typeof performance !== 'undefined') ? performance.now() : Date.now()
+  if (now - _lastSecondaryTapAt < 70) return
+  _lastSecondaryTapAt = now
+  if (playSfx('buttonTapSecondary', 0.7)) return
+  play(c => note(c, 520, c.currentTime, 0.06, 'sine', 0.11))   // synth fallback
+}
+export const playWalletBeadTap = playButtonTapSecondary   // reuses the same file — see the sound library
+
+export function playButtonDisabled() {       // flattened "dud" pop — tapping a disabled control
+  if (playSfx('buttonDisabled', 0.6)) return
+  play(c => {
+    const t = c.currentTime
+    note(c, 260, t,       0.09, 'sine', 0.14)
+    note(c, 220, t+0.05,  0.12, 'sine', 0.10)
+  })
+}
+
 let _lastHoverAt = 0
 export function playHover() {                                // soft blip on nav-icon hover
   const now = (typeof performance !== 'undefined') ? performance.now() : Date.now()
@@ -88,7 +107,15 @@ export function playHover() {                                // soft blip on nav
   _lastHoverAt = now
   playSfx('uiHover', 0.45)
 }
-export function playSwoosh()  { playSfx('uiSwoosh', 0.8) }   // whoosh on screen / nav transitions
+export function playSwoosh()  { playSfx('uiSwoosh', 0.8) }   // whoosh on screen / nav transitions + skip actions
+
+export function playScreenTransitionIn()  { playSfx('screenTransitionIn', 0.7) }
+export function playScreenTransitionOut() { playSfx('screenTransitionOut', 0.7) }
+
+// One generated clip serves both states — pitched up for ON, down for OFF,
+// matching how the sound was actually written ("springs upward" / "drops down").
+export function playToggleOn()  { if (playSfx('toggleOn', 0.75, 1.08)) return; play(c => note(c, 700, c.currentTime, 0.09, 'sine', 0.16)) }
+export function playToggleOff() { if (playSfx('toggleOn', 0.75, 0.9))  return; play(c => note(c, 520, c.currentTime, 0.09, 'sine', 0.14)) }
 
 export function playSpinStart() {
   play(c => {

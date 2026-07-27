@@ -22,9 +22,14 @@ const MANIFEST = {
   beadGold:        'bead-gold.mp3',     // gold-coin prize jingle — gold bead
   beadRainbow:     'bead-rainbow.mp3',  // magic-wand sparkle — the rainbow wild-card bead
   reelStop:        'reel-stop.mp3',     // crisp mechanical click — a slot reel landing
-  buttonTap:       'button-tap.wav',    // kawaii fairy-sparkle "ting" — every button press
-  uiHover:         'ui-hover.wav',      // soft magic blip — hovering a nav icon
-  uiSwoosh:        'ui-pop.mp3',        // soft "pop" — clicking a nav icon (the pop Lauren liked)
+  buttonTap:          'primary-button-tap.mp3',    // ElevenLabs bubble-pop — every primary button press
+  buttonTapSecondary: 'secondary-button-tap.mp3',  // smaller/softer pop — secondary/ghost/cancel buttons
+  buttonDisabled:     'disabled-button-tap.mp3',   // flattened "dud" pop — tapping a disabled button
+  uiHover:            'nav-hover.mp3',              // soft magic blip — hovering a nav icon
+  uiSwoosh:           'nav-swoosh.mp3',             // light airy whoosh — nav taps + skip actions
+  screenTransitionIn:  'screen-transition-in.mp3',  // modal/overlay opening (pay table, etc)
+  screenTransitionOut: 'screen-transition-out.mp3', // modal/overlay closing
+  toggleOn:           'toggle-on-off.mp3',          // single file for BOTH toggle states — see playToggleOn/Off in sounds.js, differentiated by playbackRate
 }
 
 let ctx = null
@@ -73,7 +78,9 @@ export function hasSound(key) { return !!MANIFEST[key] }
 
 // One-shot. Returns true if a real file fired (so sounds.js knows not to also
 // play its synth fallback). A not-yet-decoded buffer returns false this once.
-export function playSfx(key, gainMul = 1) {
+// `rate` lets one file serve two states cheaply (e.g. toggleOn/Off share a
+// single generated clip, pitched up for "on" and down for "off").
+export function playSfx(key, gainMul = 1, rate = 1) {
   const { muted, volume } = getSettings()
   if (muted || !MANIFEST[key]) return false
   const c = getCtx(); if (!c) return false
@@ -81,6 +88,7 @@ export function playSfx(key, gainMul = 1) {
   if (!buf) { load(key); return false }
   try {
     const src = c.createBufferSource(); src.buffer = buf
+    src.playbackRate.value = rate
     const g = c.createGain(); g.gain.value = volume * gainMul
     src.connect(g); g.connect(c.destination)
     src.start()

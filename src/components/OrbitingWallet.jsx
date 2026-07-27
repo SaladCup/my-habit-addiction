@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import BeadDisplay from './ui/BeadDisplay'
+import { playWalletBeadTap } from '../engine/sounds'
 
 // The wallet beads, orbiting the jar instead of sitting in a bar. Beads are
 // grouped by color; each color-cluster orbits the jar slowly while its own beads
@@ -18,6 +19,7 @@ const CY_FRAC = 0.39       // orbit center y (glass center sits above box center
 const CLUSTER_R = 13       // how far apart same-color beads sit while circling
 
 export default function OrbitingWallet({ wallet, getBeadColor, onOpen }) {
+  function handleOpen(e) { playWalletBeadTap(); onOpen?.(e) }
   const containerRef = useRef(null)
   const nodeRefs = useRef(new Map())   // item key → DOM node
   const layoutRef = useRef(null)       // live layout the rAF reads each frame
@@ -94,9 +96,9 @@ export default function OrbitingWallet({ wallet, getBeadColor, onOpen }) {
           style={{ position: 'absolute', left: 0, top: 0, willChange: 'transform', pointerEvents: 'auto' }}
         >
           {it.chip ? (
-            <button onClick={onOpen} aria-label={`${it.chip} more beads — open wallet`} style={chipStyle}>+{it.chip}</button>
+            <button onClick={handleOpen} aria-label={`${it.chip} more beads — open wallet`} style={chipStyle}>+{it.chip}</button>
           ) : (
-            <button onClick={onOpen} aria-label="Open bead wallet" style={beadBtn}>
+            <button onClick={handleOpen} aria-label="Open bead wallet" style={beadBtn}>
               <BeadDisplay color={getBeadColor(it.bead.slot, it.bead.isGold)} slot={it.bead.slot} isGold={it.bead.isGold}
                 style={{ width: BEAD, height: BEAD }} />
             </button>

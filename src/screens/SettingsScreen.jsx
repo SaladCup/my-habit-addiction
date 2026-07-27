@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore, { KAWAII_COLORS, PERSIST_VERSION } from '../store/useStore'
 import { TIER_COINS, BONUS_TIERS } from '../engine/gameLogic'
-import { playWin } from '../engine/sounds'
+import { playWin, playToggleOn, playToggleOff } from '../engine/sounds'
 import { KawaiiButton, PixelPanel, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_SETTINGS } from '../content/habitChanScript'
@@ -560,6 +560,7 @@ export default function SettingsScreen() {
           <KawaiiButton
             variant={settings.muted ? 'ghost' : 'secondary'}
             size="sm"
+            sound={() => (settings.muted ? playToggleOn : playToggleOff)()}
             onClick={() => updateSettings({ muted: !settings.muted })}
           >
             {settings.muted ? 'UNMUTE' : 'MUTE'}
@@ -590,6 +591,7 @@ export default function SettingsScreen() {
             <KawaiiButton
               variant={(settings.musicEnabled ?? true) ? 'secondary' : 'ghost'}
               size="sm"
+              sound={() => ((settings.musicEnabled ?? true) ? playToggleOff : playToggleOn)()}
               onClick={() => updateSettings({ musicEnabled: !(settings.musicEnabled ?? true) })}
             >
               {(settings.musicEnabled ?? true) ? 'MUTE' : 'UNMUTE'}

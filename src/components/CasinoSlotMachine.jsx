@@ -10,7 +10,7 @@ import {
   canvasW, canvasH, LINE_COLORS,
   cabinetStyle, displayBox, infoBtn, displayLabel, displayValue, spinBtn, theaterStyle, winRowStyle, winPanelStyle,
 } from './slots/rig'
-import { playSpinStart, playLineWin, playCoinTick, playSlotWin, playNearMiss } from '../engine/sounds'
+import { playSpinStart, playLineWin, playCoinTick, playSlotWin, playNearMiss, playScreenTransitionIn, playScreenTransitionOut, playSwoosh } from '../engine/sounds'
 
 const MIN_BET = 10
 
@@ -113,7 +113,7 @@ export default function CasinoSlotMachine() {
 
   function onSpinButton() {
     if (phase === 'spinning') { try { reelSetRef.current?.skipSpin() } catch { /* */ } return }
-    if (phase === 'revealing') { skipRef.current = true; return }
+    if (phase === 'revealing') { playSwoosh(); skipRef.current = true; return }
     startSpin()
   }
 
@@ -153,7 +153,7 @@ export default function CasinoSlotMachine() {
                 {net >= 0 ? '+' : '−'}{Math.abs(net).toLocaleString()}
               </div>
             </div>
-            <button onClick={() => setShowPays(true)} aria-label="Pay table" title="Pay table" style={infoBtn}>ⓘ</button>
+            <button onClick={() => { playScreenTransitionIn(); setShowPays(true) }} aria-label="Pay table" title="Pay table" style={infoBtn}>ⓘ</button>
           </div>
 
           {/* Reels */}
@@ -220,7 +220,7 @@ export default function CasinoSlotMachine() {
 
       {showPays && (
         <SlotPayTable
-          onClose={() => setShowPays(false)}
+          onClose={() => { playScreenTransitionOut(); setShowPays(false) }}
           note="Base pays shown — your win scales with your bet size."
         />
       )}

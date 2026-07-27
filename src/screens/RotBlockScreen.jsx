@@ -6,6 +6,7 @@ import { KawaiiButton, PixelPanel, ScreenHeader } from '../components/ui'
 import VisualNovel from '../components/VisualNovel'
 import { FIRST_VISIT_ROTBLOCK } from '../content/habitChanScript'
 import { useFirstVisitPopIn } from '../hooks/useFirstVisitPopIn'
+import { playToggleOn, playToggleOff } from '../engine/sounds'
 
 const desktop = (typeof window !== 'undefined' && window.desktop) ? window.desktop : null
 
@@ -109,7 +110,7 @@ export default function RotBlockScreen() {
           <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 22, color: '#3D2B4F' }}>
             {rotblock.enabled ? '🛡️ RotBlock on' : '💤 RotBlock off'}
           </span>
-          <KawaiiButton variant={rotblock.enabled ? 'secondary' : 'mint'} size="sm" onClick={() => rbSetEnabled(!rotblock.enabled)}>
+          <KawaiiButton variant={rotblock.enabled ? 'secondary' : 'mint'} size="sm" sound={() => (rotblock.enabled ? playToggleOff : playToggleOn)()} onClick={() => rbSetEnabled(!rotblock.enabled)}>
             {rotblock.enabled ? 'TURN OFF' : 'TURN ON'}
           </KawaiiButton>
         </div>

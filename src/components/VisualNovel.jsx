@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import HabitChanSprite from './HabitChanSprite'
+import { playSwoosh } from '../engine/sounds'
 
 // One reusable visual-novel overlay. It ghosts/dims everything behind it, slides
 // Habit-Chan up, and types each line out in a dialogue box that advances on tap.
@@ -38,6 +39,7 @@ export default function VisualNovel({ script, onComplete, onSkip, name = 'Habit-
 
   function handleSkip(e) {
     e.stopPropagation()
+    playSwoosh()
     ;(onSkip || onComplete)?.()
   }
 

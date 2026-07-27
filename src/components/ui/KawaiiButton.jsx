@@ -1,5 +1,9 @@
 import { useRef } from 'react'
-import { playButtonTap } from '../../engine/sounds'
+import { playButtonTap, playButtonTapSecondary, playButtonDisabled } from '../../engine/sounds'
+
+// Which tap sound a variant gets by default — secondary/ghost read as quieter
+// background actions, everything else is a decisive primary tap.
+const VARIANT_SOUND = { secondary: playButtonTapSecondary, ghost: playButtonTapSecondary }
 
 const VARIANTS = {
   primary:   { bg: '#FF85A1', shadow: '#C44B6A', text: '#fff' },
@@ -29,14 +33,18 @@ export default function KawaiiButton({
   fullWidth = false,
   style = {},
   type = 'button',
+  sound,   // optional override, e.g. sound={() => (nowOn ? playToggleOn : playToggleOff)()}
 }) {
   const btnRef = useRef(null)
   const v = VARIANTS[variant] || VARIANTS.primary
   const s = SIZES[size] || SIZES.md
 
   function handleClick(e) {
-    if (disabled) return
-    playButtonTap()
+    // native `disabled` blocks the click entirely, so a disabled button gets an
+    // aria-disabled instead (below) — this is what lets it play a "nope" sound
+    // and still refuse the real action, instead of going silently inert.
+    if (disabled) { playButtonDisabled(); return }
+    ;(sound || VARIANT_SOUND[variant] || playButtonTap)()
     // Squish animation
     if (btnRef.current) {
       btnRef.current.animate(
@@ -61,7 +69,7 @@ export default function KawaiiButton({
       ref={btnRef}
       type={type}
       onClick={handleClick}
-      disabled={disabled}
+      aria-disabled={disabled}
       style={{
         fontFamily: "'Fredoka', cursive",
         fontSize: s.fontSize,
