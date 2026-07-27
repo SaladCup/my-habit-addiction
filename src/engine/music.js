@@ -13,7 +13,7 @@ const SRC = '/music/bg-kawaii-pop.mp3'
 // hot, so we scale the whole slider down (0.2 default → ~0.11) — keeps the 0–100% UI.
 const MUSIC_GAIN = 0.55
 
-let cfg = { muted: false, musicEnabled: true, musicVolume: 0.2 }
+let cfg = { muted: false, musicEnabled: false, musicVolume: 0.2 }
 let ctx = null
 let gainNode = null
 let buffer = null

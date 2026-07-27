@@ -159,7 +159,7 @@ const useStore = create(
         bonusTiers:     { ...DEFAULT_BONUS_TIERS },  // global default per-tier bonuses (used when a habit has none)
         muted:          false,
         volume:         0.6,   // SFX volume (Web Audio one-shots/loops in audio.js + sounds.js)
-        musicEnabled:   true,  // background music on/off (independent of SFX)
+        musicEnabled:   false, // background music on/off (independent of SFX) — defaulted OFF while the app's still being actively built; flip back to true once development settles
         musicVolume:    0.2,   // background music — intentionally low by default (it sits UNDER everything)
         uiScale:        1,     // fine-tune multiplier on the auto fit-to-window scale (Settings → Display); 1 = fit
       },
@@ -695,7 +695,7 @@ const useStore = create(
         }
         if (version < 18 && persisted.settings) {
           // Background music added — seed the new audio settings on older saves.
-          if (persisted.settings.musicEnabled === undefined) persisted.settings.musicEnabled = true
+          if (persisted.settings.musicEnabled === undefined) persisted.settings.musicEnabled = false
           if (persisted.settings.musicVolume === undefined) persisted.settings.musicVolume = 0.2
         }
         if (version < 19 && !persisted.rotblock) {

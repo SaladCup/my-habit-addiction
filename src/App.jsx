@@ -127,7 +127,7 @@ function BottomNav() {
 // engine whenever they change. The engine handles the autoplay-unlock gesture,
 // so music begins on the first tap (e.g. dismissing the warning splash).
 function MusicController() {
-  const musicEnabled = useStore(s => s.settings.musicEnabled ?? true)
+  const musicEnabled = useStore(s => s.settings.musicEnabled ?? false)
   const musicVolume  = useStore(s => s.settings.musicVolume ?? 0.2)
   const muted        = useStore(s => s.settings.muted)
   useEffect(() => {

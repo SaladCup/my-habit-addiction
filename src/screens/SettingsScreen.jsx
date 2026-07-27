@@ -586,15 +586,15 @@ export default function SettingsScreen() {
             <span style={{ fontFamily: 'Mulish, sans-serif', fontSize: 17, color: '#3D2B4F' }}>
               {settings.muted
                 ? '🔇 Muted'
-                : ((settings.musicEnabled ?? true) ? '🎵 Music on' : '🎵 Music off')}
+                : ((settings.musicEnabled ?? false) ? '🎵 Music on' : '🎵 Music off')}
             </span>
             <KawaiiButton
-              variant={(settings.musicEnabled ?? true) ? 'secondary' : 'ghost'}
+              variant={(settings.musicEnabled ?? false) ? 'secondary' : 'ghost'}
               size="sm"
-              sound={() => ((settings.musicEnabled ?? true) ? playToggleOff : playToggleOn)()}
-              onClick={() => updateSettings({ musicEnabled: !(settings.musicEnabled ?? true) })}
+              sound={() => ((settings.musicEnabled ?? false) ? playToggleOff : playToggleOn)()}
+              onClick={() => updateSettings({ musicEnabled: !(settings.musicEnabled ?? false) })}
             >
-              {(settings.musicEnabled ?? true) ? 'MUTE' : 'UNMUTE'}
+              {(settings.musicEnabled ?? false) ? 'MUTE' : 'UNMUTE'}
             </KawaiiButton>
           </div>
           <label style={labelStyle}>MUSIC VOLUME — {Math.round((settings.musicVolume ?? 0.2) * 100)}%</label>
